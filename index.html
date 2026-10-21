@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>류봉두와 함께하는 국어수업</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<style>
+/* 레이아웃: 애플 홈페이지처럼 가운데 큰 제목 하나, 그 아래 학년 타일 세 개 */
+:root{
+  --bg:#ffffff; --fg:#1d1d1f; --muted:#6e6e73; --tile:#f5f5f7; --line:#d2d2d7; --link:#0066cc;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--fg:#f5f5f7;--muted:#a1a1a6;--tile:#1d1d1f;--line:#424245;--link:#2997ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#000;--fg:#f5f5f7;--muted:#a1a1a6;--tile:#1d1d1f;--line:#424245;--link:#2997ff;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;padding-block:clamp(56px,10vw,120px) 64px}
+.hero{text-align:center}
+.eyebrow{font-size:17px;font-weight:500;color:var(--muted);margin:0 0 10px}
+h1{font-size:clamp(36px,6.4vw,64px);font-weight:800;letter-spacing:-0.025em;line-height:1.08;margin:0;text-wrap:balance}
+.sub{font-size:clamp(17px,2.2vw,21px);color:var(--muted);margin:16px 0 0;line-height:1.5}
+.grades{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:clamp(48px,8vw,80px)}
+.grade{display:flex;flex-direction:column;gap:6px;background:var(--tile);border-radius:22px;padding:32px 28px 28px;
+  text-decoration:none;color:inherit;min-height:200px;transition:transform .25s ease}
+a.grade:hover{transform:scale(1.015)}
+a.grade:focus-visible{outline:3px solid var(--link);outline-offset:3px}
+.grade .num{font-size:clamp(40px,5vw,56px);font-weight:800;letter-spacing:-0.03em;line-height:1}
+.grade .num small{font-size:.45em;font-weight:700;margin-left:2px}
+.grade .desc{font-size:15px;color:var(--muted);margin-top:auto}
+.grade .go{font-size:17px;color:var(--link);font-weight:500}
+.grade.off{color:var(--muted)}
+.grade.off .go{color:var(--muted);margin-top:auto}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:56px;border-top:1px solid var(--line);padding-top:20px}
+@media (max-width:640px){.grades{grid-template-columns:1fr}.grade{min-height:0}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">고흥대서중학교 국어</p>
+    <h1>류봉두와 함께하는<br>국어수업</h1>
+    <p class="sub">학년을 골라 들어가세요.</p>
+  </header>
+
+  <nav class="grades" aria-label="학년 선택">
+    <!-- 학년이 준비되면 <div class="grade off"> 를 <a class="grade" href="g1/index.html"> 로 바꾸면 됩니다 -->
+    <div class="grade off">
+      <span class="num">1<small>학년</small></span>
+      <span class="go">준비 중</span>
+    </div>
+    <a class="grade" href="g2/index.html">
+      <span class="num">2<small>학년</small></span>
+      <span class="desc">해냄에듀 국어 2-1 · 2-2</span>
+      <span class="go">들어가기 ›</span>
+    </a>
+    <div class="grade off">
+      <span class="num">3<small>학년</small></span>
+      <span class="go">준비 중</span>
+    </div>
+  </nav>
+
+  <footer>류봉두 · 고흥대서중학교</footer>
+</div>
+</body>
+</html>

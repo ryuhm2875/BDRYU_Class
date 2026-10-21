@@ -427,6 +427,20 @@ h2{font-weight:800;font-size:46px;letter-spacing:-2px;line-height:1.22}
 .or.em .od{font-weight:800}
 
 footer .nav .jp{font-size:15px;padding:10px 16px}
+
+/* 바로가기 (추가) */
+#toc{position:absolute;inset:0;z-index:50;background:rgba(28,27,25,.55);display:none;align-items:center;justify-content:center}
+#toc.on{display:flex}
+#toc .tocin{width:1180px;max-width:94%;max-height:660px;background:var(--paper2,#FBFAF7);border-radius:22px;padding:18px 24px 20px;box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;color:var(--k,#1C1B19)}
+#toc .toch{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+#toc .toch b{font-size:24px;font-weight:900}
+#toc .toch button{font:inherit;font-size:16px;font-weight:800;background:#EAE8E2;border:0;border-radius:999px;padding:8px 16px;cursor:pointer}
+#toc .tocg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 14px;overflow:auto}
+#toc .tocc h4{font-size:16px;font-weight:900;background:var(--k,#1C1B19);color:var(--y,#FEE500);border-radius:8px;padding:4px 12px;margin:0 0 6px;width:fit-content}
+#toc .tocg button{font:inherit;display:flex;gap:8px;width:100%;text-align:left;font-size:14.5px;font-weight:700;padding:4px 8px;border:0;background:none;border-radius:8px;line-height:1.35;cursor:pointer;color:inherit}
+#toc .tocg button i{font-style:normal;flex:none;width:26px;font-weight:900;color:var(--gray,#8A8A8A)}
+#toc .tocg button:hover{background:var(--y2,#FFF7B3)}
+#toc .tocg button.cur{background:var(--y,#FEE500)}
 </style>
 </head>
 <body>
@@ -870,7 +884,7 @@ footer .nav .jp{font-size:15px;padding:10px 16px}
   </div>
 
   <div class="gloss" id="gloss"></div>
-  <footer><div class="bar"><i id="bar"></i></div><span class="pageno" id="pno"></span><div class="nav"><button class="jp" id="jump">1차시 ⇄ 2차시</button><button id="prev">← 이전</button><button id="next">다음 →</button><button id="fs">전체 화면</button></div></footer>
+  <footer><div class="bar"><i id="bar"></i></div><span class="pageno" id="pno"></span><div class="nav"><button id="homeB" onclick="location.href='../index.html'">⌂ 목차</button><button id="tocB">☰ 바로가기</button><button class="jp" id="jump">1차시 ⇄ 2차시</button><button id="prev">← 이전</button><button id="next">다음 →</button><button id="fs">전체 화면</button></div></footer><div id="toc"><div class="tocin"><div class="toch"><b>페이지 바로가기</b><button id="tocX">✕ 닫기</button></div><div class="tocg" id="tocG"></div></div></div>
   <button class="edge el" id="edgeL" aria-label="이전"><span>‹</span></button><button class="edge er" id="edgeR" aria-label="다음"><span>›</span></button>
 </div>
 
@@ -1088,6 +1102,52 @@ document.getElementById('oxReset').onclick=e=>{ e.stopPropagation(); resetOX(); 
 function fit(){ const s=Math.min(innerWidth/1280,innerHeight/720)*0.98; stage.style.transform='translate(-50%,-50%) scale('+s+')'; }
 addEventListener('resize',fit); fit();
 go(0);
+</script>
+<script>
+/* 바로가기 (추가) */
+(function(){
+  const toc=document.getElementById('toc'), G=document.getElementById('tocG');
+  function title(sl){
+    if(sl.classList.contains('s-cover')) return '표지';
+    const h=sl.querySelector('h2'), k=sl.querySelector('.kicker');
+    let t=h?h.cloneNode(true):null; if(t){ t.querySelectorAll('small').forEach(x=>x.remove()); t.querySelectorAll('br').forEach(x=>x.replaceWith(' ')); }
+    t=t?t.textContent.replace(/\s+/g,' ').trim():'';
+    if(!t){ const tt=sl.querySelector('.ttl'); if(tt) t=tt.textContent.replace(/\s+/g,' ').trim(); }
+    if(!t){ const sc=sl.querySelector('b.sec'); if(sc) t=sc.textContent.trim(); }
+    if(!t && k) t=k.textContent.split('·')[0].trim();
+    if(!t){ const lines=[...sl.querySelectorAll('p,li,span,div,b')].map(x=>x.children.length?'':x.textContent.replace(/\s+/g,' ').trim()).filter(x=>x.length>=4&&!/^[\d\s./:%-]+$/.test(x)); if(lines[0]) t=lines[0].length>24?lines[0].slice(0,24)+'…':lines[0]; }
+    return t||'(그림 장면)';
+  }
+  function build(){
+    let st=[0];
+    try{ if(typeof STARTS!=='undefined' && STARTS.length>1) st=STARTS; }catch(e){}
+    if(st.length===1){ const cv=[...slides.keys()].filter(i=>i>0&&slides[i].classList.contains('s-cover')); if(cv.length) st=[0,...cv]; }
+    let nm=null; try{ if(typeof LNAME!=='undefined') nm=LNAME; }catch(e){}
+    let h='';
+    st.forEach((s,k)=>{
+      const en=k+1<st.length?st[k+1]:slides.length;
+      h+='<div class="tocc">'+(st.length>1?'<h4>'+((nm&&nm[k])||(k+1))+'차시</h4>':'');
+      for(let i=s;i<en;i++) h+='<button data-go="'+i+'"'+(i===cur?' class="cur"':'')+'><i>'+(i+1)+'</i>'+title(slides[i])+'</button>';
+      h+='</div>';
+    });
+    if(st.length===1){ // 차시 구분이 없으면 세 줄로 나눠 담기
+      const all=[...slides.keys()], n=Math.ceil(all.length/3); h='';
+      for(let c=0;c<3;c++){ h+='<div class="tocc">'; all.slice(c*n,(c+1)*n).forEach(i=>{ h+='<button data-go="'+i+'"'+(i===cur?' class="cur"':'')+'><i>'+(i+1)+'</i>'+title(slides[i])+'</button>'; }); h+='</div>'; }
+    }
+    G.innerHTML=h;
+  }
+  const open=()=>{ build(); toc.classList.add('on'); }, close=()=>toc.classList.remove('on');
+  document.getElementById('tocB').onclick=open;
+  document.getElementById('pno').style.cursor='pointer';
+  document.getElementById('pno').addEventListener('click',open);
+  document.getElementById('tocX').onclick=close;
+  toc.addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b){ close(); go(+b.dataset.go); return; } if(e.target===toc) close(); });
+  window.addEventListener('keydown',e=>{
+    const on=toc.classList.contains('on');
+    if(on){ if(e.key==='Escape') close(); e.stopImmediatePropagation(); return; }
+    if(e.key==='g'||e.key==='G'||e.key==='m'||e.key==='M') open();
+  },true);
+})();
 </script>
 </body>
 </html>

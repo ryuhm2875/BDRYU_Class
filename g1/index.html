@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>1학년 국어 · 류봉두와 함께하는 국어수업</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<style>
+/* 레이아웃: 큰 제목 → 학기 전환 버튼 → 단원마다 소단원 줄 목록 */
+:root{
+  --bg:#ffffff; --fg:#1d1d1f; --muted:#6e6e73; --faint:#86868b; --tile:#f5f5f7; --line:#d2d2d7; --link:#0066cc; --chip:#e8e8ed;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--tile:#1d1d1f;--line:#38383c;--link:#2997ff;--chip:#2c2c2e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#000;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--tile:#1d1d1f;--line:#38383c;--link:#2997ff;--chip:#2c2c2e;color-scheme:dark}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:820px;margin:0 auto;padding-block:20px 72px}
+.back{font-size:15px;color:var(--link);text-decoration:none}
+.back:hover{text-decoration:underline}
+header{text-align:center;margin-top:clamp(40px,7vw,72px)}
+.eyebrow{font-size:17px;font-weight:500;color:var(--muted);margin:0 0 8px}
+h1{font-size:clamp(36px,6vw,56px);font-weight:800;letter-spacing:-0.025em;line-height:1.08;margin:0}
+.seg{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px;margin-top:28px}
+.seg button{font:inherit;font-size:15px;font-weight:500;border:0;background:transparent;color:var(--fg);padding:8px 22px;border-radius:999px;cursor:pointer}
+.seg button[aria-selected="true"]{background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.seg button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.units{display:flex;flex-direction:column;gap:12px;margin-top:clamp(36px,6vw,56px)}
+.unit{background:var(--tile);border-radius:22px;padding:26px 28px 10px}
+.unit-head{display:flex;align-items:baseline;gap:12px;margin-bottom:10px}
+.unit-no{font-size:15px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.unit-title{font-size:clamp(21px,3vw,26px);font-weight:700;letter-spacing:-0.015em;margin:0;line-height:1.25}
+.lessons{list-style:none;margin:0;padding:0}
+.lesson{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 0;border-top:1px solid var(--line)}
+.lesson-name{font-size:17px;min-width:0}
+.lesson-name .n{color:var(--muted);margin-right:6px;font-variant-numeric:tabular-nums}
+.lesson.off .lesson-name{color:var(--faint)}
+.links{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:8px;flex-shrink:0}
+.links a{font-size:15px;font-weight:500;color:var(--link);text-decoration:none;white-space:nowrap}
+.links a:hover{text-decoration:underline}
+.links a:focus-visible{outline:2px solid var(--link);outline-offset:3px;border-radius:4px}
+.links a.chip{background:var(--bg);border-radius:999px;padding:5px 12px}
+.links a.dl{color:var(--fg);border:1px solid var(--line);background:transparent}
+.soon{font-size:14px;color:var(--faint);white-space:nowrap}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:48px}
+@media (max-width:520px){.unit{padding:22px 20px 6px}.lesson{flex-direction:column;align-items:flex-start;gap:8px}.links{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">‹ 처음으로</a>
+
+  <header>
+    <p class="eyebrow">해냄에듀 중학교 국어</p>
+    <h1>1학년 국어</h1>
+    <div class="seg" role="tablist" aria-label="학기 선택">
+      <button role="tab" id="tab-1" data-term="1" aria-selected="false">1학기</button>
+      <button role="tab" id="tab-2" data-term="2" aria-selected="false">2학기</button>
+    </div>
+  </header>
+
+  <main class="units" id="units"></main>
+  <footer>류봉두 · 고흥대서중학교</footer>
+</div>
+
+<script>
+/* ================================================================
+   여기만 고치면 됩니다.
+   수업 파일을 올렸으면 해당 소단원의 files 안에 한 줄을 넣어 주세요.
+
+   files: {}                                   → "준비 중"
+   files: { "열기": "2-2/2-1.html" }            → 열기 버튼 하나
+   files: { "1차시": "1-2/3-1-1.html",
+            "2차시": "2-2/3-1-2.html" }         → 차시 버튼 여러 개
+   files: { "열기": "2-2/2-1.html",
+            "학습지": "2-2/2-1-worksheet.pdf" } → html이 아닌 파일은 ↓ 내려받기 버튼
+
+   파일 이름 규칙: 학기 폴더/단원-소단원(-차시).html
+   예) 2학기 3단원 (1) 2차시 → 1-2/3-1-2.html
+   ================================================================ */
+const 수업 = {
+  1: [
+    { 단원: 1, 제목: "빛나는 표현", 소단원: [
+      { 번호: 1, 제목: "운율과 비유", files: {} },
+      { 번호: 2, 제목: "상징", files: {} },
+    ]},
+    { 단원: 2, 제목: "간추리고 알리고", 소단원: [
+      { 번호: 1, 제목: "요약하며 읽기", files: {} },
+      { 번호: 2, 제목: "정보를 전달하는 글 쓰기", files: {} },
+    ]},
+    { 단원: 3, 제목: "읽고 쓰며 성장하는 삶", 소단원: [
+      { 번호: 1, 제목: "문학과 함께 성장하기", files: {} },
+      { 번호: 2, 제목: "정서 표현의 글 쓰기", files: {} },
+    ]},
+    { 단원: 4, 제목: "언어와 매체를 만나다", 소단원: [
+      { 번호: 1, 제목: "어휘의 양상과 올바른 언어생활", files: {} },
+      { 번호: 2, 제목: "매체의 특성과 영향력", files: {} },
+    ]},
+  ],
+  2: [
+    { 단원: 1, 제목: "갈등에서 소통으로", 소단원: [
+      { 번호: 1, 제목: "갈등으로 읽는 문학", files: {} },
+    ]},
+    { 단원: 2, 제목: "숨은 뜻을 찾아라", 소단원: [
+      { 번호: 1, 제목: "추론하며 이해하기", files: {} },
+      { 번호: 2, 제목: "매체를 통한 소통", files: {} },
+    ]},
+    { 단원: 3, 제목: "단어야 놀자", 소단원: [
+      { 번호: 1, 제목: "단어의 갈래", files: { "열기": "1-2/3-1.html", "학습지": "1-2/3-1-worksheet.pdf" } },
+      { 번호: 2, 제목: "단어의 짜임", files: {} },
+    ]},
+    { 단원: 4, 제목: "더불어 살아가는 힘", 소단원: [
+      { 번호: 1, 제목: "문제 해결을 위한 토의", files: {} },
+      { 번호: 2, 제목: "주장하는 글 쓰기", files: {} },
+    ]},
+  ],
+};
+/* ================= 아래는 고치지 않아도 됩니다 ================= */
+
+const box = document.getElementById("units");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function show(term) {
+  document.querySelectorAll(".seg button").forEach(b =>
+    b.setAttribute("aria-selected", b.dataset.term === String(term)));
+  box.innerHTML = 수업[term].map(u => `
+    <section class="unit">
+      <div class="unit-head"><span class="unit-no">${u.단원}단원</span><h2 class="unit-title">${esc(u.제목)}</h2></div>
+      <ul class="lessons">${u.소단원.map(l => {
+        const f = Object.entries(l.files);
+        const pages = f.filter(([, h]) => /\.html?$/i.test(h));
+        const many = pages.length > 1 || (pages.length === 1 && pages[0][0] !== "열기");
+        const right = f.length
+          ? f.map(([k, href]) => {
+              if (!/\.html?$/i.test(href)) {           // html이 아니면 내려받기
+                const ext = href.split(".").pop();
+                return `<a class="chip dl" href="${esc(href)}" download="${esc(l.제목 + " " + k + "." + ext)}">${esc(k)} ↓</a>`;
+              }
+              return `<a class="${many ? "chip" : ""}" href="${esc(href)}">${esc(k)}${many ? "" : " ›"}</a>`;
+            }).join("")
+          : `<span class="soon">준비 중</span>`;
+        return `<li class="lesson${f.length ? "" : " off"}">
+          <span class="lesson-name"><span class="n">(${l.번호})</span>${esc(l.제목)}</span>
+          <span class="links">${right}</span></li>`;
+      }).join("")}</ul>
+    </section>`).join("");
+  try { localStorage.setItem("g1-term", term); } catch (e) {}
+}
+
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => show(b.dataset.term)));
+
+let start = (new Date().getMonth() + 1 >= 3 && new Date().getMonth() + 1 <= 7) ? 1 : 2;  // 3~7월은 1학기
+try { const saved = localStorage.getItem("g1-term"); if (saved === "1" || saved === "2") start = saved; } catch (e) {}
+show(start);
+</script>
+</body>
+</html>

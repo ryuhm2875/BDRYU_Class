@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>2학년 국어 · 류봉두와 함께하는 국어수업</title>
+<title>2학년 국어 · 류봉두의 즐거운 국어 수업</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
@@ -47,7 +47,7 @@ h1{font-size:clamp(36px,6vw,56px);font-weight:800;letter-spacing:-0.025em;line-h
 .links a.chip{background:var(--bg);border-radius:999px;padding:5px 12px}
 .links a.dl{color:var(--fg);border:1px solid var(--line);background:transparent}
 .soon{font-size:14px;color:var(--faint);white-space:nowrap}
-footer{text-align:center;color:var(--muted);font-size:12px;margin-top:48px}
+.empty{text-align:center;color:var(--muted);font-size:17px;padding:40px 0}
 @media (max-width:520px){.unit{padding:22px 20px 6px}.lesson{flex-direction:column;align-items:flex-start;gap:8px}.links{justify-content:flex-start}}
 </style>
 </head>
@@ -56,7 +56,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:48px}
   <a class="back" href="../index.html">‹ 처음으로</a>
 
   <header>
-    <p class="eyebrow">해냄에듀 중학교 국어</p>
+    <p class="eyebrow">고흥대서중학교 류봉두의 즐거운 국어 수업</p>
     <h1>2학년 국어</h1>
     <div class="seg" role="tablist" aria-label="학기 선택">
       <button role="tab" id="tab-1" data-term="1" aria-selected="false">1학기</button>
@@ -65,7 +65,6 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:48px}
   </header>
 
   <main class="units" id="units"></main>
-  <footer>류봉두 · 고흥대서중학교</footer>
 </div>
 
 <script>
@@ -113,7 +112,7 @@ const 수업 = {
       { 번호: 2, 제목: "국어의 문자 체계", files: { "열기": "2-2/2-2.html" } },
     ]},
     { 단원: 3, 제목: "매체로 세상과 소통하기", 소단원: [
-      { 번호: 1, 제목: "복합양식 자료 읽기", files: { "3차시": "2-2/3-1-3.html" } },
+      { 번호: 1, 제목: "복합양식 자료 읽기", files: { "1~2차시": "2-2/3-1-1.html", "3차시": "2-2/3-1-3.html" } },
       { 번호: 2, 제목: "복합양식 자료 활용하여 쓰기", files: {} },
     ]},
     { 단원: 4, 제목: "논리 찾기, 자신 있게 말하기", 소단원: [
@@ -130,9 +129,9 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 function show(term) {
   document.querySelectorAll(".seg button").forEach(b =>
     b.setAttribute("aria-selected", b.dataset.term === String(term)));
-  box.innerHTML = 수업[term].map(u => `
+  box.innerHTML = !수업[term].length ? `<p class="empty">아직 올린 수업이 없습니다.</p>` : 수업[term].map(u => `
     <section class="unit">
-      <div class="unit-head"><span class="unit-no">${u.단원}단원</span><h2 class="unit-title">${esc(u.제목)}</h2></div>
+      <div class="unit-head">${u.단원 ? `<span class="unit-no">${u.단원}단원</span>` : ""}<h2 class="unit-title">${esc(u.제목)}</h2></div>
       <ul class="lessons">${u.소단원.map(l => {
         const f = Object.entries(l.files);
         const pages = f.filter(([, h]) => /\.html?$/i.test(h));

@@ -79,6 +79,8 @@ h1{font-size:clamp(36px,6vw,56px);font-weight:800;letter-spacing:-0.025em;line-h
    files: { "열기": "2-2/2-1.html",
             "학습지": "2-2/2-1-worksheet.pdf" } → html이 아닌 파일은 ↓ 내려받기 버튼
 
+   소단원이 아닌 줄(수행평가 등)은 번호 대신 머리: "수행평가" 를 씁니다.
+
    파일 이름 규칙: 학기 폴더/단원-소단원(-차시).html
    예) 2학기 3단원 (1) 2차시 → 2-2/3-1-2.html
    ================================================================ */
@@ -110,6 +112,7 @@ const 수업 = {
     { 단원: 2, 제목: "아름다운 우리 말과 글", 소단원: [
       { 번호: 1, 제목: "국어의 음운 체계", files: { "열기": "2-2/2-1.html" } },
       { 번호: 2, 제목: "국어의 문자 체계", files: { "열기": "2-2/2-2.html" } },
+      { 머리: "수행평가", 제목: "한글 홍보물 만들기", files: { "안내": "2-2/2-pa.html", "기획서": "2-2/2-pa-plan.hwpx" } },
     ]},
     { 단원: 3, 제목: "매체로 세상과 소통하기", 소단원: [
       { 번호: 1, 제목: "복합양식 자료 읽기", files: { "1~2차시": "2-2/3-1-1.html", "3차시": "2-2/3-1-3.html" } },
@@ -146,7 +149,7 @@ function show(term) {
             }).join("")
           : `<span class="soon">준비 중</span>`;
         return `<li class="lesson${f.length ? "" : " off"}">
-          <span class="lesson-name"><span class="n">(${l.번호})</span>${esc(l.제목)}</span>
+          <span class="lesson-name"><span class="n">${l.머리 ? esc(l.머리) : "(" + l.번호 + ")"}</span>${esc(l.제목)}</span>
           <span class="links">${right}</span></li>`;
       }).join("")}</ul>
     </section>`).join("");

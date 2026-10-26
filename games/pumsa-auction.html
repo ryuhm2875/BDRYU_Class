@@ -390,6 +390,17 @@ body.pad{background:var(--paper);min-height:100%}
 .pmodal .pts{grid-template-columns:1fr}.pmodal .pts div{font-size:18px}
 
 .trapnote em,.trapnote span{display:block;margin-left:0!important}
+/* 경매사 봉두 */
+.chars.solo>div{animation:bob 2.6s ease-in-out infinite}
+.intro .chars.solo{right:150px;bottom:90px}.intro .chars.solo>div{width:250px}
+.isay{position:absolute;right:240px;top:196px;background:var(--y);color:var(--ink);border:3px solid var(--ink);border-radius:22px 22px 4px 22px;padding:12px 20px;font-size:26px;font-weight:900;white-space:nowrap;animation:pop .5s .4s both;z-index:3}
+.episode .chars.solo{right:110px;bottom:90px}.episode .chars.solo>div{width:260px}
+.isay.isay-ep{right:300px;top:228px}
+.rank .chars.solo{right:56px;bottom:84px}.rank .chars.solo>div{width:140px}
+.ochar{position:absolute;right:110px;bottom:80px;width:200px}
+.ochar span{position:absolute;right:-30px;top:-40px;background:var(--y);color:var(--ink);border:3px solid var(--ink);border-radius:20px 20px 4px 20px;padding:8px 16px;font-size:24px;font-weight:900;white-space:nowrap;animation:pop .4s .2s both}
+.wait .chars.solo>div{width:130px}.wait .chars.solo>.bd-podium{width:150px}
+.tut-say .cv-podium{width:110px}.tut-say .cv-up{width:104px}
 
 </style>
 </head>
@@ -1768,6 +1779,46 @@ function charSVG(who,mood,head){
   return '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
 }
 
+/* 경매사 봉두: 기존 봉두 얼굴·머리 그대로, 옷과 소품만 경매사 */
+function auctioneerSVG(mood, opt={}){
+  const S='stroke="#191919" stroke-width="3"', L='stroke-linecap="round" stroke-linejoin="round"';
+  let s='';
+  const podium = !!opt.podium;
+  /* 다리 */
+  if(!podium){
+    s+='<rect x="44" y="150" width="13" height="38" rx="6" fill="#2F3A4A"/><rect x="63" y="150" width="13" height="38" rx="6" fill="#2F3A4A"/>';
+    s+='<ellipse cx="49" cy="190" rx="10" ry="5" fill="#191919"/><ellipse cx="71" cy="190" rx="10" ry="5" fill="#191919"/>';
+  }
+  /* 왼팔 (몸 뒤) */
+  s+=`<path d="M34 112 Q22 128 26 146" fill="none" stroke="#191919" stroke-width="13" ${L}/><path d="M34 112 Q22 128 26 146" fill="none" stroke="#2F4C8C" stroke-width="8" ${L}/><circle cx="26" cy="148" r="6" fill="#FFE0C2" ${S}/>`;
+  /* 몸: 흰 셔츠 + 검은 조끼 */
+  s+=`<rect x="30" y="96" width="60" height="64" rx="24" fill="#2F4C8C" ${S}/>`;
+  s+=`<path d="M48 98 L60 124 L72 98 Z" fill="#fff" stroke="#191919" stroke-width="2.5" ${L}/>`;
+  s+='<circle cx="60" cy="132" r="2.4" fill="#FEE500"/><circle cx="60" cy="142" r="2.4" fill="#FEE500"/>';
+  /* 나비넥타이 */
+  s+=`<path d="M60 104 L48 97 L48 111 Z M60 104 L72 97 L72 111 Z" fill="#E0565B" stroke="#191919" stroke-width="2.5" ${L}/><circle cx="60" cy="104" r="3.6" fill="#E0565B" stroke="#191919" stroke-width="2.5"/>`;
+  /* 머리 (기존 봉두 그대로) */
+  s+=`<circle cx="60" cy="62" r="38" fill="#FFE0C2" ${S}/>`;
+  s+='<path d="M22 64 Q19 22 60 22 Q101 22 98 64 Q93 46 81 44 L75 34 L67 43 L59 31 L51 43 L43 36 L39 47 Q27 49 22 64Z" fill="#191919"/>';
+  s+=face(mood);
+  /* 오른팔 + 망치 */
+  if (opt.raise){
+    s+=`<path d="M86 112 Q102 100 106 82" fill="none" stroke="#191919" stroke-width="13" ${L}/><path d="M86 112 Q102 100 106 82" fill="none" stroke="#2F4C8C" stroke-width="8" ${L}/>`;
+    s+=`<g transform="rotate(-28 108 74)"><rect x="105" y="40" width="6" height="40" rx="3" fill="#C98A4B" ${S}/><rect x="92" y="28" width="32" height="16" rx="5" fill="#8B5A2B" ${S}/><rect x="96" y="31" width="4" height="10" rx="1" fill="#FEE500"/><rect x="116" y="31" width="4" height="10" rx="1" fill="#FEE500"/></g>`;
+    s+=`<circle cx="106" cy="80" r="7" fill="#FFE0C2" ${S}/>`;
+  } else {
+    s+=`<path d="M86 112 Q98 124 96 140" fill="none" stroke="#191919" stroke-width="13" ${L}/><path d="M86 112 Q98 124 96 140" fill="none" stroke="#2F4C8C" stroke-width="8" ${L}/>`;
+    s+=`<g transform="rotate(20 98 140)"><rect x="95" y="104" width="6" height="40" rx="3" fill="#C98A4B" ${S}/><rect x="82" y="92" width="32" height="16" rx="5" fill="#8B5A2B" ${S}/></g><circle cx="97" cy="142" r="7" fill="#FFE0C2" ${S}/>`;
+  }
+  /* 경매대 */
+  if (podium){
+    s+=`<path d="M8 138 H112 L104 196 H16 Z" fill="#8B5A2B" ${S} ${L}/><rect x="2" y="128" width="116" height="14" rx="6" fill="#A86B34" ${S}/>`;
+    s+='<rect x="30" y="152" width="60" height="26" rx="6" fill="#FEE500" stroke="#191919" stroke-width="2.5"/><text x="60" y="171" font-size="15" font-weight="900" text-anchor="middle" fill="#191919" font-family="NSK,sans-serif">경매</text>';
+  }
+  const vb = opt.raise ? '0 6 136 196' : '0 6 124 196';
+  return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+
 /* =====================================================================
    품사 경매 · 류봉두와 함께하는 국어수업
    - 주소 그대로 열면: 전자칠판(선생님) 화면
@@ -2278,24 +2329,24 @@ function tickTeacher(){
 
 /* ---------- 친절한 게임 설명 (칠판·태블릿 같이 씀) ---------- */
 function exChip(w,p){ return `<span>${esc(w)}<small style="background:${POS_COLOR[p]||'#eee'}">${p}</small></span>`; }
-function say(who,mood,text){ return `<div class="tut-say"><div class="bub">${text}</div><div class="cv">${charSVG(who,mood)}</div></div>`; }
+function say(pose,mood,text){ return `<div class="tut-say"><div class="bub">${text}</div><div class="cv cv-${pose}">${auctioneerSVG(mood,{raise:pose!=='down',podium:pose==='podium'})}</div></div>`; }
 const TUT = [
  ()=>`<div class="tut-h">1 / 4</div><div class="tut-t">이렇게 놀아요</div>
    <div class="flow"><div class="fstep"><div class="i">💰</div><b>① 카드 사기</b><span>코인으로<br>단어 카드를 사요</span></div><div class="farr">→</div>
    <div class="fstep"><div class="i">🧩</div><b>② 문장 만들기</b><span>산 카드로<br>문장 하나를 만들어요</span></div><div class="farr">→</div>
    <div class="fstep"><div class="i">🏆</div><b>③ 이기기</b><span>길고 바른 문장을<br>만든 팀이 이겨요</span></div></div>
-   ${say('girl','smile','코인은 100개뿐!<br>아껴 써요.')}`,
+   ${say('down','smile','코인은 100개뿐!<br>아껴 써요.')}`,
  ()=>`<div class="tut-h">2 / 4</div><div class="tut-t">카드 사기</div>
    <div class="big1"><div class="pad1"><div class="n">15</div><div class="b">입찰</div></div>
    <div class="txt1">태블릿에 <mark>숫자</mark>를 쓰고<br>[입찰]을 눌러요.<br><br>제일 많이 쓴 팀이<br>카드를 가져가요.</div></div>
-   ${say('boy','happy','안 사고 싶으면<br>0!')}`,
+   ${say('up','happy','안 사고 싶으면<br>0!')}`,
  ()=>`<div class="tut-h">3 / 4</div><div class="tut-t">조심해요</div>
    <div class="two" style="max-width:860px"><div style="background:#E4F0FF"><h4>🔄 변신 카드</h4><p class="p1">쓰임에 따라<br>품사가 바뀌어요.</p><p class="p2">키가 <b>큰다</b> → 동사<br>키가 <b>크다</b> → 형용사</p></div>
    <div style="background:var(--rl)"><h4>⚠️ 함정 카드</h4><p class="p1">틀린 말이<br>몰래 숨어 있어요.</p><p class="p2">문장에 쓰면 <b>−3</b><br>결과 발표 때 밝혀져요!</p></div></div>
-   ${say('boy','worry','카드를 살 때<br>잘 보고 사요!')}`,
+   ${say('down','worry','카드를 살 때<br>잘 보고 사요!')}`,
  ()=>`<div class="tut-h">4 / 4</div><div class="tut-t">점수</div>
    <div class="pts"><div><span>📝</span>단어가 많을수록<b>➕</b></div><div><span>🌈</span>품사가 다양할수록<b>➕</b></div><div><span>👑</span>9품사를 다 쓰면<b>➕10</b></div><div class="neg"><span>❌</span>틀리게 쓰면<b>➖</b></div></div>
-   ${say('girl','happy','문법도 맞고<br>뜻도 자연스러워야 해요!')}`
+   ${say('podium','happy','문법도 맞고<br>뜻도 자연스러워야 해요!')}`
 ];
 function tutHTML(i){ return `<div class="tp">${TUT[i]()}</div><div class="tnav"><button class="pill" data-tp="${i-1}" data-act="tGo" ${i<=0?'disabled':''}>◀ 이전</button><div class="dots">${TUT.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>${i<TUT.length-1?`<button class="pill k" data-tp="${i+1}" data-act="tGo">다음 ▶</button>`:`<button class="pill k" data-act="closeModal" data-tclose="1">알겠어요! 시작!</button>`}</div>`; }
 
@@ -2303,6 +2354,8 @@ function tutHTML(i){ return `<div class="tp">${TUT[i]()}</div><div class="tnav">
    칠판 화면 그리기
    ===================================================================== */
 const charHTML = (who,mood) => `<div>${charSVG(who,mood)}</div>`;
+/* 경매사 봉두: pose = down(망치 내림) | up(망치 듦) | podium(경매대) */
+const BD = (mood,pose='down') => `<div class="bd bd-${pose}">${auctioneerSVG(mood,{raise:pose!=='down',podium:pose==='podium'})}</div>`;
 let lastAnim='';
 function boardFit(){ const st=$('#stage'); if(!st) return; const s=Math.min(innerWidth/1280, innerHeight/720); st.style.transform=`scale(${s})`; }
 function hdr(right=''){ return `<div class="hd"><b>류봉두</b>와 함께하는 국어수업</div>${right?`<div class="tr">${right}</div>`:''}`; }
@@ -2346,7 +2399,7 @@ function viewIntro(){
     <div class="meta"><span>시즌 1</span><i>1학년</i>3. 단어야 놀자 · (1) 단어의 갈래</div>
     <div class="desc">조사 한 장에 30코인? 단어를 사고, 문장을 만들고, 품사를 증명하라.<br>가장 길고 바른 문장을 만든 팀이 이긴다.</div>
     <div class="btns"><button class="nbtn" data-act="toSetup">▶ 게임 시작</button>${saved?`<button class="nbtn g" data-act="resume">↻ 이어서 하기</button>`:''}<button class="nbtn g" data-act="rules">ⓘ 게임 설명</button></div>
-    <div class="chars">${charHTML('boy','happy')}${charHTML('girl','smile')}</div>
+    <div class="chars solo">${BD('happy','up')}</div><div class="isay">자 이제 경매를 시작하지.</div>
     ${bar('')}</div>`;
 }
 function padURL(){ const u=new URL(location.href); u.search=''; u.hash=''; u.searchParams.set('pad','1'); return u.toString(); }
@@ -2424,7 +2477,7 @@ function viewEpisode(){
     <div class="meta">${spNote}</div>
     <div class="mcard"><small>🎯 새 미션 · 최종 문장에서 달성하면 +3</small><div>${esc(m.t)}</div></div>
     ${prev?`<div class="mlist">쌓인 미션<br>${prev}</div>`:''}
-    <div class="chars">${charHTML('boy','happy')}${charHTML('girl','smile')}</div>
+    <div class="chars solo">${BD('happy','podium')}</div><div class="isay isay-ep">새 미션 나갑니다!</div>
     ${bar(`<button class="pill y" data-act="toAuction">▶ 경매 시작</button>`)}</div>`;
 }
 function viewAuction(){
@@ -2456,10 +2509,10 @@ function viewAuction(){
       return `<div class="bidc ${top?'top':''} ${x.amt?'':'zero'}" style="animation-delay:${i*0.18}s"><span class="an">${t.an}</span><span class="nm">${esc(t.name)}</span><span class="v">${x.amt||'포기'}</span></div>`; }).join('')}</div></div>`;
   }
   if (au.status==='sold'){ const t=T(au.result.tid); center=bigCard(c,false);
-    overlay = `<div class="sold"><div class="lbl">SOLD</div><div class="who">${t.an} ${esc(t.name)}</div><div class="what"><b>${esc(c.w)}</b> 카드를 ${au.result.price}코인에 낙찰!</div></div>`;
+    overlay = `<div class="sold"><div class="lbl">SOLD</div><div class="who">${t.an} ${esc(t.name)}</div><div class="what"><b>${esc(c.w)}</b> 카드를 ${au.result.price}코인에 낙찰!</div><div class="ochar">${BD('happy','up')}<span>낙찰!</span></div></div>`;
     btns=`<button class="pill k" data-act="next">다음 카드 →</button>`; }
   if (au.status==='unsold'){ center=bigCard(c,false);
-    overlay = `<div class="sold" style="background:rgba(250,250,247,.95);color:var(--ink)"><div class="lbl" style="color:var(--gray)">PASS</div><div class="who">유찰</div><div class="what" style="color:var(--gray)">이 카드는 마지막 떨이 시장에 나와요</div></div>`;
+    overlay = `<div class="sold" style="background:rgba(250,250,247,.95);color:var(--ink)"><div class="lbl" style="color:var(--gray)">PASS</div><div class="who">유찰</div><div class="what" style="color:var(--gray)">이 카드는 마지막 떨이 시장에 나와요</div><div class="ochar">${BD('worry','down')}<span>아무도 없나…?</span></div></div>`;
     btns=`<button class="pill k" data-act="next">다음 카드 →</button>`; }
   return `<div class="stage auction" id="stage">${hdr(topInfo())}
     <div class="mission">🎯 EP${S.round+1} 미션: <mark>${esc(m.t)}</mark></div>
@@ -2530,7 +2583,7 @@ function viewRank(){
     <div class="rk">${top.map((x,i)=>`<div class="it ${i===0?'g':''}" style="animation-delay:${(2-i)*0.5}s"><div class="n">${i+1}</div><div class="pc"><span class="an">${x.t.an}</span><b>${esc(x.t.name)}</b><span>${x.sc.total}점${x.sc.complete?' · 9품사 완전체':''}</span></div></div>`).join('')}</div>
     ${rest.length?`<div class="rest">${rest.map((x,i)=>`<div><b>${i+4}</b><span>${x.t.an} ${esc(x.t.name)}</span><span>${x.sc.total}점</span></div>`).join('')}</div>`:''}
     ${best?`<div class="best">🏆 <b>${esc(best)}</b></div>`:''}
-    ${rest.length?'':`<div class="chars">${charHTML('boy','happy')}${charHTML('girl','happy')}</div>`}
+    <div class="chars solo">${BD('happy','podium')}</div>
     ${bar(`<button class="pill" data-act="detail">점수 자세히</button><button class="pill y" data-act="cleanup">방 정리하고 끝내기</button>`)}</div>`;
 }
 
@@ -2778,16 +2831,16 @@ function renderPad(force){
   if (P.screen.startsWith('build') && key.startsWith('build') && P.builder && !force){ updatePad(); return; }
   P.screen=key; P.builder=null;
   let h='';
-  if (!p){ h=`<div class="wait"><div class="chars">${charHTML('boy','smile')}${charHTML('girl','smile')}</div><h2>방 ${esc(P.code)}에 연결하는 중…</h2><p>잠시만 기다려 주세요.</p><p id="slowMsg"></p></div>`; }
+  if (!p){ h=`<div class="wait"><div class="chars solo">${BD('smile','down')}</div><h2>방 ${esc(P.code)}에 연결하는 중…</h2><p>잠시만 기다려 주세요.</p><p id="slowMsg"></p></div>`; }
   else if (!t){
     if (p.phase==='lobby' && arr(p.teams).length<MAX_TEAMS && !P.joining){
       const sv=ls.get('pa-join-'+P.code,{name:'',members:['']});
-      h=`<div class="wait" style="padding:10px 0 0"><div class="chars">${charHTML('boy','happy')}${charHTML('girl','smile')}</div><h2>품사 경매 · 방 ${esc(P.code)}</h2><p>팀 이름과 팀원 이름을 적고 들어가요.</p></div>
+      h=`<div class="wait" style="padding:10px 0 0"><div class="chars solo">${BD('happy','up')}</div><h2>품사 경매 · 방 ${esc(P.code)}</h2><p>팀 이름과 팀원 이름을 적고 들어가요.</p></div>
         <div class="card"><h3>팀 이름</h3><input class="fld" id="jName" maxlength="14" placeholder="예) 품사 사냥꾼" value="${esc(sv.name)}">
         <h3 style="margin-top:8px">팀원 <span style="font-size:14px;color:var(--gray)">(1~4명)</span></h3><div class="mem" id="jMem">${arr(sv.members).concat(arr(sv.members).length?[]:['']).slice(0,4).map((m,i)=>`<input class="fld" data-m="${i}" maxlength="8" placeholder="팀원 ${i+1}" value="${esc(m)}">`).join('')}</div>
         <button class="bb l" id="jAdd" style="padding:12px;font-size:17px">+ 팀원 추가</button><button class="bb" id="jGo">입장하기</button></div>`;
     } else if (P.joining) h=`<div class="wait"><h2>입장하는 중…</h2><p>칠판에 우리 팀 이름이 뜨는지 확인해 보세요.</p></div>`;
-    else h=`<div class="wait"><div class="chars">${charHTML('boy','worry')}${charHTML('girl','worry')}</div><h2>${arr(p.teams).length>=MAX_TEAMS&&p.phase==='lobby'?'팀이 가득 찼어요 (8팀)':'게임이 이미 시작됐어요'}</h2><p>선생님께 말씀해 주세요.</p></div>`;
+    else h=`<div class="wait"><div class="chars solo">${BD('worry','down')}</div><h2>${arr(p.teams).length>=MAX_TEAMS&&p.phase==='lobby'?'팀이 가득 찼어요 (8팀)':'게임이 이미 시작됐어요'}</h2><p>선생님께 말씀해 주세요.</p></div>`;
   }
   else {
     h = padHead(t) + padBody(p,t);
@@ -2800,7 +2853,7 @@ function renderPad(force){
 function missionList(p){ const ms=arr(p.missions); if(!ms.length) return ''; return `<div class="card"><h3>🎯 미션 보드 <span style="font-size:14px;color:var(--gray)">최종 문장에서 달성하면 각 +3</span></h3><ul class="ms">${ms.map(m=>`<li>EP${m.r} · ${esc(m.t)}</li>`).join('')}</ul></div>`; }
 function padBody(p,t){
   const ph=p.phase;
-  if (ph==='lobby') return `<div class="wait"><div class="chars">${charHTML('boy','happy')}${charHTML('girl','happy')}</div><h2>입장 완료!</h2><p>칠판을 보세요. 선생님이 시작하면 기본 카드를 뽑아요.</p><button class="bb y" data-help="0" style="max-width:420px;margin:18px auto 0">❓ 기다리는 동안 게임 설명 보기</button></div>`;
+  if (ph==='lobby') return `<div class="wait"><div class="chars solo">${BD('smile','podium')}</div><h2>입장 완료!</h2><p>칠판을 보세요. 선생님이 시작하면 기본 카드를 뽑아요.</p><button class="bb y" data-help="0" style="max-width:420px;margin:18px auto 0">❓ 기다리는 동안 게임 설명 보기</button></div>`;
   if (ph==='starter'){
     const n=t.starter||0;
     return `<div class="card"><h3>기본 카드 뽑기 <span style="color:var(--gray);font-size:16px">${n}/5</span></h3>
@@ -2835,7 +2888,7 @@ function padBody(p,t){
     return `<div class="card"><h3>떨이 시장 <span style="font-size:15px;color:var(--gray)">한 장 5코인 · ${t.bought||0}/2장</span><span id="ptm" style="float:right"></span></h3><div class="hand">${arr(mk.cards).map(c=>`<div class="hc"><div class="w">${esc(c.w)}</div><div class="p">${c.k==='shift'?'🔄 변신':esc(c.p)}</div>${c.by?`<span class="rp" style="background:var(--soft);color:var(--gray)">${esc((arr(p.teams).find(x=>x.id===c.by)||{}).name||'팔림')}</span>`:`<button class="rp" style="background:var(--y);color:var(--ink)" data-buy="${c.id}" ${(t.bought||0)>=2||t.coins<5?'disabled':''}>5코인에 사기</button>`}</div>`).join('')}</div></div>
       <div class="card"><h3>가진 카드</h3>${handHTML(t)}</div>`; }
   if (ph==='build'){
-    if (t.sub) return `<div class="wait"><div class="chars">${charHTML('boy','happy')}${charHTML('girl','smile')}</div><h2>제출 완료!</h2><p>판정을 기다려요. 발표할 사람은 칠판이 정해 줘요.</p></div>`;
+    if (t.sub) return `<div class="wait"><div class="chars solo">${BD('happy','down')}</div><h2>제출 완료!</h2><p>판정을 기다려요. 발표할 사람은 칠판이 정해 줘요.</p></div>`;
     return `<div class="card" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0;flex:1">최종 문장 만들기</h3><span id="ptm" style="font-size:22px;font-weight:900"></span></div><div style="font-size:15px;color:var(--gray);font-weight:700;margin-top:6px;line-height:1.6">용언은 문장에 맞게 바꿔 써요. 기쁘다 → 기쁘게<br>기본 카드와 🔄 카드는 품사를 골라요 · 뜻도 자연스러워야 ⭕</div></div><div id="pb"></div>${missionList(p)}<div class="pfix"><div class="in"><button class="bb" id="subGo">제출하기</button></div></div>`;
   }
   if (ph==='judge'){
@@ -2843,7 +2896,7 @@ function padBody(p,t){
     return `<div class="wait" id="jw"></div>`;
   }
   if (ph==='rank'){ const rk=arr(p.rank); const i=rk.findIndex(x=>x.tid===t.id); const r=rk[i];
-    return `<div class="wait"><div class="chars">${charHTML('boy','happy')}${charHTML('girl','happy')}</div><h2>${i>=0?`${i+1}위 · ${r.total}점`:'끝!'}</h2><p>칠판에서 최종 순위를 확인해요. 수고했어요!</p></div>`; }
+    return `<div class="wait"><div class="chars solo">${BD('happy','podium')}</div><h2>${i>=0?`${i+1}위 · ${r.total}점`:'끝!'}</h2><p>칠판에서 최종 순위를 확인해요. 수고했어요!</p></div>`; }
   return `<div class="wait"><h2>칠판을 보세요</h2></div>`;
 }
 function mountPadBuilder(t){
@@ -2871,8 +2924,8 @@ function updatePad(){
     if (m) m.innerHTML = done ? `<div class="notice">입찰 완료: ${P.sentBid??'?'}코인 · 시간 안에는 다시 바꿀 수 있어요</div>` : '';
   }
   if (p.phase==='judge'){ const jw=$('#jw'); if(jw){ const j=p.judge||{}; const res=obj(j.res)[t.id];
-    jw.innerHTML = res ? `<div class="chars">${charHTML('boy','happy')}${charHTML('girl','happy')}</div><h2>${{ok:'⭕ 바른 문장!',zero:'❌ 아쉬워요',fix:'✏️ 고쳐 오기'}[res.state]||''} · ${res.total}점</h2><p>다른 팀 판정을 함께 봐요.</p>`
-      : j.tid===t.id ? `<div class="chars">${charHTML('boy','happy')}${charHTML('girl','smile')}</div><h2>지금 우리 팀 차례!</h2><p>🎤 발표: <b>${esc(j.presenter)}</b></p>` : `<div class="chars">${charHTML('boy','smile')}${charHTML('girl','smile')}</div><h2>판정 중 (${(j.i||0)+1}/${j.n||0})</h2><p>칠판을 보세요.</p>`; } }
+    jw.innerHTML = res ? `<div class="chars solo">${res.state==='zero'?BD('worry','down'):BD('happy','up')}</div><h2>${{ok:'⭕ 바른 문장!',zero:'❌ 아쉬워요',fix:'✏️ 고쳐 오기'}[res.state]||''} · ${res.total}점</h2><p>다른 팀 판정을 함께 봐요.</p>`
+      : j.tid===t.id ? `<div class="chars solo">${BD('happy','podium')}</div><h2>지금 우리 팀 차례!</h2><p>🎤 발표: <b>${esc(j.presenter)}</b></p>` : `<div class="chars solo">${BD('smile','down')}</div><h2>판정 중 (${(j.i||0)+1}/${j.n||0})</h2><p>칠판을 보세요.</p>`; } }
 }
 document.addEventListener('click', e=>{ if(!document.body.classList.contains('pad')) return;
   const h=e.target.closest('[data-help]'); if(h){ padHelp(+h.dataset.help); return; }
@@ -2914,7 +2967,7 @@ async function bootPad(code){
 /* ---------------- 시작 ---------------- */
 function askCode(){
   document.body.className='pad';
-  document.body.innerHTML=`<div id="pad"><div class="wait"><div class="chars">${charHTML('boy','smile')}${charHTML('girl','smile')}</div><h2>품사 경매</h2><p>칠판에 보이는 방 번호 4자리를 넣어요.</p></div><div class="card"><input class="fld" id="cIn" inputmode="numeric" maxlength="4" placeholder="1234" style="font-size:36px;text-align:center;letter-spacing:10px"><button class="bb" id="cGo">들어가기</button><button class="bb l" data-help="0">❓ 게임 설명 보기</button></div></div>`;
+  document.body.innerHTML=`<div id="pad"><div class="wait"><div class="chars solo">${BD('happy','up')}</div><h2>품사 경매</h2><p>칠판에 보이는 방 번호 4자리를 넣어요.</p></div><div class="card"><input class="fld" id="cIn" inputmode="numeric" maxlength="4" placeholder="1234" style="font-size:36px;text-align:center;letter-spacing:10px"><button class="bb" id="cGo">들어가기</button><button class="bb l" data-help="0">❓ 게임 설명 보기</button></div></div>`;
   $('#cIn').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#cGo').click(); });
   $('#cGo').onclick=()=>{ const v=$('#cIn').value.trim(); if(/^\d{4}$/.test(v)){ const u=new URL(location.href); u.searchParams.set('join',v); location.href=u.toString(); } };
 }

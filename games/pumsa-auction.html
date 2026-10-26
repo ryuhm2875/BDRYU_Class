@@ -172,7 +172,7 @@ body.board{background:#cfcdc6;overflow:hidden}
 .bst .nm{flex:1;font-size:19px;font-weight:800}
 .judge .presenter{position:absolute;left:48px;top:128px;font-size:22px;font-weight:800}
 .judge .presenter b{background:var(--y);padding:2px 12px;border-radius:10px}
-.sent{position:absolute;left:48px;right:400px;top:186px;display:flex;flex-wrap:wrap;gap:10px 8px;align-items:flex-start;min-height:200px}
+.sent{position:absolute;left:48px;right:400px;top:186px;display:flex;flex-wrap:wrap;gap:34px 8px;align-items:flex-start;min-height:200px}
 .jc{display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
 .jc .t{font-size:30px;font-weight:900;padding:8px 14px;border-radius:14px;background:#fff;border:2px solid var(--ink);min-width:50px;text-align:center}
 .jc .p{font-size:13px;font-weight:800;padding:2px 8px;border-radius:10px}
@@ -372,6 +372,24 @@ body.pad{background:var(--paper);min-height:100%}
 .pmodal .fstep .i{font-size:34px}.pmodal .fstep b{margin:0 0 2px}
 .pmodal .farr{font-size:20px;line-height:1;margin:-4px 0}
 .pmodal .tut-say .cv{width:70px}
+.trapnote{display:flex;flex-direction:column;gap:6px;margin:8px -8px -2px}
+.trapnote div{background:#2a2a2a;color:#fff;border-radius:12px;padding:9px 14px;line-height:1.5;font-size:15px;font-weight:700;animation:pop .4s}
+.trapnote b{color:var(--y)}.trapnote em{font-style:normal;color:#ff8a98;font-weight:900;margin-left:6px}.trapnote span{color:#aaa;margin-left:6px}
+.big1{display:flex;align-items:center;gap:40px;margin-top:10px}
+.pad1{width:230px;background:#fff;border:3px solid var(--ink);border-radius:26px;padding:20px;text-align:center;box-shadow:6px 6px 0 var(--ink)}
+.pad1 .n{font-size:84px;font-weight:900;line-height:1.1}
+.pad1 .b{background:var(--ink);color:var(--y);font-size:24px;font-weight:900;border-radius:14px;padding:10px;margin-top:8px}
+.txt1{font-size:28px;font-weight:800;line-height:1.5}
+.two .p1{font-size:24px!important;font-weight:900;line-height:1.4!important;margin:4px 0 10px!important}
+.two .p2{font-size:19px!important;font-weight:700;line-height:1.6!important;margin:0!important}
+.pts{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:760px}
+.pts div{background:#fff;border:2px solid var(--ink);border-radius:18px;padding:16px 18px;font-size:22px;font-weight:800;display:flex;align-items:center;gap:12px}
+.pts div span{font-size:30px}.pts div b{margin-left:auto;font-size:26px;font-weight:900;background:var(--y);border-radius:10px;padding:0 10px}
+.pts div.neg b{background:var(--rl);color:#b3263a}
+.pmodal .big1{flex-direction:column;gap:16px}.pmodal .txt1{font-size:22px;text-align:center}
+.pmodal .pts{grid-template-columns:1fr}.pmodal .pts div{font-size:18px}
+
+.trapnote em,.trapnote span{display:block;margin-left:0!important}
 
 </style>
 </head>
@@ -1945,7 +1963,6 @@ function cardPub(c, opt={}){
   else if (c.k==='trap') { o.p=c.p; }        /* 함정은 평범한 카드처럼 보이게 */
   else { o.p=c.p; if(c.s) o.s=c.s; if(c.e) o.e=1; if(c.cop) o.cop=1; if(c.nm) o.nm=1; }
   if (c.paid!=null) o.paid=c.paid;
-  if (c.rep) o.rep=c.rep;
   if (opt.reveal && c.k==='trap') { o.trap=1; }
   return o;
 }
@@ -2116,19 +2133,6 @@ function marketBuy(tid, cid){
   c.owner=tid; c.paid=5; t.coins-=5; t.bought=(t.bought||0)+1; t.hand.push(cid); SND.pop(); commit();
 }
 
-/* ---------- 함정 신고 ---------- */
-function report(tid, cid){
-  const t=T(tid), c=C(cid); if(!t||!c||!t.hand.includes(cid)||c.st||c.rep) return;
-  if (['build','judge','rank'].includes(S.phase)) return;
-  c.rep='pending'; S.reports.push({tid,cid}); commit();
-}
-function resolveReport(ok){
-  const r=S.reports[0]; if(!r) return; const c=C(r.cid), t=T(r.tid);
-  if (ok && c.k==='trap'){ c.rep='ok'; t.coins+= (c.paid||0)+5; t.hand=t.hand.filter(id=>id!==c.id); UI.repMsg={ok:true, why:c.why, w:c.w, team:t.name, gain:(c.paid||0)+5}; SND.sold(); }
-  else { c.rep='no'; UI.repMsg={ok:false, w:c.w, team:t.name, notTrap: c.k!=='trap'}; SND.bad(); }
-  S.reports.shift(); commit();
-}
-
 /* ---------- 제출, 판정, 점수 ---------- */
 function acceptSubmit(tid, payload){
   const t=T(tid); if(!t || !['build','judge'].includes(S.phase)) return;
@@ -2226,7 +2230,6 @@ function handleEvent(ev){
   if (ev.t==='draw' && S.phase==='starter') { drawStarter(t.id, ev.g); commit(); }
   else if (ev.t==='bid' && S.phase==='auction' && S.au && ev.card===S.au.cid) secretBid(t.id, ev.amt);
   else if (ev.t==='raise' && S.phase==='auction' && S.au && ev.card===S.au.cid) raise(t.id, ev.to);
-  else if (ev.t==='report') report(t.id, ev.card);
   else if (ev.t==='buy') marketBuy(t.id, ev.card);
   else if (ev.t==='submit') acceptSubmit(t.id, ev);
 }
@@ -2277,37 +2280,24 @@ function tickTeacher(){
 function exChip(w,p){ return `<span>${esc(w)}<small style="background:${POS_COLOR[p]||'#eee'}">${p}</small></span>`; }
 function say(who,mood,text){ return `<div class="tut-say"><div class="bub">${text}</div><div class="cv">${charSVG(who,mood)}</div></div>`; }
 const TUT = [
- ()=>`<div class="tut-h">STEP 1 · 어떤 게임?</div><div class="tut-t">코인으로 <mark>단어를 사서</mark>, 가장 길고 바른 문장을 만들어요</div>
-   <div class="flow"><div class="fstep"><div class="i">💰</div><b>단어 사기</b><span>팀마다 코인을 받아요.<br>경매에 나온 단어 카드를 사요.</span></div><div class="farr">→</div>
-   <div class="fstep"><div class="i">🧩</div><b>문장 만들기</b><span>마지막에 가진 카드로<br>문장 하나를 만들어요.</span></div><div class="farr">→</div>
-   <div class="fstep"><div class="i">🏆</div><b>점수 받기</b><span>길수록, 품사가 다양할수록<br>점수가 올라가요.</span></div></div>
-   <div class="tips" style="margin-top:22px"><div>📱 팀마다 태블릿 1대 · 팀 이름과 팀원 이름을 넣고 들어와요</div><div>👀 경매는 칠판을 보고, 입찰과 문장 만들기는 태블릿으로 해요</div></div>
-   ${say('girl','smile','코인은 다시 생기지 않아요.<br>어디에 쓸지가 작전이에요!')}`,
- ()=>`<div class="tut-h">STEP 2 · 기본 카드</div><div class="tut-t">처음엔 <mark>5번 골라 뽑기</mark> — 묶음만 고르고, 단어는 운!</div>
-   <div class="gcol"><div><b>체언</b><span>명사 · 대명사<br>수사</span></div><div><b>용언</b><span>동사<br>형용사</span></div><div><b>수식언</b><span>관형사<br>부사</span></div><div><b>관계언</b><span>조사</span></div><div><b>독립언</b><span>감탄사</span></div></div>
-   <div class="tips"><div>🎲 같은 묶음을 여러 번 골라도 돼요. 조사만 5장 모으는 팀도 있어요!</div><div>🙈 기본 카드는 <b>품사가 숨겨져</b> 있어요. 문장을 낼 때 “이건 대명사!”처럼 직접 골라야 점수가 돼요.</div></div>
-   ${say('boy','happy','조사가 없으면 문장이 안 이어져요.<br>관계언을 몇 장 뽑을까?')}`,
- ()=>`<div class="tut-h">STEP 3 · 경매</div><div class="tut-t">경매는 두 가지 방식, 선생님이 카드마다 정해요</div>
-   <div class="two"><div><h4>🔒 비밀 입찰</h4><ol><li>태블릿에서 금액을 정하고 [입찰 확정]</li><li>시간이 끝나면 한꺼번에 공개!</li><li>가장 높은 팀이 가져가요</li><li>0코인 = 포기</li><li>동점이면 ⚔️ <b>공개 결투</b>로 다시 겨뤄요</li></ol></div>
-   <div><h4>📢 공개 입찰</h4><ol><li>지금 최고가가 칠판에 보여요</li><li>[+1] [+5] [+10]으로 올려 불러요</li><li><b>5초</b> 동안 아무도 안 부르면 낙찰!</li><li>내 팀이 최고가일 땐 못 올려요</li></ol></div></div>
-   <div class="tips" style="margin-top:12px"><div>📦 아무도 안 산 카드는 마지막 <b>떨이 시장</b>에 5코인으로 나와요 (팀마다 2장까지)</div></div>
-   ${say('girl','smile','다 쓰면 끝!<br>남은 코인은 점수가 안 돼요.')}`,
- ()=>`<div class="tut-h">STEP 4 · 특별한 카드</div><div class="tut-t">카드를 잘 보세요. <mark>보통 카드가 아닐 수도</mark> 있어요</div>
-   <div class="sp3"><div style="background:var(--yl)"><h4>✨ 희귀 · 조사</h4><p>조사 카드는 귀해요. ‘이/가’처럼 짝이 한 장에 있어서 앞말 받침에 맞게 저절로 바뀌어요.</p></div>
-   <div style="background:#E4F0FF"><h4>🔄 변신 카드</h4><p>쓰임에 따라 품사가 바뀌어요.<br>키가 <b>큰다</b> → 동사<br>키가 <b>크다</b> → 형용사<br>바르게 쓰고 맞히면 <b>+3</b></p></div>
-   <div style="background:var(--rl)"><h4>⚠️ 함정 카드</h4><p>잘못 활용된 말이 몰래 섞여 있어요. 그대로 쓰면 <b>−3</b>.<br>찾아서 [함정 신고] → 선생님 앞에서 이유를 말하면 <b>낸 코인 돌려받고 +5코인</b>!</p></div></div>
-   ${say('boy','worry','형용사에 ‘-ㄴ다’가 붙어 있다면…<br>수상한데?')}`,
- ()=>`<div class="tut-h">STEP 5 · 최종 문장</div><div class="tut-t">태블릿에서 카드를 눌러 <mark>문장 하나</mark>를 만들어요</div>
-   <div class="two" style="max-width:900px"><div><h4>만드는 순서</h4><ol><li>가진 카드를 눌러 문장 줄에 넣기</li><li>◀ ▶ 또는 길게 눌러 끌어서 순서 바꾸기</li><li>용언은 <b>활용형</b>으로 고쳐 쓰기<br><span style="color:var(--gray)">기쁘다 → 기쁘게, 찼다, 먹고…</span></li><li>기본 카드·🔄 카드는 <b>품사 고르기</b></li><li>문장 끝 . ? ! 고르고 [제출]</li></ol></div>
-   <div><h4>판정 기준</h4><ol><li>문법이 바르고 <b>뜻도 자연스러워야</b> ⭕</li><li>선생님이 판정하고, 칠판이 발표자를 뽑아요 🎤</li><li>조금 틀렸으면 <b>고쳐 오기</b> 기회 1번 (−2)</li></ol></div></div>
-   ${say('girl','happy','“사과가 노래를 먹었다”는<br>문법은 맞아도 ❌예요!')}`,
- ()=>`<div class="tut-h">STEP 6 · 점수</div><div class="tut-t">이 문장은 몇 점일까요?</div>
-   <div class="ex">${exChip('와','감탄사')}${exChip('그','대명사')}${exChip('는','조사')}${exChip('새','관형사')}${exChip('공','명사')}${exChip('하나','수사')}${exChip('를','조사')}${exChip('아주','부사')}${exChip('기쁘게','형용사')}${exChip('찼다','동사')}</div>
-   <div style="display:flex;gap:30px;align-items:flex-start;margin-top:8px"><table class="sc-t"><tr><td>단어 1개</td><td>+1</td></tr><tr><td>품사 종류 1개</td><td>+2</td></tr><tr><td>9품사 완전체</td><td>+10</td></tr><tr><td>미션 달성</td><td>+3</td></tr><tr><td>변신 카드 바르게</td><td>+3</td></tr><tr><td style="color:#b3263a">함정 카드 · 활용 오류</td><td style="color:#b3263a">−3</td></tr><tr><td style="color:#b3263a">고쳐 오기</td><td style="color:#b3263a">−2</td></tr></table>
-   <div class="calc">단어 10개 → <b>+10</b><br>9품사 모두 → 9 × 2 = <b>+18</b><br>완전체 보너스 → <b>+10</b><br>모두 더하면 <b style="font-size:22px">38점</b> 🎉<br><span style="color:var(--gray)">🎯 미션은 라운드마다 하나씩 쌓여요.</span></div></div>
-   ${say('boy','happy','9품사를 다 쓰면<br>보너스가 커요!')}`
+ ()=>`<div class="tut-h">1 / 4</div><div class="tut-t">이렇게 놀아요</div>
+   <div class="flow"><div class="fstep"><div class="i">💰</div><b>① 카드 사기</b><span>코인으로<br>단어 카드를 사요</span></div><div class="farr">→</div>
+   <div class="fstep"><div class="i">🧩</div><b>② 문장 만들기</b><span>산 카드로<br>문장 하나를 만들어요</span></div><div class="farr">→</div>
+   <div class="fstep"><div class="i">🏆</div><b>③ 이기기</b><span>길고 바른 문장을<br>만든 팀이 이겨요</span></div></div>
+   ${say('girl','smile','코인은 100개뿐!<br>아껴 써요.')}`,
+ ()=>`<div class="tut-h">2 / 4</div><div class="tut-t">카드 사기</div>
+   <div class="big1"><div class="pad1"><div class="n">15</div><div class="b">입찰</div></div>
+   <div class="txt1">태블릿에 <mark>숫자</mark>를 쓰고<br>[입찰]을 눌러요.<br><br>제일 많이 쓴 팀이<br>카드를 가져가요.</div></div>
+   ${say('boy','happy','안 사고 싶으면<br>0!')}`,
+ ()=>`<div class="tut-h">3 / 4</div><div class="tut-t">조심해요</div>
+   <div class="two" style="max-width:860px"><div style="background:#E4F0FF"><h4>🔄 변신 카드</h4><p class="p1">쓰임에 따라<br>품사가 바뀌어요.</p><p class="p2">키가 <b>큰다</b> → 동사<br>키가 <b>크다</b> → 형용사</p></div>
+   <div style="background:var(--rl)"><h4>⚠️ 함정 카드</h4><p class="p1">틀린 말이<br>몰래 숨어 있어요.</p><p class="p2">문장에 쓰면 <b>−3</b><br>결과 발표 때 밝혀져요!</p></div></div>
+   ${say('boy','worry','카드를 살 때<br>잘 보고 사요!')}`,
+ ()=>`<div class="tut-h">4 / 4</div><div class="tut-t">점수</div>
+   <div class="pts"><div><span>📝</span>단어가 많을수록<b>➕</b></div><div><span>🌈</span>품사가 다양할수록<b>➕</b></div><div><span>👑</span>9품사를 다 쓰면<b>➕10</b></div><div class="neg"><span>❌</span>틀리게 쓰면<b>➖</b></div></div>
+   ${say('girl','happy','문법도 맞고<br>뜻도 자연스러워야 해요!')}`
 ];
-function tutHTML(i){ return `<div class="tp">${TUT[i]()}</div><div class="tnav"><button class="pill" data-tp="${i-1}" data-act="tGo" ${i<=0?'disabled':''}>◀ 이전</button><div class="dots">${TUT.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>${i<TUT.length-1?`<button class="pill k" data-tp="${i+1}" data-act="tGo">다음 ▶</button>`:`<button class="pill k" data-act="closeModal" data-tclose="1">알겠어요!</button>`}</div>`; }
+function tutHTML(i){ return `<div class="tp">${TUT[i]()}</div><div class="tnav"><button class="pill" data-tp="${i-1}" data-act="tGo" ${i<=0?'disabled':''}>◀ 이전</button><div class="dots">${TUT.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>${i<TUT.length-1?`<button class="pill k" data-tp="${i+1}" data-act="tGo">다음 ▶</button>`:`<button class="pill k" data-act="closeModal" data-tclose="1">알겠어요! 시작!</button>`}</div>`; }
 
 /* =====================================================================
    칠판 화면 그리기
@@ -2443,7 +2433,7 @@ function viewAuction(){
   let center='', side='', btns='', overlay='';
   const modeBtns = `<div class="mode"><button class="${au.mode==='secret'?'on':''}" data-act="mode" data-v="secret" ${au.status!=='ready'?'disabled':''}>🔒 비밀 입찰</button><button class="${au.mode==='open'?'on':''}" data-act="mode" data-v="open" ${au.status!=='ready'?'disabled':''}>📢 공개 입찰</button></div>`;
   if (au.status==='ready'){
-    center = modeBtns + bigCard(c,anim) + `<div class="under">${au.mode==='secret'?'모든 팀이 몰래 금액을 써요. 가장 높은 팀이 가져가요.':'금액을 올려 불러요. 5초 동안 아무도 안 부르면 낙찰!'}</div>`;
+    center = modeBtns + bigCard(c,anim) + `<div class="under">${c.k==='shift'?'🔄 변신 카드: 쓰임에 따라 품사가 바뀌어요! ':''}${au.mode==='secret'?'모든 팀이 몰래 금액을 써요. 가장 높은 팀이 가져가요.':'+1, +5, +10으로 올려 불러요. 5초 동안 아무도 안 부르면 끝!'}</div>`;
     side = ring('tm',1,S.cfg.bidSec+'초') + `<div class="prog">준비</div>` + missionBoard();
     btns = `<button class="pill" data-act="skip">⏭ 건너뛰기</button><button class="pill k" data-act="start">▶ 경매 시작</button>`;
   } else if (au.status==='bid' && au.mode==='secret'){
@@ -2452,7 +2442,7 @@ function viewAuction(){
     btns = `<button class="pill" data-act="unsoldNow">⏭ 유찰</button><button class="pill k" data-act="revealNow">🔓 바로 공개</button>`;
   } else if (au.status==='bid' && au.mode==='open'){
     const lt=T(au.leader);
-    center = (au.duel?`<div class="mode"><button class="on">⚔️ 결투 · ${au.duel.map(id=>esc(T(id).name)).join(' vs ')}</button></div>`:modeBtns) + bigCard(c,anim) + `<div class="under">${au.duel?'결투! 동점이었던 팀만 올려 부를 수 있어요':'태블릿에서 [+1] [+5] [+10]으로 올려 불러요'}</div>`;
+    center = (au.duel?`<div class="mode"><button class="on">⚔️ 결투 · ${au.duel.map(id=>esc(T(id).name)).join(' vs ')}</button></div>`:modeBtns) + bigCard(c,anim) + `<div class="under">${au.duel?'⚔️ 결투! 같은 금액을 쓴 팀끼리 다시 겨뤄요':'태블릿에서 [+1] [+5] [+10]으로 올려 불러요'}</div>`;
     side = `<div class="price">현재 최고가<b>${au.price}</b></div><div class="leader">${lt?`${lt.an} ${esc(lt.name)}`:'아직 아무도…'}</div><div class="going" id="going"></div>` + ring('tm',1,'') + missionBoard();
     btns = `<button class="pill" data-act="unsoldNow">⏭ 유찰</button><button class="pill k" data-act="sellNow" ${lt?'':'disabled'}>🔨 낙찰</button>`;
   } else if (au.status==='rps'){
@@ -2523,9 +2513,14 @@ function viewJudge(){
     <div class="plain">“${esc(sentenceText(items, S.subs[tid].end))}”</div>
     <div class="mchk"><h4>미션 보드 · 단어를 누르면 활용 오류(−3) 표시</h4>${ms}</div>
     <div class="score">${row('단어 수',sc.words)}${row(`품사 종류 ${sc.kindList.length}개`,sc.kinds)}${sc.complete?row('9품사 완전체',sc.complete):''}${row('미션',sc.mission)}${sc.shift?row('변신 카드',sc.shift):''}${sc.trap?row('함정 카드',sc.trap):''}${sc.err?row('활용 오류',sc.err):''}${sc.fix?row('고쳐 오기',sc.fix):''}
-      <div class="tot"><span>${stateTxt||'합계'}</span><span>${res.state==='zero'?0:sc.total}점</span></div></div>
+      <div class="tot"><span>${stateTxt||'합계'}</span><span>${res.state==='zero'?0:sc.total}점</span></div>${trapNote(tid, items)}</div>
     ${bar(decided ? `<button class="pill" data-act="judgeUndo">↩ 다시 판정</button><button class="pill k" data-act="judgeNext">다음 →</button>`
       : `<button class="pill r" data-act="judgeZero">❌ 0점</button>${res.fixUsed?'':`<button class="pill" data-act="judgeFix">✏️ 고쳐 오기 (−2)</button>`}<button class="pill k" data-act="judgeOk">⭕ 바른 문장</button>`, `<button class="pill sm" data-act="rePresenter">🎲 발표자 다시</button>`)}</div>`;
+}
+function trapNote(tid, items){
+  const used=new Set(items.map(x=>x.id)); const traps=T(tid).hand.map(C).filter(c=>c.k==='trap');
+  if(!traps.length) return '';
+  return `<div class="trapnote">${traps.map(c=>`<div>⚠️ <b>${esc(c.w)}</b>${jongOf(c.w[c.w.length-1])>0?'은':'는'} 함정 카드! ${esc(c.why)} ${used.has(c.id)?'<em>문장에 써서 −3</em>':'<span>(문장에 안 써서 감점은 없어요)</span>'}</div>`).join('')}</div>`;
 }
 function viewRank(){
   const L=rankList(); const top=L.slice(0,3), rest=L.slice(3);
@@ -2542,12 +2537,9 @@ function viewRank(){
 /* ---------- 모달 ---------- */
 function modalHTML(){
   const m=UI.modal;
-  if (S.reports.length && !m){ const r=S.reports[0], t=T(r.tid), c=C(r.cid);
-    return `<div class="modal"><div class="mbox" style="text-align:center"><h3>🚨 함정 신고!</h3><p>${t.an} <b>${esc(t.name)}</b> 팀이 <mark style="font-size:28px;font-weight:900">${esc(c.w)}</mark> 카드를 신고했어요.<br>왜 틀린 말인지 설명해 보세요.</p>
-      <div class="acts" style="justify-content:center"><button class="pill" data-act="repNo">❌ 설명이 틀려요</button><button class="pill k" data-act="repOk">⭕ 설명이 맞아요</button></div></div></div>`; }
   if (!m) return '';
   if (m.type==='msg') return `<div class="modal"><div class="mbox" style="text-align:center"><h3>${m.title}</h3><p>${m.text}</p></div></div>`;
-  if (m.type==='repResult'){ const r=m.r; return `<div class="modal" data-act="closeModal"><div class="mbox" style="text-align:center;max-width:620px">${r.ok?`<h3>🎉 함정 발견! +${r.gain}코인</h3><p><b>${esc(r.w)}</b> — ${esc(r.why)}</p><p>${esc(r.team)} 팀은 낸 코인을 돌려받고 5코인을 더 받아요. 카드는 버려요.</p>`:`<h3>${r.notTrap?'함정이 아니었어요!':'아쉬워요!'}</h3><p><b>${esc(r.w)}</b> ${r.notTrap?'는 바른 말이에요. 카드는 그대로 가지고 있어요.':'— 설명이 맞지 않았어요.'}</p>`}<div class="acts" style="justify-content:center"><button class="pill k" data-act="closeModal">확인</button></div></div></div>`; }
+  if (false && m.type==='repResult'){ const r=m.r; return `<div class="modal" data-act="closeModal"><div class="mbox" style="text-align:center;max-width:620px">${r.ok?`<h3>🎉 함정 발견! +${r.gain}코인</h3><p><b>${esc(r.w)}</b> — ${esc(r.why)}</p><p>${esc(r.team)} 팀은 낸 코인을 돌려받고 5코인을 더 받아요. 카드는 버려요.</p>`:`<h3>${r.notTrap?'함정이 아니었어요!':'아쉬워요!'}</h3><p><b>${esc(r.w)}</b> ${r.notTrap?'는 바른 말이에요. 카드는 그대로 가지고 있어요.':'— 설명이 맞지 않았어요.'}</p>`}<div class="acts" style="justify-content:center"><button class="pill k" data-act="closeModal">확인</button></div></div></div>`; }
   if (m.type==='neterr') return `<div class="modal"><div class="mbox"><h3>인터넷에 연결하지 못했어요</h3><p>Firebase 서버에 닿지 않습니다. 와이파이를 확인한 뒤 다시 시도하거나,<br>태블릿 없이 <b>선생님 입력 모드</b>로 진행할 수 있어요.</p><div class="acts"><button class="pill" data-act="goOffline">✋ 선생님 입력 모드로</button><button class="pill k" data-act="openRoom">다시 시도</button></div></div></div>`;
   if (m.type==='rules') return `<div class="modal"><div class="mbox tutbox" data-stop="1">${tutHTML(UI.rp||0)}</div></div>`;
   if (m.type==='team'){ const t=T(m.tid); if(!t) return '';
@@ -2557,9 +2549,8 @@ function modalHTML(){
     else if (S.phase==='auction' && S.au && S.au.status==='bid' && S.au.mode==='open') body=`<p>${esc(t.name)} 팀 대신 올려 부르기 (현재 ${S.au.price}, 가진 코인 ${t.coins})</p><div class="chips" style="gap:10px">${[1,5,10].map(d=>`<button class="pill y" data-act="pRaise" data-d="${d}" ${S.au.price+d>t.coins||S.au.leader===t.id?'disabled':''}>+${d} → ${S.au.price+d}</button>`).join('')}</div>`;
     else if (S.phase==='market') body=`<p>${esc(t.name)} 팀이 살 카드 (${t.bought||0}/2, 5코인)</p><div class="chips">${S.unsold.filter(id=>!C(id).owner).map(id=>`<button class="pill y" data-act="pBuy" data-id="${id}" ${t.bought>=2||t.coins<5?'disabled':''}>${esc(C(id).w)}</button>`).join('')||'남은 카드가 없어요'}</div>`;
     else if (S.phase==='build') { acts=`<button class="pill y" data-act="pBuild">✋ 대신 문장 만들기</button>`; }
-    const canRep=!['build','judge','rank'].includes(S.phase);
-    const hand=t.hand.map(id=>{const c=C(id); const rp=canRep&&!c.st&&!c.rep;
-      return `<span class="chip" style="cursor:default">${esc(c.w)} <small style="color:var(--gray)">${c.st?c.g:c.k==='shift'?'변신':c.p}</small>${rp?` <button data-act="pReport" data-id="${c.id}" style="font-size:12px;font-weight:800;color:#b3263a">⚠️신고</button>`:''}</span>`;}).join('');
+    const hand=t.hand.map(id=>{const c=C(id);
+      return `<span class="chip" style="cursor:default">${esc(c.w)} <small style="color:var(--gray)">${c.st?c.g:c.k==='shift'?'변신':c.p}</small></span>`;}).join('');
     return `<div class="modal" data-act="closeModal"><div class="mbox" data-stop="1" style="max-width:900px"><h3>${t.an} ${esc(t.name)} <span style="font-size:18px;color:var(--gray)">💰 ${t.coins}</span></h3><p style="color:var(--gray);font-size:15px">${t.members.map(esc).join(' · ')}</p>${body}<div class="lbl" style="margin-top:14px">가진 카드 ${t.hand.length}장</div><div class="chips">${hand||'<span style="color:var(--gray)">아직 없어요</span>'}</div><div class="acts">${S.phase==='auction'&&S.cfg.net==='on'?'':''}<button class="pill" data-act="closeModal">닫기</button>${acts}</div></div></div>`; }
   if (m.type==='addTeam') return `<div class="modal"><div class="mbox" data-stop="1"><h3>팀 추가</h3><input class="fld" id="atName" placeholder="팀 이름" maxlength="14"><div class="mem">${[0,1,2,3].map(i=>`<input class="fld" id="atM${i}" placeholder="팀원 ${i+1}" maxlength="8">`).join('')}</div><div class="acts"><button class="pill" data-act="closeModal">취소</button><button class="pill k" data-act="addTeamOk">추가</button></div></div></div>`;
   if (m.type==='builder') return `<div class="modal"><div class="mbox" data-stop="1" style="width:1100px;max-width:1100px"><h3>${T(m.tid).an} ${esc(T(m.tid).name)} · 대신 문장 만들기</h3><div id="bHost"></div><div class="acts"><button class="pill" data-act="closeModal">닫기</button><button class="pill k" data-act="pSubmit">제출</button></div></div></div>`;
@@ -2637,18 +2628,15 @@ function boardAct(act, d){
     case 'rules': UI.modal={type:'rules'}; UI.rp=0; renderBoard(); return;
     case 'tGo': UI.rp=+d.tp; renderBoard(); return;
     case 'fs': toggleFS(); return;
-    case 'closeModal': if(UI.repMsg){ UI.repMsg=null; } UI.modal=null; UI.builder=null; renderBoard(); return;
+    case 'closeModal': UI.modal=null; UI.builder=null; renderBoard(); return;
     case 'team': UI.modal={type:'team', tid:d.tid}; UI.kp=''; renderBoard(); return;
     case 'pDraw': drawStarter(UI.modal.tid, d.g); break;
     case 'kp': { const k=d.k; UI.kp = k==='C' ? '' : k==='←' ? UI.kp.slice(0,-1) : (UI.kp+k).replace(/^0+(?=\d)/,'').slice(0,3); renderBoard(); return; }
     case 'pBid': { const tid=UI.modal.tid; UI.modal=null; secretBid(tid, +UI.kp||0); renderBoard(); return; }
     case 'pRaise': raise(UI.modal.tid, S.au.price + (+d.d)); return;
     case 'pBuy': marketBuy(UI.modal.tid, d.id); return;
-    case 'pReport': { const tid=UI.modal.tid; UI.modal=null; report(tid, d.id); return; }
     case 'pBuild': UI.modal={type:'builder', tid:UI.modal.tid}; UI.builder=null; renderBoardForce(); return;
     case 'pSubmit': { const b=UI.builder; if(!b) return; const p=b.payload(); if(p.err){ toast(p.err); return; } const tid=UI.modal.tid; UI.modal=null; UI.builder=null; acceptSubmit(tid, p); return; }
-    case 'repOk': resolveReport(true); UI.modal={type:'repResult', r:UI.repMsg}; renderBoard(); return;
-    case 'repNo': resolveReport(false); UI.modal={type:'repResult', r:UI.repMsg}; renderBoard(); return;
   }
   commit();
 }
@@ -2762,10 +2750,9 @@ function padHead(t){ return `<div class="ph"><span class="an">${t.an}</span><div
 function padHelp(i){ let el=$('#phelp'); if(i<0){ if(el) el.remove(); return; }
   if(!el){ el=document.createElement('div'); el.id='phelp'; el.className='pmodal'; document.body.appendChild(el); }
   el.innerHTML=`<div class="mbox tutbox">${tutHTML(i)}</div>`; }
-function handHTML(t, report){
+function handHTML(t){
   return `<div class="hand">${arr(t.hand).map(c=>{ const lab=c.st?c.g:c.k==='shift'?'🔄 변신':c.p;
-    const rp = report && !c.st && !c.rep ? `<button class="rp" data-rep="${c.id}">⚠️ 함정 신고</button>` : c.rep==='pending' ? `<span class="rp" style="background:var(--yl);color:var(--ink)">신고 중…</span>` : c.rep==='no' ? `<span class="rp" style="background:var(--soft);color:var(--gray)">신고 실패</span>` : '';
-    return `<div class="hc"><div class="w">${esc(c.w)}</div><div class="p">${esc(lab)}</div>${rp}</div>`; }).join('') || '<span style="color:var(--gray);font-weight:700">아직 카드가 없어요</span>'}</div>`;
+    return `<div class="hc"><div class="w">${esc(c.w)}</div><div class="p">${esc(lab)}</div></div>`; }).join('') || '<span style="color:var(--gray);font-weight:700">아직 카드가 없어요</span>'}</div>`;
 }
 function padCard(c, au){
   if(!c) return '';
@@ -2775,7 +2762,7 @@ function padCard(c, au){
 function padScreenKey(){
   const p=P.pub, t=me(); if(!p) return 'load'; if(!t) return 'join:'+p.phase;
   const au=p.au||{};
-  const hs=arr(t.hand).map(c=>c.id+(c.rep||'')).join(',');
+  const hs=arr(t.hand).map(c=>c.id).join(',');
   if (p.phase==='starter') return `starter:${hs}`;
   if (p.phase==='episode') return `ep:${p.round}:${hs}`;
   if (p.phase==='market') return `mk:${hs}:${arr((p.market||{}).cards).map(c=>c.by||'').join(',')}`;
@@ -2817,11 +2804,11 @@ function padBody(p,t){
   if (ph==='starter'){
     const n=t.starter||0;
     return `<div class="card"><h3>기본 카드 뽑기 <span style="color:var(--gray);font-size:16px">${n}/5</span></h3>
-      ${n<5?`<p style="font-size:16px;color:var(--gray);margin-bottom:12px;line-height:1.6">묶음을 고르면 그 안에서 단어가 하나 나와요. 조사가 필요하면 관계언, 꾸미는 말이 필요하면 수식언!</p><div class="grp">${GROUPS.map(g=>`<button data-draw="${g}">${g}</button>`).join('')}</div>`:`<div class="notice">5장을 모두 뽑았어요! 다른 팀을 기다려요.</div>`}</div>
-      <div class="card"><h3>뽑은 카드</h3><p style="font-size:14px;color:var(--gray);margin-bottom:10px">기본 카드는 묶음만 보여요. 진짜 품사는 문장을 낼 때 직접 골라요.</p>${handHTML(t,false)}</div>`;
+      ${n<5?`<p style="font-size:16px;color:var(--gray);margin-bottom:12px;line-height:1.6">묶음을 고르면 그 안에서 단어가 하나 나와요. 조사가 필요하면 관계언!</p><div class="grp">${GROUPS.map(g=>`<button data-draw="${g}">${g}</button>`).join('')}</div>`:`<div class="notice">5장을 모두 뽑았어요! 다른 팀을 기다려요.</div>`}</div>
+      <div class="card"><h3>뽑은 카드</h3><p style="font-size:14px;color:var(--gray);margin-bottom:10px">기본 카드는 묶음만 보여요. 진짜 품사는 문장을 낼 때 직접 골라요.</p>${handHTML(t)}</div>`;
   }
   if (ph==='episode'){ const ms=arr(p.missions); const m=ms[ms.length-1];
-    return `<div class="pbig" style="background:#141414;color:#fff;border-color:#141414;box-shadow:6px 6px 0 var(--y)"><div style="font-size:15px;letter-spacing:6px;color:var(--y);font-weight:800">EPISODE ${p.round+1}</div><div class="w" style="font-size:40px">새 미션</div><div style="font-size:24px;font-weight:900;background:var(--y);color:var(--ink);border-radius:14px;padding:12px">${m?esc(m.t):''}</div></div>${missionList(p)}<div class="card"><h3>가진 카드</h3>${handHTML(t,true)}</div>`; }
+    return `<div class="pbig" style="background:#141414;color:#fff;border-color:#141414;box-shadow:6px 6px 0 var(--y)"><div style="font-size:15px;letter-spacing:6px;color:var(--y);font-weight:800">EPISODE ${p.round+1}</div><div class="w" style="font-size:40px">새 미션</div><div style="font-size:24px;font-weight:900;background:var(--y);color:var(--ink);border-radius:14px;padding:12px">${m?esc(m.t):''}</div></div>${missionList(p)}<div class="card"><h3>가진 카드</h3>${handHTML(t)}</div>`; }
   if (ph==='auction'){
     const au=p.au||{}; const c=au.card; let ctl='';
     if (au.status==='ready') ctl=`<div class="notice y">곧 경매가 시작돼요. 칠판을 보세요!</div>`;
@@ -2834,22 +2821,22 @@ function padBody(p,t){
     }
     else if (au.status==='bid' && au.mode==='open'){
       const inDuel=!arr(au.duel).length || arr(au.duel).includes(t.id);
-      ctl=`<div class="card" style="text-align:center"><h3>${arr(au.duel).length?'⚔️ 공개 결투':'📢 공개 입찰'}</h3><div class="price">현재 최고가<b id="opP">${au.price}</b></div><div class="leader" id="opL"></div><div class="going" id="opG"></div>
-        ${inDuel?`<div class="steps" style="grid-template-columns:repeat(3,1fr);margin-top:10px">${[1,5,10].map(d=>`<button data-rs="${d}">+${d}</button>`).join('')}</div><div id="opMsg" style="margin-top:8px;font-weight:800;color:var(--gray)"></div>`:`<div class="notice y">동점이었던 팀끼리 결투 중이에요. 지켜봐요!</div>`}</div>`;
+      ctl=`<div class="card" style="text-align:center"><h3>${arr(au.duel).length?'⚔️ 공개 결투':'📢 공개 입찰'}</h3><div class="price">현재 최고가<b id="opP">${au.price}</b></div><div class="leader" id="opL"></div><div class="going" id="opG"></div><div style="font-size:15px;font-weight:700;color:var(--gray)">${arr(au.duel).length?'⚔️ 같은 금액을 쓴 팀끼리 다시 겨뤄요.':'+1, +5, +10으로 올려 불러요. 5초 동안 아무도 안 부르면 끝!'}</div>
+        ${inDuel?`<div class="steps" style="grid-template-columns:repeat(3,1fr);margin-top:10px">${[1,5,10].map(d=>`<button data-rs="${d}">+${d}</button>`).join('')}</div><div id="opMsg" style="margin-top:8px;font-weight:800;color:var(--gray)"></div>`:`<div class="notice y">같은 금액을 쓴 팀끼리 결투 중이에요. 지켜봐요!</div>`}</div>`;
     }
     else if (au.status==='reveal'){ const mine=arr(au.reveal).find(x=>x.tid===t.id); const r=au.result||{};
       ctl=`<div class="notice ${r.tid===t.id?'':'y'}">공개! 우리 팀 입찰: ${mine?mine.amt:0}코인 ${r.type==='duel'&&arr(r.tids).includes(t.id)?'· ⚔️ 동점! 결투 준비!':''}</div>`; }
     else if (au.status==='sold'){ const r=au.result||{}; ctl = r.tid===t.id ? `<div class="notice" style="font-size:24px">🎉 낙찰! ${r.price}코인</div>` : `<div class="notice y">${esc((arr(p.teams).find(x=>x.id===r.tid)||{}).name||'')} 팀이 가져갔어요 (${r.price}코인)</div>`; }
     else if (au.status==='unsold') ctl=`<div class="notice y">유찰! 이 카드는 떨이 시장에 나와요.</div>`;
     else if (au.status==='rps') ctl=`<div class="notice y">✊✌️🖐 가위바위보로 정해요!</div>`;
-    return padCard(c,au) + ctl + missionList(p) + `<div class="card"><h3>가진 카드 <span style="font-size:14px;color:var(--gray)">잘못된 말이 섞여 있다면 신고!</span></h3>${handHTML(t,true)}</div>`;
+    return padCard(c,au) + ctl + missionList(p) + `<div class="card"><h3>가진 카드</h3>${handHTML(t)}</div>`;
   }
   if (ph==='market'){ const mk=p.market||{};
     return `<div class="card"><h3>떨이 시장 <span style="font-size:15px;color:var(--gray)">한 장 5코인 · ${t.bought||0}/2장</span><span id="ptm" style="float:right"></span></h3><div class="hand">${arr(mk.cards).map(c=>`<div class="hc"><div class="w">${esc(c.w)}</div><div class="p">${c.k==='shift'?'🔄 변신':esc(c.p)}</div>${c.by?`<span class="rp" style="background:var(--soft);color:var(--gray)">${esc((arr(p.teams).find(x=>x.id===c.by)||{}).name||'팔림')}</span>`:`<button class="rp" style="background:var(--y);color:var(--ink)" data-buy="${c.id}" ${(t.bought||0)>=2||t.coins<5?'disabled':''}>5코인에 사기</button>`}</div>`).join('')}</div></div>
-      <div class="card"><h3>가진 카드</h3>${handHTML(t,true)}</div>`; }
+      <div class="card"><h3>가진 카드</h3>${handHTML(t)}</div>`; }
   if (ph==='build'){
     if (t.sub) return `<div class="wait"><div class="chars">${charHTML('boy','happy')}${charHTML('girl','smile')}</div><h2>제출 완료!</h2><p>판정을 기다려요. 발표할 사람은 칠판이 정해 줘요.</p></div>`;
-    return `<div class="card" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0;flex:1">최종 문장 만들기</h3><span id="ptm" style="font-size:22px;font-weight:900"></span></div><div style="font-size:14px;color:var(--gray);font-weight:700;margin-top:4px">문법이 바르고 뜻도 자연스러워야 해요 · 기본 카드와 🔄 카드는 품사를 골라요</div></div><div id="pb"></div>${missionList(p)}<div class="pfix"><div class="in"><button class="bb" id="subGo">제출하기</button></div></div>`;
+    return `<div class="card" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0;flex:1">최종 문장 만들기</h3><span id="ptm" style="font-size:22px;font-weight:900"></span></div><div style="font-size:15px;color:var(--gray);font-weight:700;margin-top:6px;line-height:1.6">용언은 문장에 맞게 바꿔 써요. 기쁘다 → 기쁘게<br>기본 카드와 🔄 카드는 품사를 골라요 · 뜻도 자연스러워야 ⭕</div></div><div id="pb"></div>${missionList(p)}<div class="pfix"><div class="in"><button class="bb" id="subGo">제출하기</button></div></div>`;
   }
   if (ph==='judge'){
     if (t.fix) return `<div class="notice r" style="margin-bottom:12px">✏️ 선생님이 고쳐 오라고 했어요 (−2점). 다시 만들어 제출해요!</div><div id="pb"></div><div class="pfix"><div class="in"><button class="bb" id="subGo">다시 제출하기</button></div></div>`;
@@ -2904,7 +2891,6 @@ function padClick(e){
   const bd=tgt.closest('[data-bd]'); if(bd && t){ const v=bd.dataset.bd; P.bid = v==='max' ? t.coins : v==='0' ? 0 : Math.max(0, Math.min(t.coins, P.bid + (+v))); $('#bidV').textContent=P.bid; return; }
   if (tgt.id==='bidGo' && t && p.au){ P.sentBid=P.bid; send({t:'bid', amt:P.bid, card:p.au.card.id}); SND.pop(); const m=$('#bidMsg'); if(m) m.innerHTML=`<div class="notice">보내는 중… ${P.bid}코인</div>`; return; }
   const rs=tgt.closest('[data-rs]'); if(rs && t && p.au){ if(rs.disabled) return; send({t:'raise', to:p.au.price + (+rs.dataset.rs), card:p.au.card.id}); SND.pop(); rs.disabled=true; return; }
-  const rp=tgt.closest('[data-rep]'); if(rp && t){ const c=arr(t.hand).find(x=>x.id===rp.dataset.rep); if(c && confirm(`‘${c.w}’ 카드를 함정 카드로 신고할까요?\n선생님 앞에서 왜 틀린 말인지 설명해야 해요.\n맞으면 낸 코인을 돌려받고 +5코인!`)){ send({t:'report', card:c.id}); rp.outerHTML=`<span class="rp" style="background:var(--yl);color:var(--ink)">신고 중…</span>`; } return; }
   const by=tgt.closest('[data-buy]'); if(by && t){ send({t:'buy', card:by.dataset.buy}); by.disabled=true; by.textContent='사는 중…'; return; }
   if (tgt.id==='subGo' && P.builder){ const pl=P.builder.payload(); if(pl.err){ alert(pl.err); return; }
     if(!confirm(`이 문장으로 낼까요?\n\n“${pl.text}”\n\n내고 나면 고칠 수 없어요.`)) return;

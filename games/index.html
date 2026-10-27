@@ -40,10 +40,18 @@ a.game:focus-visible{outline:3px solid var(--link);outline-offset:3px}
 .game.off{color:var(--faint)} .game.off .go{color:var(--faint)}
 .gw{position:relative}
 .game.has-extra .go{transform:translateY(-14px)}
-.extra{position:absolute;right:26px;top:50%;transform:translateY(4px);font-size:15px;font-weight:700;color:var(--link);text-decoration:none;background:#fff;border-radius:999px;padding:4px 12px;white-space:nowrap}
+.extras{position:absolute;right:26px;top:50%;transform:translateY(4px);display:flex;gap:6px}
+.extra{font:inherit;font-size:15px;font-weight:700;color:var(--link);text-decoration:none;background:var(--bg);border:0;border-radius:999px;padding:4px 12px;white-space:nowrap;cursor:pointer}
 .extra:hover{text-decoration:underline}
-@media (max-width:560px){.game{flex-wrap:wrap;gap:14px;padding:20px}.thumb{width:68px;height:68px;font-size:34px;border-radius:16px}.go{width:100%}.game.has-extra .go{transform:none}.extra{top:auto;bottom:18px;right:20px;transform:none}}
+@media (max-width:560px){.game{flex-wrap:wrap;gap:14px;padding:20px}.thumb{width:68px;height:68px;font-size:34px;border-radius:16px}.go{width:100%}.game.has-extra .go{transform:none}.extras{top:auto;bottom:18px;right:20px;transform:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.qrm{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
+.qrm[hidden]{display:none}
+.qb{background:#fff;color:#1d1d1f;border-radius:28px;padding:28px 32px 24px;text-align:center;max-width:100%}
+.qn{margin:0 0 14px;font-size:clamp(22px,3.4vw,34px);font-weight:800;letter-spacing:-.02em}
+.qi svg{display:block;width:min(62vh,78vw);height:auto;margin:0 auto}
+.qu{margin:12px 0 4px;font-size:clamp(15px,2vw,20px);font-weight:700;word-break:break-all}
+.qh{margin:0;font-size:14px;color:#6e6e73}
 </style>
 </head>
 <body>
@@ -59,6 +67,9 @@ a.game:focus-visible{outline:3px solid var(--link);outline-offset:3px}
   <main class="games" id="games"></main>
 </div>
 
+<div class="qrm" id="qrm" hidden><div class="qb"><p class="qn"></p><div class="qi"></div><p class="qu"></p><p class="qh">휴대폰 카메라로 찍어서 들어와요 · 아무 곳이나 누르면 닫혀요</p></div></div>
+<script src="qr.js"></script>
+
 <script>
 /* ================================================================
    여기만 고치면 됩니다.
@@ -66,6 +77,7 @@ a.game:focus-visible{outline:3px solid var(--link);outline-offset:3px}
 
    href : 같은 폴더의 파일이면 "파일이름.html", 다른 사이트면 https:// 주소
    자료 : (있을 때만) 플레이 아래에 붙는 링크. 예) 자료: { 이름: "공략집", href: "파일.pdf" }
+   큐알 : true 로 두면 플레이 아래에 [QR 코드] 버튼이 생겨 학생들이 휴대폰으로 찍고 들어올 수 있어요.
    (다른 사이트 주소는 새 탭에서 열립니다. href를 비우면 "준비 중")
    ================================================================ */
 const 게임 = [
@@ -85,11 +97,13 @@ const 게임 = [
   { 이름: "봉두문고 · 소설 속으로", 그림: "📚", 색: "#F3E3C3",
     태그: ["2학년", "소설 읽기", "혼자 하는 RPG"],
     설명: "책을 펼치면 소설 속 주인공이 됩니다. 「수난이대」, 「하늘은 맑건만」.",
-    href: "https://ryuhm2875.github.io/bongdoomoongo-sunanedae/" },
+    href: "https://ryuhm2875.github.io/bongdoomoongo-sunanedae/",
+    큐알: true },
   { 이름: "고흥FC 드림 프로젝트", 그림: "⚽", 색: "#C8EBC4",
     태그: ["축구부", "3년 육성 시뮬레이션", "학번 로그인"],
     설명: "고흥대서중 축구부 학생선수가 되어 입학부터 졸업까지! 훈련, 경기 선택, 8가지 엔딩.",
-    href: "https://ryuhm2875.github.io/FC-GOHENG/" },
+    href: "https://ryuhm2875.github.io/FC-GOHENG/",
+    큐알: true },
 ];
 /* ================= 아래는 고치지 않아도 됩니다 ================= */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -99,13 +113,27 @@ document.getElementById("games").innerHTML = 게임.map(g => {
     <span class="info"><span class="tags">${g.태그.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</span>
       <h2 class="name">${esc(g.이름)}</h2><p class="desc">${esc(g.설명)}</p></span>
     <span class="go">${g.href ? (ext ? "플레이 ↗" : "플레이 ›") : "준비 중"}</span>`;
+  const extras = [];
+  if (g.자료) extras.push(`<a class="extra" href="${esc(g.자료.href)}" target="_blank" rel="noopener">📖 ${esc(g.자료.이름)} ↗</a>`);
+  if (g.큐알 && g.href) extras.push(`<button type="button" class="extra" data-qr="${esc(g.href)}" data-name="${esc(g.이름)}">📱 QR 코드</button>`);
   const card = g.href
-    ? `<a class="game${g.자료 ? " has-extra" : ""}" href="${esc(g.href)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>`
+    ? `<a class="game${extras.length ? " has-extra" : ""}" href="${esc(g.href)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>`
     : `<div class="game off">${inner}</div>`;
-  return g.자료
-    ? `<div class="gw">${card}<a class="extra" href="${esc(g.자료.href)}" target="_blank" rel="noopener">📖 ${esc(g.자료.이름)} ↗</a></div>`
-    : card;
+  return extras.length ? `<div class="gw">${card}<span class="extras">${extras.join("")}</span></div>` : card;
 }).join("");
+
+/* QR 코드 크게 보기 */
+const qrm = document.getElementById("qrm");
+document.getElementById("games").addEventListener("click", e => {
+  const b = e.target.closest("[data-qr]"); if (!b) return;
+  const url = new URL(b.dataset.qr, location.href).href;
+  qrm.querySelector(".qn").textContent = b.dataset.name;
+  qrm.querySelector(".qi").innerHTML = qrSVG(url);
+  qrm.querySelector(".qu").textContent = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  qrm.hidden = false;
+});
+qrm.addEventListener("click", () => { qrm.hidden = true; });
+addEventListener("keydown", e => { if (e.key === "Escape") qrm.hidden = true; });
 </script>
 </body>
 </html>

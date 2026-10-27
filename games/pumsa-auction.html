@@ -401,6 +401,62 @@ body.pad{background:var(--paper);min-height:100%}
 .ochar span{position:absolute;right:-30px;top:-40px;background:var(--y);color:var(--ink);border:3px solid var(--ink);border-radius:20px 20px 4px 20px;padding:8px 16px;font-size:24px;font-weight:900;white-space:nowrap;animation:pop .4s .2s both}
 .wait .chars.solo>div{width:130px}.wait .chars.solo>.bd-podium{width:150px}
 .tut-say .cv-podium{width:110px}.tut-say .cv-up{width:104px}
+/* ===== 판정 ① 확인 ===== */
+.judge2 .jtop{position:absolute;left:48px;top:56px;display:flex;align-items:center;gap:12px}
+.judge2 .jtop .an{font-size:42px}.judge2 .jtop h2{font-size:34px;font-weight:900;letter-spacing:-1px}
+.judge2 .jtop .fx{font-size:14px;font-weight:800;background:var(--rl);color:#b3263a;padding:4px 10px;border-radius:12px}
+.judge2 .mic{background:var(--y);border:2.5px solid var(--ink);border-radius:30px;padding:6px 16px;font-size:19px;font-weight:900;margin-left:6px}
+.jsent{position:absolute;left:48px;right:48px;top:120px;background:#fff;border:2px solid var(--line);border-radius:24px;padding:18px 22px 12px}
+.jcards{display:flex;flex-wrap:wrap;gap:10px 8px;align-items:flex-start}
+.jk{display:flex;flex-direction:column;align-items:center}
+.jk .w{font-size:32px;font-weight:900;padding:5px 13px;border-radius:14px;border:2.5px solid var(--ink);background:#fff;position:relative;line-height:1.25}
+.jcards.many .jk .w{font-size:25px;padding:4px 10px}
+.jk .p{margin-top:5px;font-size:13.5px;font-weight:800;padding:2px 9px;border-radius:10px;white-space:nowrap}
+.jk .jb{font-size:11px;color:var(--gray);font-weight:700;margin-top:1px}
+.jk.flag .w{border-color:var(--red);box-shadow:0 0 0 4px var(--rl)}
+.jk.bad .w{background:var(--rl);border-color:var(--red);color:#b3263a;text-decoration:line-through}
+.jk.trap .w{background:#2a2a2a;color:#fff;border-color:#2a2a2a}
+.jk .q{position:absolute;top:-11px;right:-9px;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+.jread{margin-top:12px;padding-top:10px;border-top:1.5px dashed var(--line);font-size:21px;font-weight:800;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jread b{color:var(--ink)}
+.judge2 .pos9{position:absolute;left:48px;right:48px;top:312px;display:flex;gap:6px;align-items:center}
+.pos9 .l{font-size:14px;font-weight:800;color:var(--gray);width:64px}
+.pos9 span{flex:1;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;border:2px dashed #DDD;color:#C9C9C9}
+.pos9 span.on{border:2px solid var(--ink);color:var(--ink)}
+.pos9 .l,.pos9 .cnt{flex:none;border:0}
+.pos9 .cnt{margin-left:6px;font-size:22px;font-weight:900;color:var(--ink);width:auto}
+.jcheck{position:absolute;left:48px;top:366px;width:760px;height:268px;overflow:auto;background:#fff;border:2px solid var(--ink);border-radius:20px;padding:10px 16px}
+.jcheck h4{font-size:16px;font-weight:900;margin-bottom:2px}.jcheck h4 small{font-size:13px;color:var(--gray);font-weight:700;margin-left:6px}
+.jrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid #EEE;font-size:16px;font-weight:700}
+.jcheck h4+.jrow{border-top:0}
+.jrow .ic{font-size:19px;width:24px;flex:none}.jrow .t{flex:1;line-height:1.3}.jrow .t small{display:block;font-size:12.5px;color:var(--gray);font-weight:700}
+.tg{display:flex;gap:4px;flex:none}
+.tg button,.tg i{font-style:normal;padding:6px 11px;border-radius:10px;font-size:14px;font-weight:900;background:#EEECE6;color:#8E8E8E}
+.tg .ok.on{background:var(--gl);color:var(--green);box-shadow:inset 0 0 0 2.5px var(--green)}
+.tg .ng.on{background:var(--rl);color:#b3263a;box-shadow:inset 0 0 0 2.5px #b3263a}
+.jmis{position:absolute;right:48px;top:366px;width:400px;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:12px 16px}
+.jmis h4{font-size:14px;color:var(--gray);font-weight:800;margin-bottom:4px}
+.jmis button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;font-size:15px;font-weight:800;padding:3px 0;opacity:1}
+.jmis .ck{width:20px;height:20px;border-radius:6px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}
+.jmis .ck.on{background:var(--ink);color:var(--y)}
+.pill.pl{padding:14px 26px;font-size:21px}
+.jk .w:disabled{opacity:1}
+/* ===== 판정 ② 점수 공개 ===== */
+.jres .stamp{position:absolute;left:96px;top:96px;font-size:30px;font-weight:900;color:#46d369;letter-spacing:3px;animation:pop .4s both}
+.jres.zero .stamp{color:#ff6b7d}.jres.fix .stamp{color:var(--y)}
+.jres .tot{position:absolute;left:88px;top:128px;font-size:190px;font-weight:900;letter-spacing:-8px;line-height:1;animation:pop .5s .1s both}
+.jres .tot small{font-size:56px;letter-spacing:0;margin-left:6px}
+.jres .tot .txt{font-size:90px;letter-spacing:-3px}
+.jres .who{position:absolute;left:98px;top:340px;font-size:26px;font-weight:800;color:#ddd}
+.jres .jline{position:absolute;left:98px;width:470px;top:390px;font-size:21px;font-weight:700;color:#aaa;line-height:1.5;word-break:keep-all}
+.jres .stack{position:absolute;left:600px;top:96px;width:360px;display:flex;flex-direction:column;gap:9px}
+.jres .stack div{display:flex;justify-content:space-between;align-items:center;background:#262626;border-radius:14px;padding:11px 18px;font-size:21px;font-weight:800;line-height:1.35;opacity:0;animation:pop .35s forwards}
+.jres .stack div b{color:var(--y)}.jres .stack div.n b{color:#ff8a98}
+.jres .stack div.t{background:var(--y);color:var(--ink);font-size:25px}.jres .stack div.t b{color:var(--ink)}
+.jres .stack div:nth-child(1){animation-delay:.35s}.jres .stack div:nth-child(2){animation-delay:.6s}.jres .stack div:nth-child(3){animation-delay:.85s}.jres .stack div:nth-child(4){animation-delay:1.1s}.jres .stack div:nth-child(5){animation-delay:1.35s}.jres .stack div:nth-child(6){animation-delay:1.6s}.jres .stack div:nth-child(7){animation-delay:1.85s}.jres .stack div:nth-child(8){animation-delay:2.1s}.jres .stack div:nth-child(9){animation-delay:2.35s}
+.jres .jbd{position:absolute;right:56px;bottom:80px;width:190px}
+.jres .jsay{position:absolute;right:80px;top:300px;background:var(--y);color:var(--ink);border:3px solid var(--ink);border-radius:20px 20px 4px 20px;padding:10px 18px;font-size:22px;font-weight:900;white-space:nowrap;animation:pop .4s .5s both}
+.jres.noanim *{animation:none!important;opacity:1!important}
 
 </style>
 </head>
@@ -422,41 +478,45 @@ const BANK = [
   ...W(`친구 선생님 학생 동생 언니 형 누나 엄마 아빠 할머니 할아버지 강아지 고양이
         학교 교실 운동장 도서관 집 바다 하늘 산 꽃 나무 공 책 연필 편지 노래 그림 사진
         사과 빵 우유 급식 선물 생일 주말 아침 저녁 시험 숙제 축구 자전거 버스 바람 마음
-        꿈 이야기 우산 가방 신발 창문 의자 운동화 케이크 떡볶이 라면 축제 소풍 영화 게임 별 달`, '명사', '보통'),
+        꿈 이야기 우산 가방 신발 창문 의자 운동화 케이크 떡볶이 라면 축제 소풍 영화 게임 별 달
+        운동회 교과서 놀이터 장미 기차`, '명사', '보통'),
   ...W('것 수 개 명 마리 권', '명사', '의존'),
   /* 대명사 */
-  ...W('나 너 우리 저희 너희 그녀 그들 자기', '대명사', '인칭'),
+  ...W('나 너 우리 저희 너희 그녀 그들 자기 당신 그대', '대명사', '인칭'),
   ...W('누구', '대명사', '인칭'),
-  ...W('이것 그것 저것 여기 거기 저기 무엇', '대명사', '지시'),
+  ...W('이것 그것 저것 여기 거기 저기 무엇 이곳 그곳 어디', '대명사', '지시'),
   /* 수사 */
-  ...W('하나 둘 셋 넷', '수사', '양수'),
-  ...W('첫째 둘째 셋째', '수사', '서수'),
+  ...W('하나 둘 셋 넷 스물 두셋 서넛', '수사', '양수'),
+  ...W('첫째 둘째 셋째 넷째 다섯째', '수사', '서수'),
   /* 동사 */
   ...W(`먹다 마시다 가다 오다 보다 읽다 쓰다 달리다 걷다 뛰다 웃다 울다 자다 놀다
         만나다 만들다 부르다 그리다 찍다 차다 던지다 받다 주다 사다 좋아하다 기다리다
         배우다 가르치다 공부하다 노래하다 춤추다 열다 닫다 앉다 일어나다 찾다 듣다
-        타다 입다 신다 씻다 돕다 숨다 날다 넘어지다 생각하다 사랑하다 이기다`, '동사', '', {e:1}),
+        타다 입다 신다 씻다 돕다 숨다 날다 넘어지다 생각하다 사랑하다 이기다
+        자라다 줍다 심다 빌리다 끓이다`, '동사', '', {e:1}),
   /* 형용사 */
   ...W(`슬프다 기쁘다 예쁘다 작다 빠르다 느리다 높다 낮다 맑다 밝다 어둡다 덥다 춥다
         따뜻하다 시원하다 즐겁다 재미있다 맛있다 착하다 귀엽다 아름답다 좋다 싫다 많다
         적다 길다 짧다 넓다 좁다 무겁다 가볍다 바쁘다 행복하다 조용하다 시끄럽다 새롭다
-        알맞다 젊다 푸르다 노랗다 달다`, '형용사', '', {e:1}),
+        알맞다 젊다 푸르다 노랗다 달다
+        깨끗하다 고요하다 날카롭다 부드럽다 심심하다`, '형용사', '', {e:1}),
   /* 관형사 */
-  ...W('새 헌 옛 온갖 온', '관형사', '성상'),
-  ...W('이 무슨 어느 웬', '관형사', '지시'),
-  ...W('한 두 세 네 몇 첫', '관형사', '수'),
-  ...W('모든 여러 각', '관형사', ''),
+  ...W('새 헌 옛 온갖 온 갖은 순', '관형사', '성상'),
+  ...W('이 무슨 어느 웬 어떤', '관형사', '지시'),
+  ...W('한 두 세 네 몇 첫 스무 두세 서너', '관형사', '수'),
+  ...W('모든 여러 각 딴', '관형사', ''),
   /* 부사 */
   ...W(`아주 매우 정말 너무 참 가장 빨리 천천히 잘 열심히 함께 같이 다시 벌써 아직
-        항상 늘 자주 많이 활짝 깡충깡충 반짝반짝 꼭 일찍 곧 오래 안 못`, '부사', '성분'),
+        항상 늘 자주 많이 활짝 깡충깡충 반짝반짝 꼭 일찍 곧 오래 안 못
+        몹시 무척 겨우 이미 살금살금`, '부사', '성분'),
   ...W('그리고 그러나 그래서 하지만', '부사', '접속'),
   /* 감탄사 */
-  ...W('와 아 어머 아이고 네 응 얘 여보세요 우아 앗 흥', '감탄사', ''),
+  ...W('와 아 어머 아이고 네 응 얘 여보세요 우아 앗 흥 오 쉿 야호 글쎄 에구머니', '감탄사', ''),
   /* 조사 */
-  ...W('이/가 께서 을/를 의 에 에게 에서 (으)로 처럼 보다 아/야', '조사', '격'),
+  ...W('이/가 께서 을/를 의 에 에게 에서 (으)로 처럼 보다 아/야 한테 께', '조사', '격'),
   ...W('이다', '조사', '격', {e:1, cop:1}),
-  ...W('와/과 하고', '조사', '접속'),
-  ...W('은/는 도 만 까지 부터', '조사', '보조'),
+  ...W('와/과 하고 (이)랑', '조사', '접속'),
+  ...W('은/는 도 만 까지 부터 마다 조차 밖에', '조사', '보조'),
 ];
 
 /* 🔄 변신 카드: 쓰임에 따라 품사가 달라지는 말 */
@@ -1838,7 +1898,7 @@ const FB_VER = '10.12.2';
 const MAX_TEAMS = 8;
 const ANIMALS = ['🐻','🐰','🐥','🦊','🐼','🐯','🐸','🐧'];
 const GROUP_POS = {체언:['명사','대명사','수사'],용언:['동사','형용사'],수식언:['관형사','부사'],관계언:['조사'],독립언:['감탄사']};
-const PFORMS = {'이/가':['이','가'],'은/는':['은','는'],'을/를':['을','를'],'와/과':['과','와'],'아/야':['아','야'],'(으)로':['으로','로']};
+const PFORMS = {'이/가':['이','가'],'은/는':['은','는'],'을/를':['을','를'],'와/과':['과','와'],'아/야':['아','야'],'(으)로':['으로','로'],'(이)랑':['이랑','랑']};
 const EP_TITLES = ['첫 경매','눈치 싸움','조사 쟁탈전','반전의 시간','코인의 무게','마지막 한 장','숨은 고수','품사 대혼란','역전의 기회'];
 
 /* ---------------- 작은 도구 ---------------- */
@@ -2546,29 +2606,74 @@ function viewJudge(){
       ${bar(`<button class="pill k" data-act="toRank">기다리지 않고 순위 보기 →</button>`, connDot())}</div>`;
   }
   const t=T(tid), res=j.res[tid], items=subItems(tid), flags=flagsOf(tid), ds=displayForms(items), sc=scoreOf(tid);
+  if (res.state!=='pending') return viewJudgeResult(t, res, items, sc);
+  /* ① 확인 단계 */
   const chips=items.map((it,i)=>{ const c=it.card; const e=effPos(it,res);
-    let pl;
-    if (c.k==='trap') pl=`<span class="p" style="background:#2a2a2a;color:#fff">⚠️ 함정</span>`;
-    else if (c.k==='shift') pl=`<button class="sh ${res.shift[c.id]===false?'ng':'ok'}" data-act="shiftT" data-id="${c.id}">🔄 ${esc(it.tag||'?')} ${res.shift[c.id]===false?'✗':'✓'}</button>`;
-    else if (c.st) pl=`<span class="p ${e?'':'no'}" style="background:${POS_COLOR[it.tag]||'#eee'}">${esc(it.tag||'?')}${e?' ✓':''}</span>${e?'':`<span class="base">정답: ${c.p}</span>`}`;
-    else pl=`<span class="p" style="background:${POS_COLOR[c.p]}">${c.p}</span>`;
-    const base = (c.e && it.form && it.form!==c.w) ? `<span class="base">(${esc(c.w)})</span>` : '';
-    return `<div class="jc ${res.errs[c.id]?'err':''} ${flags[c.id]&&!res.errs[c.id]?'flag':''} ${c.k==='trap'?'trap':''}">${flags[c.id]?`<span class="why">${esc(flags[c.id])}</span>`:''}<button class="t" data-act="errT" data-id="${c.id}">${esc(ds[i])}${it.comma?',':''}</button>${pl}${base}</div>`; }).join('');
+    let lab, bg;
+    if (c.k==='trap'){ lab='⚠️ 함정'; bg='#2a2a2a;color:#fff'; }
+    else if (c.k==='shift'){ lab='🔄 '+(it.tag||'?'); bg=(POS_COLOR[it.tag]||'#eee'); }
+    else if (c.st){ lab=(it.tag||'?')+(e?'':' ✗'); bg=e?POS_COLOR[it.tag]:'var(--rl);color:#b3263a'; }
+    else { lab=c.p; bg=POS_COLOR[c.p]; }
+    const base = (c.e && it.form && it.form!==c.w && c.k!=='trap') ? `<span class="jb">${esc(c.w)}</span>` : '';
+    const cls = [res.errs[c.id]?'bad':'', (flags[c.id]&&!res.errs[c.id])||(c.k==='shift'&&res.shift[c.id]===false)?'flag':'', c.k==='trap'?'trap':''].join(' ');
+    return `<div class="jk ${cls}"><button class="w" data-act="errT" data-id="${c.id}" ${c.k==='trap'?'disabled':''}>${esc(ds[i])}${it.comma?',':''}${flags[c.id]?'<span class="q">?</span>':''}</button><span class="p" style="background:${bg}">${esc(lab)}</span>${base}</div>`; }).join('');
+  /* 9품사 칸 */
+  const used=new Set(sc.kindList);
+  const pos9=POS.map(p=>`<span class="${used.has(p)?'on':''}" style="${used.has(p)?'background:'+POS_COLOR[p]:''}">${p}</span>`).join('');
+  /* 선생님 확인 목록 */
+  const rows=[];
+  items.forEach(it=>{ const c=it.card;
+    if (c.k==='shift'){ const ok=res.shift[c.id]!==false;
+      rows.push(`<div class="jrow"><span class="ic">🔄</span><span class="t">‘${esc(it.form||c.w)}’를 <b>${esc(it.tag)}</b>${particleForm('(으)로', it.tag||'')} 골랐어요<small>${flags[c.id]?'‘-ㄴ다/-는다’가 붙었으니 동사 아닐까요?':'변신 카드 · 맞으면 +3'}</small></span><span class="tg"><button class="ok ${ok?'on':''}" data-act="shiftSet" data-id="${c.id}" data-v="1">맞아요</button><button class="ng ${ok?'':'on'}" data-act="shiftSet" data-id="${c.id}" data-v="0">틀려요</button></span></div>`); }
+    else if (!c.k && c.e && (flags[c.id] || res.errs[c.id])){ const bad=!!res.errs[c.id];
+      rows.push(`<div class="jrow"><span class="ic">✏️</span><span class="t">‘${esc(it.form)}’ <small>기본형 ${esc(c.w)}${flags[c.id]?' · '+esc(flags[c.id]):' · 선생님이 표시함'}</small></span><span class="tg"><button class="ok ${bad?'':'on'}" data-act="errSet" data-id="${c.id}" data-v="0">맞게 씀</button><button class="ng ${bad?'on':''}" data-act="errSet" data-id="${c.id}" data-v="1">틀림 −3</button></span></div>`); }
+    else if (res.errs[c.id]){
+      rows.push(`<div class="jrow"><span class="ic">✏️</span><span class="t">‘${esc(it.form||c.w)}’ 틀리게 씀 <small>선생님이 표시함</small></span><span class="tg"><button class="ok" data-act="errSet" data-id="${c.id}" data-v="0">취소</button><button class="ng on">−3</button></span></div>`); }
+    if (c.st){ const e=effPos(it,res);
+      rows.push(`<div class="jrow"><span class="ic">🧩</span><span class="t">기본 카드 ‘${esc(c.w)}’ → 팀은 <b>${esc(it.tag)}</b><small>${e?'정답이에요':'정답은 '+c.p+' · 이 품사는 점수에서 빠져요'}</small></span><span class="tg"><i class="${e?'ok':'ng'} on">${e?'✓ 자동':'✗ 자동'}</i></span></div>`); }
+    if (c.k==='trap')
+      rows.push(`<div class="jrow"><span class="ic">⚠️</span><span class="t">‘${esc(c.w)}’${jongOf(c.w[c.w.length-1])>0?'은':'는'} 함정 카드!<small>${esc(c.why)}</small></span><span class="tg"><i class="ng on">−3 자동</i></span></div>`);
+  });
+  const unusedTraps=t.hand.map(C).filter(c=>c.k==='trap' && !items.some(x=>x.id===c.id));
+  unusedTraps.forEach(c=>rows.push(`<div class="jrow"><span class="ic">⚠️</span><span class="t">사 둔 ‘${esc(c.w)}’도 함정 카드였어요<small>문장에 안 써서 감점은 없어요</small></span></div>`));
   const ms=S.missions.map(mid=>{ const m=MISSION_BY[mid]; const ok=sc.missionList.includes(mid);
-    return `<button ${m.auto?'':`data-act="manM" data-id="${mid}"`}><span class="ck ${ok?'on':''}">${ok?'✓':''}</span>${esc(m.t)}${m.auto?'':' <span style="color:var(--gray)">(선생님 확인)</span>'}</button>`; }).join('');
-  const row=(l,v)=>`<div class="r ${v<0?'neg':''}"><span>${l}</span><span>${v>0?'+':''}${v}</span></div>`;
-  const decided=res.state!=='pending';
-  const stateTxt={ok:'⭕ 바른 문장',fix:'✏️ 고쳐 오기',zero:'❌ 0점'}[res.state]||'';
-  return `<div class="stage judge" id="stage">${hdr(`판정 ${j.i+1} / ${j.order.length}`)}
-    <div class="ttl" style="top:58px"><div class="ep">JUDGE</div><h2>${t.an} ${esc(t.name)}${res.fixUsed?' <span style="font-size:18px;color:var(--gray)">(고쳐 온 문장)</span>':''}</h2></div>
-    <div class="presenter">🎤 발표: <b>${esc(j.presenter)}</b></div>
-    <div class="sent">${chips}</div>
-    <div class="plain">“${esc(sentenceText(items, S.subs[tid].end))}”</div>
-    <div class="mchk"><h4>미션 보드 · 단어를 누르면 활용 오류(−3) 표시</h4>${ms}</div>
-    <div class="score">${row('단어 수',sc.words)}${row(`품사 종류 ${sc.kindList.length}개`,sc.kinds)}${sc.complete?row('9품사 완전체',sc.complete):''}${row('미션',sc.mission)}${sc.shift?row('변신 카드',sc.shift):''}${sc.trap?row('함정 카드',sc.trap):''}${sc.err?row('활용 오류',sc.err):''}${sc.fix?row('고쳐 오기',sc.fix):''}
-      <div class="tot"><span>${stateTxt||'합계'}</span><span>${res.state==='zero'?0:sc.total}점</span></div>${trapNote(tid, items)}</div>
-    ${bar(decided ? `<button class="pill" data-act="judgeUndo">↩ 다시 판정</button><button class="pill k" data-act="judgeNext">다음 →</button>`
-      : `<button class="pill r" data-act="judgeZero">❌ 0점</button>${res.fixUsed?'':`<button class="pill" data-act="judgeFix">✏️ 고쳐 오기 (−2)</button>`}<button class="pill k" data-act="judgeOk">⭕ 바른 문장</button>`, `<button class="pill sm" data-act="rePresenter">🎲 발표자 다시</button>`)}</div>`;
+    return `<button ${m.auto?'disabled':`data-act="manM" data-id="${mid}"`}><span class="ck ${ok?'on':''}">${ok?'✓':''}</span>${esc(m.t)}${m.auto?'':' <span style="color:var(--gray);font-size:13px">눌러서 확인</span>'}</button>`; }).join('');
+  return `<div class="stage judge2" id="stage">${hdr(`판정 ${j.i+1} / ${j.order.length}`)}
+    <div class="jtop"><span class="an">${t.an}</span><h2>${esc(t.name)}</h2>${res.fixUsed?'<span class="fx">고쳐 온 문장</span>':''}<button class="mic" data-act="rePresenter" title="다시 뽑기">🎤 ${esc(j.presenter)} 발표</button></div>
+    <div class="jsent"><div class="jcards ${items.length>10?'many':''}">${chips}</div>
+      <div class="jread">읽어 보기 · <b>“${esc(sentenceText(items, S.subs[tid].end))}”</b></div></div>
+    <div class="pos9"><span class="l">쓴 품사</span>${pos9}<span class="cnt">${used.size} / 9</span></div>
+    <div class="jcheck"><h4>👀 선생님 확인 <small>단어 카드를 누르면 틀린 활용(−3)으로 표시돼요</small></h4>${rows.join('')||'<div class="jrow"><span class="t" style="color:var(--gray)">따로 확인할 것이 없어요. 문장만 들어 보세요.</span></div>'}</div>
+    <div class="jmis"><h4>🎯 미션 보드</h4>${ms}</div>
+    ${bar(`<button class="pill pl r" data-act="judgeZero">❌ 0점</button>${res.fixUsed||S.cfg.fixOn===false?'':`<button class="pill pl" data-act="judgeFix">✏️ 고쳐 오기 −2</button>`}<button class="pill pl k" data-act="judgeOk">⭕ 이대로 채점</button>`, `<span>판정 ${j.i+1} / ${j.order.length}</span>`)}</div>`;
+}
+let lastJR='';
+function viewJudgeResult(t, res, items, sc){
+  const j=S.judge; const key=t.id+res.state+(res.fixUsed?1:0); const anim=lastJR!==key; lastJR=key;
+  let head, big, rows='', say;
+  if (res.state==='ok'){
+    head='⭕ 인정!'; big=`${sc.total}<small>점</small>`; say=sc.total>=25?'훌륭한 낙찰품이군!':'통과!';
+    const r=(l,v,neg)=>`<div class="${neg?'n':''}">${l}<b>${v>0?'+'+v:'−'+(-v)}</b></div>`;
+    rows += r(`단어 ${sc.words}개`, sc.words);
+    rows += r(`품사 ${sc.kindList.length}가지`, sc.kinds);
+    if (sc.complete) rows += r('👑 9품사 완전체', sc.complete);
+    if (sc.mission) rows += r(`미션 ${sc.missionList.length}개`, sc.mission);
+    if (sc.shift) rows += r('변신 카드', sc.shift);
+    if (sc.trap) rows += r('함정 카드', sc.trap, 1);
+    if (sc.err) rows += r(`틀린 활용 ${-sc.err/3}개`, sc.err, 1);
+    if (sc.fix) rows += r('고쳐 오기', sc.fix, 1);
+    rows += `<div class="t">합계<b>${sc.total}점</b></div>`;
+  } else if (res.state==='fix'){ head='✏️ 고쳐 오기!'; big='<span class="txt">다시 한 번</span>'; say='한 번 더 기회를 주지.';
+    rows=`<div>태블릿에서 문장을 고쳐<br>다시 내요</div><div class="n">고친 문장은<b>−2</b></div>`;
+  } else { head='❌ 0점'; big='0<small>점</small>'; say='이번엔 유찰이군…';
+    rows=`<div>문장으로 인정되지 않았어요</div>`; }
+  return `<div class="stage dark jres ${anim?'':'noanim'} ${res.state}" id="stage">${hdr(`판정 ${j.i+1} / ${j.order.length}`)}
+    <div class="stamp">${head}</div><div class="tot">${big}</div>
+    <div class="who">${t.an} ${esc(t.name)} · 🎤 ${esc(j.presenter)}</div>
+    <div class="jline">“${esc(sentenceText(items, S.subs[t.id].end))}”</div>
+    <div class="stack">${rows}</div>
+    <div class="jsay">${say}</div><div class="jbd">${BD(res.state==='zero'?'worry':'happy', res.state==='zero'?'down':'up')}</div>
+    ${bar(`<button class="pill pl" data-act="judgeUndo">↩ 다시 판정</button><button class="pill pl y" data-act="judgeNext">${j.i+1>=j.order.length&&!Object.keys(S.fixReq).length?'순위 보기 →':'다음 팀 →'}</button>`, `<span>판정 ${j.i+1} / ${j.order.length}</span>`)}</div>`;
 }
 function trapNote(tid, items){
   const used=new Set(items.map(x=>x.id)); const traps=T(tid).hand.map(C).filter(c=>c.k==='trap');
@@ -2667,6 +2772,8 @@ function boardAct(act, d){
     case 'judgeGo': UI.modal=null; startJudge(); break;
     case 'errT': { const r=S.judge.res[S.judge.order[S.judge.i]]; if(r.state==='pending') r.errs[d.id]=!r.errs[d.id]; break; }
     case 'shiftT': { const r=S.judge.res[S.judge.order[S.judge.i]]; if(r.state==='pending') r.shift[d.id]=r.shift[d.id]===false; break; }
+    case 'shiftSet': { const r=S.judge.res[S.judge.order[S.judge.i]]; if(r.state==='pending') r.shift[d.id]=d.v==='1'; break; }
+    case 'errSet': { const r=S.judge.res[S.judge.order[S.judge.i]]; if(r.state==='pending') r.errs[d.id]=d.v==='1'; break; }
     case 'manM': { const r=S.judge.res[S.judge.order[S.judge.i]]; if(r.state==='pending') r.man[d.id]=!r.man[d.id]; break; }
     case 'judgeOk': S.judge.res[S.judge.order[S.judge.i]].state='ok'; SND.sold(); break;
     case 'judgeZero': S.judge.res[S.judge.order[S.judge.i]].state='zero'; SND.bad(); break;
@@ -2924,7 +3031,7 @@ function updatePad(){
     if (m) m.innerHTML = done ? `<div class="notice">입찰 완료: ${P.sentBid??'?'}코인 · 시간 안에는 다시 바꿀 수 있어요</div>` : '';
   }
   if (p.phase==='judge'){ const jw=$('#jw'); if(jw){ const j=p.judge||{}; const res=obj(j.res)[t.id];
-    jw.innerHTML = res ? `<div class="chars solo">${res.state==='zero'?BD('worry','down'):BD('happy','up')}</div><h2>${{ok:'⭕ 바른 문장!',zero:'❌ 아쉬워요',fix:'✏️ 고쳐 오기'}[res.state]||''} · ${res.total}점</h2><p>다른 팀 판정을 함께 봐요.</p>`
+    jw.innerHTML = res ? `<div class="chars solo">${res.state==='zero'?BD('worry','down'):BD('happy','up')}</div><h2>${{ok:'⭕ 인정!',zero:'❌ 아쉬워요',fix:'✏️ 고쳐 오기'}[res.state]||''} · ${res.total}점</h2><p>다른 팀 판정을 함께 봐요.</p>`
       : j.tid===t.id ? `<div class="chars solo">${BD('happy','podium')}</div><h2>지금 우리 팀 차례!</h2><p>🎤 발표: <b>${esc(j.presenter)}</b></p>` : `<div class="chars solo">${BD('smile','down')}</div><h2>판정 중 (${(j.i||0)+1}/${j.n||0})</h2><p>칠판을 보세요.</p>`; } }
 }
 document.addEventListener('click', e=>{ if(!document.body.classList.contains('pad')) return;

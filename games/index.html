@@ -38,7 +38,11 @@ a.game:focus-visible{outline:3px solid var(--link);outline-offset:3px}
 .desc{font-size:15px;color:var(--muted);margin:6px 0 0;line-height:1.5}
 .go{flex:none;font-size:17px;font-weight:500;color:var(--link);white-space:nowrap}
 .game.off{color:var(--faint)} .game.off .go{color:var(--faint)}
-@media (max-width:560px){.game{flex-wrap:wrap;gap:14px;padding:20px}.thumb{width:68px;height:68px;font-size:34px;border-radius:16px}.go{width:100%}}
+.gw{position:relative}
+.game.has-extra .go{transform:translateY(-14px)}
+.extra{position:absolute;right:26px;top:50%;transform:translateY(4px);font-size:15px;font-weight:700;color:var(--link);text-decoration:none;background:#fff;border-radius:999px;padding:4px 12px;white-space:nowrap}
+.extra:hover{text-decoration:underline}
+@media (max-width:560px){.game{flex-wrap:wrap;gap:14px;padding:20px}.thumb{width:68px;height:68px;font-size:34px;border-radius:16px}.go{width:100%}.game.has-extra .go{transform:none}.extra{top:auto;bottom:18px;right:20px;transform:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -61,6 +65,7 @@ a.game:focus-visible{outline:3px solid var(--link);outline-offset:3px}
    게임을 올렸으면 아래 목록에 한 덩어리를 넣어 주세요.
 
    href : 같은 폴더의 파일이면 "파일이름.html", 다른 사이트면 https:// 주소
+   자료 : (있을 때만) 플레이 아래에 붙는 링크. 예) 자료: { 이름: "공략집", href: "파일.pdf" }
    (다른 사이트 주소는 새 탭에서 열립니다. href를 비우면 "준비 중")
    ================================================================ */
 const 게임 = [
@@ -71,7 +76,8 @@ const 게임 = [
   { 이름: "유산 경매", 그림: "🏺", 색: "#E6C98F",
     태그: ["역사②", "삼국~고려 문화유산", "태블릿 팀 대항전"],
     설명: "유산을 사고, 전시실을 꾸미고, 진품을 가려내라! 감정가·가품·세트 미션, 2~8팀.",
-    href: "yusan-auction.html" },
+    href: "yusan-auction.html",
+    자료: { 이름: "공략집", href: "yusan-guide.pdf" } },
   { 이름: "성분 낙하", 그림: "🪂", 색: "#BFE3FF",
     태그: ["3학년", "문장의 짜임과 양상", "교실 TV 반 대항전"],
     설명: "하늘에서 떨어지는 어절을 알맞은 문장 성분 바구니로! 2~5모둠, 순한맛부터 매운맛까지 100문장.",
@@ -89,9 +95,12 @@ document.getElementById("games").innerHTML = 게임.map(g => {
     <span class="info"><span class="tags">${g.태그.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</span>
       <h2 class="name">${esc(g.이름)}</h2><p class="desc">${esc(g.설명)}</p></span>
     <span class="go">${g.href ? (ext ? "플레이 ↗" : "플레이 ›") : "준비 중"}</span>`;
-  return g.href
-    ? `<a class="game" href="${esc(g.href)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>`
+  const card = g.href
+    ? `<a class="game${g.자료 ? " has-extra" : ""}" href="${esc(g.href)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${inner}</a>`
     : `<div class="game off">${inner}</div>`;
+  return g.자료
+    ? `<div class="gw">${card}<a class="extra" href="${esc(g.자료.href)}" target="_blank" rel="noopener">📖 ${esc(g.자료.이름)} ↗</a></div>`
+    : card;
 }).join("");
 </script>
 </body>

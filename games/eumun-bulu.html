@@ -952,6 +952,46 @@ body.pad .sline{margin-bottom:6px}
 .tour .adj>span{font-size:13px}
 .tour .adj button{padding:5px 12px;font-size:15px}
 .ctr .ringS.qt{position:absolute;right:-4px;top:-4px;width:70px;height:70px}.ctr .ringS.qt svg{width:70px;height:70px}.ctr .ringS.qt .n{font-size:26px}
+/* ===== 최종 결과 ===== */
+.fin .fhd{position:absolute;left:48px;top:58px;display:flex;align-items:baseline;gap:14px}
+.fin .fhd span{font-size:15px;font-weight:900;letter-spacing:5px;color:var(--y)}
+.fin .fhd h2{font-size:38px;font-weight:900;letter-spacing:-1.5px;color:#fff;line-height:1}
+.fin .fhd small{font-size:14px;font-weight:700;color:#BFE5CC}
+.podium{position:absolute;left:48px;top:118px;width:660px;height:372px;display:flex;align-items:flex-end;justify-content:center;gap:16px}
+.pcol{width:206px;display:flex;flex-direction:column;align-items:center;text-align:center;animation:rise .6s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes rise{from{opacity:0;transform:translateY(40px)}}
+.pcol .pan{width:66px;height:66px;border-radius:50%;background:var(--oc);border:4px solid var(--bm-k);display:grid;place-items:center;font-size:34px;box-shadow:3px 4px 0 rgba(0,0,0,.35)}
+.pcol .pnm{margin-top:8px;font-size:19px;font-weight:900;color:#fff;line-height:1.2;word-break:keep-all;max-width:200px}
+.pcol .pas{margin-top:4px;font-size:24px;font-weight:900;color:var(--y);letter-spacing:-.5px}
+.pcol .psub{font-size:11.5px;font-weight:700;color:#BFE5CC;margin:2px 0 8px}
+.pcol .pbase{width:100%;background:var(--cream);border:3px solid var(--bm-k);border-radius:10px 10px 0 0;display:flex;align-items:flex-start;justify-content:center;box-shadow:5px 0 0 rgba(0,0,0,.25)}
+.pcol .pbase b{font-size:46px;font-weight:900;color:var(--bm-k);line-height:1.3}
+.pcol.p1 .pbase{height:132px;background:linear-gradient(#FFE15A,#FFC400)}
+.pcol.p1 .pan{width:86px;height:86px;font-size:46px}
+.pcol.p1 .pnm{font-size:22px}
+.pcol.p1 .pas{font-size:30px}
+.pcol.p2 .pbase{height:96px;background:linear-gradient(#F2F2F2,#C9C9C9)}
+.pcol.p3 .pbase{height:70px;background:linear-gradient(#F3C99A,#D99A5E)}
+.rest2{position:absolute;left:48px;top:500px;width:660px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rrow{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.15);border-radius:12px;padding:8px 14px;color:#fff;font-weight:800;font-size:16px}
+.rrow .no{font-size:20px;font-weight:900;color:#BFE5CC;width:20px}
+.rrow .an{font-size:22px}
+.rrow .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rrow b{font-size:18px;color:var(--y)}
+.fside{position:absolute;left:740px;right:48px;top:118px;display:flex;flex-direction:column;gap:12px}
+.awd{display:flex;flex-direction:column;gap:8px}
+.aw1{display:flex;align-items:center;gap:10px;background:var(--cream);border:3px solid var(--bm-k);border-radius:12px;padding:8px 14px;box-shadow:4px 4px 0 rgba(0,0,0,.35)}
+.aw1 .ai{font-size:24px}
+.aw1 .al{font-size:14px;font-weight:900;color:var(--bm-red);width:86px}
+.aw1 .at{flex:1;min-width:0;font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aw1 .av{font-size:15px;font-weight:900;color:#1B5E20;white-space:nowrap}
+.lands2{background:rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 16px;color:#fff}
+.lands2 h4{font-size:15px;font-weight:900;color:var(--y);margin-bottom:8px}
+.lands2 .lb{display:flex;align-items:center;gap:10px;height:26px;font-size:14px;font-weight:800}
+.lands2 .lb .k{width:22px;font-size:18px;font-weight:900;text-align:center}
+.lands2 .lb i{display:block;height:13px;border-radius:7px;background:var(--y)}
+.lands2 p{font-size:14px;color:#BFE5CC}
+.aw1{color:var(--bm-k)}
 </style>
 </head>
 <body>
@@ -3001,18 +3041,28 @@ function viewTour(){
 }
 function viewResult(){
   const rk=rankList();
-  const st=S.stat.land; const all=CLANDS.map(k=>[k,st[k]||0]).sort((a,b)=>b[1]-a[1]); const mx=Math.max(1,...all.map(x=>x[1]));
+  const st=S.stat.land; const all=CLANDS.map(k=>[k,st[k]||0]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,7); const mx=Math.max(1,...all.map(x=>x[1]));
   const earnTop=S.teams.slice().sort((a,b)=>(S.stat.earn[b.id]||0)-(S.stat.earn[a.id]||0))[0];
   const accTop=S.teams.filter(t=>S.stat.tried[t.id]).sort((a,b)=>(S.stat.ok[b.id]/S.stat.tried[b.id])-(S.stat.ok[a.id]/S.stat.tried[a.id]))[0];
   const cntTop=S.teams.slice().sort((a,b)=>(S.stat.cnt[b.id]||0)-(S.stat.cnt[a.id]||0))[0];
-  return `<div class="stage dark felt" id="stage">${hdr()}<div class="tr">방 번호 ${S.code||''}</div>
-    <div style="position:absolute;left:60px;top:56px"><div style="font-size:15px;letter-spacing:5px;color:var(--y);font-weight:800">FINAL</div><h1 style="font-size:46px;font-weight:900;letter-spacing:-2px">최종 순위 · 총자산</h1></div>
-    <div class="rk2">${rk.map((x,i)=>`<div class="r ${i===0?'top':''}" style="animation-delay:${(rk.length-i)*0.25}s"><span class="no">${i+1}</span><span style="font-size:26px">${x.t.an}</span><span class="nm">${esc(x.t.name)}<br><small>현금 ${won(x.t.cash)} · 땅 ${landsOf(x.t.id).length}칸 · 건물 ${landsOf(x.t.id).reduce((a,k)=>a+L(k).lv,0)}채</small></span><b>${won(x.asset)}</b></div>`).join('')}</div>
-    <div class="fq"><h4>🚩 가장 많이 멈춘 땅</h4><div class="bars">${all.slice(0,8).map(([k,n])=>{ const o=L(k).o?T(L(k).o):null; return `<div><span>${k}</span><i style="width:${Math.round(n/mx*300)}px;${o?`background:${o.col}`:''}"></i>${n}번 ${o?o.an:''}</div>`; }).join('')}</div>
-      <div class="aw">${earnTop&&S.stat.earn[earnTop.id]?`💰 통행료 왕: <b>${earnTop.an} ${esc(earnTop.name)}</b> (${won(S.stat.earn[earnTop.id])})<br>`:''}${accTop?`🎯 소리 증명 왕: <b>${accTop.an} ${esc(accTop.name)}</b> (${Math.round(S.stat.ok[accTop.id]/S.stat.tried[accTop.id]*100)}%)<br>`:''}${cntTop&&S.stat.cnt[cntTop.id]?`🎲 음운 세기 왕: <b>${cntTop.an} ${esc(cntTop.name)}</b> (${S.stat.cnt[cntTop.id]}번 정답)`:''}</div></div>
+  const sub=t=>`현금 ${won(t.cash)} · 땅 ${landsOf(t.id).length}칸 · 건물 ${landsOf(t.id).reduce((a,k)=>a+L(k).lv,0)}채`;
+  const podOrder=[1,0,2].filter(i=>rk[i]);
+  const pod=podOrder.map(i=>{ const x=rk[i]; return `<div class="pcol p${i+1}" style="animation-delay:${(3-i)*0.45}s"><div class="pan" style="--oc:${x.t.col}">${x.t.an}</div><div class="pnm">${esc(x.t.name)}</div><div class="pas">${won(x.asset)}</div><div class="psub">${sub(x.t)}</div><div class="pbase"><b>${i+1}</b></div></div>`; }).join('');
+  const rest=rk.slice(3).map((x,j)=>`<div class="rrow"><span class="no">${j+4}</span><span class="an">${x.t.an}</span><span class="nm">${esc(x.t.name)}</span><b>${won(x.asset)}</b></div>`).join('');
+  const aw=[];
+  if (earnTop && S.stat.earn[earnTop.id]) aw.push(['💰','통행료 왕',earnTop,won(S.stat.earn[earnTop.id])]);
+  if (accTop) aw.push(['🎯','소리 증명 왕',accTop,Math.round(S.stat.ok[accTop.id]/S.stat.tried[accTop.id]*100)+'%']);
+  if (cntTop && S.stat.cnt[cntTop.id]) aw.push(['🎲','음운 세기 왕',cntTop,S.stat.cnt[cntTop.id]+'번 정답']);
+  return `<div class="stage dark felt fin" id="stage">${hdr()}<div class="tr">방 번호 ${S.code||''}</div>
+    <div class="fhd"><span>FINAL</span><h2>최종 순위</h2><small>총자산 = 현금 + 땅값 + 건물값</small></div>
+    <div class="podium">${pod}</div>
+    ${rest?`<div class="rest2">${rest}</div>`:''}
+    <div class="fside">
+      ${aw.length?`<div class="awd">${aw.map(a=>`<div class="aw1"><span class="ai">${a[0]}</span><span class="al">${a[1]}</span><span class="at">${a[2].an} ${esc(a[2].name)}</span><span class="av">${a[3]}</span></div>`).join('')}</div>`:''}
+      <div class="lands2"><h4>🚩 가장 많이 멈춘 땅</h4>${all.map(([k,n])=>{ const o=L(k).o?T(L(k).o):null; return `<div class="lb"><span class="k">${k}</span><i style="width:${Math.max(8,Math.round(n/mx*250))}px;${o?`background:${o.col}`:''}"></i><span class="n">${n}번 ${o?o.an:''}</span></div>`; }).join('')||'<p>아직 기록이 없어요</p>'}</div>
+    </div>
     ${bar(`<button class="pill" data-act="cleanup">방 정리하기</button>`)}</div>`;
 }
-
 /* 설명 · 모달 */
 function proofHTML(k, q, cur, act){ if(!q || q.type==='three' || !q.type) return qrowsHTML(k, cur, act); return `<div class="qrow"><div class="ql" style="font-size:17px;color:var(--ink)">${esc(q.q)}</div><div class="qo pq">${arr(q.opts).map((o,i)=>`<button class="${cur&&cur.pick===i?'on':''}" ${act}="${k}|pick|${i}">${esc(o)}</button>`).join('')}</div></div>`; }
 function qrowsHTML(k, cur, act){ return QS(k).map(q=>`<div class="qrow"><div class="ql">${q.label}</div><div class="qo">${q.opts.map((o,i)=>`<button class="${cur&&cur[q.key]===i?'on':''}" ${act}="${k}|${q.key}|${i}">${o}</button>`).join('')}</div></div>`).join(''); }

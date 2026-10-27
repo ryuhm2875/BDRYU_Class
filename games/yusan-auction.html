@@ -1917,6 +1917,9 @@ const ERAS = ['고구려','백제','신라','가야','통일 신라','발해','�
 const KINDS = ['불상과 조각','탑과 석조물','건축과 유적','무덤과 벽화','공예','도자·토기·기와','기록과 인쇄','회화'];
 const GRADES = ['국보','보물','사적','해외','그밖'];
 const GRADE_PT = {국보:5,보물:3,사적:3,해외:1,그밖:1};
+/* 기본 카드: 모든 팀이 같은 등급 조합을 받아요 (시대 묶음만 팀이 고름) */
+const STARTER_SLOTS = [{label:'국보', g:['국보']}, {label:'보물·사적', g:['보물','사적']}, {label:'그 밖', g:['해외','그밖']}];
+const STARTER_N = STARTER_SLOTS.length;
 const GRADE_LABEL = {국보:'국보',보물:'보물',사적:'사적',해외:'해외·북한',그밖:'그 밖'};
 
 /* ---------------- 작은 도구 ---------------- */
@@ -2124,16 +2127,24 @@ function setOk(m, owned){
 }
 function setNeed(m){ return [...(m.all||[]), ...(m.any||[]), ...(m.plus||[]), ...((m.pairs||[]).flat())]; }
 function makeCard(h, extra){ const id=newCardId(); S.cards[id]=Object.assign({hid:h.id, n:h.n, g:h.g, era:h.era, kind:h.kind, d:h.d, b:h.b, eras:h.eras, kinds:h.kinds}, extra||{}, {id}); return id; }
-function availReal(){ return HERITAGE.length - 5*Math.max(2,S.teams.length); }
+function starterReserve(){
+  const n=Math.max(2,S.teams.length), keep=new Set();
+  STARTER_SLOTS.forEach((sl,si)=>BUNDLES.forEach(b=>{
+    const want = si===STARTER_N-1 ? n : Math.ceil(n/2);
+    shuffle(HERITAGE.filter(h=>h.b===b && sl.g.includes(h.g))).slice(0,want).forEach(h=>keep.add(h.id)); }));
+  return keep;
+}
+function availReal(){ return HERITAGE.length - S._keep.size; }
 function genDeck(){
   const cfg=S.cfg, R=cfg.rounds;
   const spOn = cfg.specialFrom>0 && cfg.specialFrom<=R;
   const spRounds = spOn ? R-cfg.specialFrom+1 : 0;
   const nF = spOn ? Math.min(FAKES.length, Math.max(2, Math.round(R*cfg.perRound*0.1)), spRounds*cfg.perRound) : 0;
+  S._keep = starterReserve();
   const nReal = Math.min(R*cfg.perRound - nF, availReal());
   /* 지난 게임에 나온 유산은 뒤로 */
   const hist=new Set(ls.get(LS_H,[]).flat());
-  const fresh=shuffle(HERITAGE.filter(h=>!hist.has(h.id))), old=shuffle(HERITAGE.filter(h=>hist.has(h.id)));
+  const fresh=shuffle(HERITAGE.filter(h=>!hist.has(h.id)&&!S._keep.has(h.id))), old=shuffle(HERITAGE.filter(h=>hist.has(h.id)&&!S._keep.has(h.id)));
   const reals=fresh.concat(old).slice(0,nReal);
   const fakes=shuffle(FAKES).slice(0,nF);
   const rounds=Array.from({length:R},()=>[]);
@@ -2150,10 +2161,14 @@ function genDeck(){
 
 /* ---------- 기본 카드 뽑기 ---------- */
 function drawStarter(tid, g){
-  const t=T(tid); if(!t || (t.starter||0)>=5 || !BUNDLES.includes(g)) return;
+  const t=T(tid); if(!t || (t.starter||0)>=STARTER_N || !BUNDLES.includes(g)) return;
+  const sl=STARTER_SLOTS[t.starter||0];
   const taken=new Set(Object.values(S.cards).map(c=>c.hid));
-  let list=HERITAGE.filter(h=>h.b===g && !taken.has(h.id));
-  if(!list.length) list=HERITAGE.filter(h=>!taken.has(h.id));
+  const free=h=>!taken.has(h.id);
+  let list=HERITAGE.filter(h=>free(h) && h.b===g && sl.g.includes(h.g));
+  if(!list.length) list=HERITAGE.filter(h=>free(h) && sl.g.includes(h.g));   /* 그 시대에 남은 게 없으면 같은 등급에서 */
+  if(!list.length) list=HERITAGE.filter(h=>free(h) && h.b===g);
+  if(!list.length) list=HERITAGE.filter(free);
   if(!list.length) return;
   const id=makeCard(pick(list), {st:1, owner:tid});
   t.hand.push(id); t.starter=(t.starter||0)+1;
@@ -2432,7 +2447,7 @@ function viewSetup(){
   const opt=(label,key,vals,fmtv=v=>v)=>`<div class="opt"><label>${label}</label><div class="chips">${vals.map(v=>`<button class="chip ${c[key]===v?'on':''}" data-act="cfg" data-k="${key}" data-v="${v}">${fmtv(v)}</button>`).join('')}</div></div>`;
   const e=estimate(c), N=c.rounds*c.perRound;
   const warns=[];
-  if (N > HERITAGE.length-30) warns.push(`유산 카드는 모두 ${HERITAGE.length}장이에요. 팀마다 기본 카드 5장을 빼고 남는 만큼만 경매에 나와요.`);
+  if (N > HERITAGE.length-30) warns.push(`유산 카드는 모두 ${HERITAGE.length}장이에요. 팀마다 기본 카드 ${STARTER_N}장 몫을 남겨 두고 나머지만 경매에 나와요.`);
   if (e.total>50) warns.push('한 차시(50분)를 넘을 수 있어요. 카드 수나 입찰 시간을 줄여 보세요.');
   return `<div class="stage setup" id="stage">${hdr('게임 설정')}
     <div class="ttl"><div class="ep">SETTING</div><h2>오늘의 경매를 <mark>설정</mark>해요</h2></div>
@@ -2448,7 +2463,7 @@ function viewSetup(){
     </div>
     <div class="est"><p>예상 시간 (6팀 기준)</p><div class="ev ${e.total>50?'over':''}">약 ${e.total}분</div>
       ${e.rows.map(r=>`<div class="row"><span>${r[0]}</span><b>${Math.round(r[1]*10)/10}분</b></div>`).join('')}
-      <p style="margin-top:8px">경매 카드 ${N}장 · 팀마다 기본 카드 5장</p>
+      <p style="margin-top:8px">경매 카드 ${N}장 · 팀마다 기본 카드 ${STARTER_N}장 (국보 1 · 보물·사적 1 · 그 밖 1)</p>
       ${warns.map(w=>`<div class="warn">⚠️ ${w}</div>`).join('')}</div>
     ${bar(`<button class="pill" data-act="toIntro">← 처음</button><button class="pill k" data-act="openRoom">방 만들기 →</button>`)}</div>`;
 }
@@ -2472,12 +2487,12 @@ function viewLobby(){
     ${bar(`<button class="pill" data-act="toSetup">← 설정</button><button class="pill k" data-act="toStarter" ${S.teams.length<2?'disabled':''}>기본 카드 뽑기 →</button>`, connDot())}</div>`;
 }
 function viewStarter(){
-  const done=S.teams.every(t=>(t.starter||0)>=5);
+  const done=S.teams.every(t=>(t.starter||0)>=STARTER_N);
   return `<div class="stage" id="stage">${hdr(`방 ${S.code} · 기본 카드`)}
-    <div class="ttl"><div class="ep">STARTER</div><h2>${BUNDLES.join('·')} 중 <mark>5번</mark> 골라 뽑아요</h2></div>
+    <div class="ttl"><div class="ep">STARTER</div><h2>${BUNDLES.join('·')} 중 골라 <mark>${STARTER_N}번</mark> 뽑아요</h2></div>
     <div class="stboard">${S.teams.map(t=>{ const hs=t.hand.map(C).filter(c=>c.st);
-      return `<button class="strow" data-act="team" data-tid="${t.id}"><span class="an" style="font-size:24px">${t.an}</span><span class="nm">${esc(t.name)}</span><span class="sl">${[0,1,2,3,4].map(i=>hs[i]?`<span class="sc f">${esc(hs[i].b)}</span>`:`<span class="sc">?</span>`).join('')}</span></button>`; }).join('')}</div>
-    <div style="position:absolute;left:48px;bottom:84px;font-size:16px;color:var(--gray);font-weight:700">어떤 유산이 나올지는 뽑아 봐야 알아요. 세트 미션을 노린다면 묶음 고르기가 곧 작전! ${S.cfg.net==='off'?'· 팀 줄을 눌러 대신 뽑기':''}</div>
+      return `<button class="strow" data-act="team" data-tid="${t.id}"><span class="an" style="font-size:24px">${t.an}</span><span class="nm">${esc(t.name)}</span><span class="sl">${STARTER_SLOTS.map((sl,i)=>hs[i]?`<span class="sc f">${esc(hs[i].b)}</span>`:`<span class="sc">${sl.label}</span>`).join('')}</span></button>`; }).join('')}</div>
+    <div style="position:absolute;left:48px;bottom:84px;font-size:16px;color:var(--gray);font-weight:700">모든 팀이 국보 1 · 보물·사적 1 · 그 밖 1을 받아요. 시대 묶음은 팀이 골라요. 세트 미션을 노린다면 묶음 고르기가 곧 작전! ${S.cfg.net==='off'?'· 팀 줄을 눌러 대신 뽑기':''}</div>
     ${bar(`<button class="pill k" data-act="toEpisode" ${done?'':'disabled'}>${done?'1라운드 시작 →':'뽑는 중…'}</button>`, connDot())}</div>`;
 }
 function epTitle(r){
@@ -2622,7 +2637,7 @@ function modalHTML(){
   if (m.type==='rules') return `<div class="modal"><div class="mbox tutbox" data-stop="1">${tutHTML(UI.rp||0)}</div></div>`;
   if (m.type==='team'){ const t=T(m.tid); if(!t) return '';
     let body='', acts='';
-    if (S.phase==='starter' && (t.starter||0)<5) body=`<p>대신 뽑을 묶음을 고르세요. (${t.starter||0}/5)</p><div class="chips" style="gap:10px">${BUNDLES.map(g=>`<button class="pill y" data-act="pDraw" data-g="${g}">${g}</button>`).join('')}</div>`;
+    if (S.phase==='starter' && (t.starter||0)<STARTER_N) body=`<p>대신 뽑을 묶음을 고르세요. (${t.starter||0}/${STARTER_N} · 이번엔 ${STARTER_SLOTS[t.starter||0].label})</p><div class="chips" style="gap:10px">${BUNDLES.map(g=>`<button class="pill y" data-act="pDraw" data-g="${g}">${g}</button>`).join('')}</div>`;
     else if (S.phase==='auction' && S.au && S.au.status==='bid' && S.au.mode==='secret') { UI.kp=UI.kp??''; body=`<p>${esc(t.name)} 팀 대신 입찰 (최대 ${t.coins})</p><div class="kpv">${UI.kp||0}</div><div class="kp">${[1,2,3,4,5,6,7,8,9,'C',0,'←'].map(k=>`<button data-act="kp" data-k="${k}">${k}</button>`).join('')}</div>`; acts=`<button class="pill k" data-act="pBid">입찰</button>`; }
     else if (S.phase==='auction' && S.au && S.au.status==='bid' && S.au.mode==='open') body=`<p>${esc(t.name)} 팀 대신 올려 부르기 (현재 ${S.au.price}, 가진 코인 ${t.coins})</p><div class="chips" style="gap:10px">${[1,5,10].map(d=>`<button class="pill y" data-act="pRaise" data-d="${d}" ${S.au.price+d>t.coins||S.au.leader===t.id?'disabled':''}>+${d} → ${S.au.price+d}</button>`).join('')}</div>`;
     else if (S.phase==='market') body=`<p>${esc(t.name)} 팀이 살 유산 (${t.bought||0}/2, 5코인)</p><div class="chips">${S.unsold.filter(id=>!C(id).owner).map(id=>`<button class="pill y" data-act="pBuy" data-id="${id}" ${t.bought>=2||t.coins<5?'disabled':''}>${esc(C(id).n)}</button>`).join('')||'남은 유산이 없어요'}</div>`;
@@ -2857,8 +2872,8 @@ function padBody(p,t){
   if (ph==='lobby') return `<div class="wait"><div class="chars solo">${BD('smile','podium')}</div><h2>입장 완료!</h2><p>칠판을 보세요. 선생님이 시작하면 기본 카드를 뽑아요.</p><button class="bb y" data-help="0" style="max-width:420px;margin:18px auto 0">❓ 기다리는 동안 게임 설명 보기</button></div>`;
   if (ph==='starter'){
     const n=t.starter||0;
-    return `<div class="card"><h3>기본 카드 뽑기 <span style="color:var(--gray);font-size:16px">${n}/5</span></h3>
-      ${n<5?`<p style="font-size:16px;color:var(--gray);margin-bottom:12px;line-height:1.6">묶음을 고르면 그 시대의 유산이 하나 나와요. 세트 미션을 노려 보세요!</p><div class="grp">${BUNDLES.map(g=>`<button data-draw="${g}">${g}</button>`).join('')}</div>`:`<div class="notice">5장을 모두 뽑았어요! 다른 팀을 기다려요.</div>`}</div>
+    return `<div class="card"><h3>기본 카드 뽑기 <span style="color:var(--gray);font-size:16px">${n}/${STARTER_N}</span></h3>
+      ${n<STARTER_N?`<p style="font-size:16px;color:var(--gray);margin-bottom:12px;line-height:1.6">이번에 뽑을 등급은 <b style="color:var(--ink)">${STARTER_SLOTS[n].label}</b>! 시대 묶음을 고르면 그 안에서 하나 나와요. 모든 팀이 같은 등급을 받아요.</p><div class="grp">${BUNDLES.map(g=>`<button data-draw="${g}">${g}</button>`).join('')}</div>`:`<div class="notice">${STARTER_N}장을 모두 뽑았어요! 다른 팀을 기다려요.</div>`}</div>
       <div class="card"><h3>뽑은 유산</h3><p style="font-size:14px;color:var(--gray);margin-bottom:10px">시대와 종류는 마지막 전시실 꾸미기에서 직접 골라요.</p>${handHTML(t)}</div>`;
   }
   if (ph==='episode'){ const ms=arr(p.missions); const m=ms[ms.length-1];
@@ -2941,7 +2956,7 @@ function padClick(e){
     if(!name){ alert('팀 이름을 써 주세요.'); return; } if(!members.length){ alert('팀원 이름을 한 명 이상 써 주세요.'); return; }
     ls.set('ys-join-'+P.code,{name,members}); P.joining=true; send({t:'join', name, members}); renderPad(true);
     setTimeout(()=>{ if(!me()){ P.joining=false; renderPad(true); } }, 8000); return; }
-  const dr=tgt.closest('[data-draw]'); if(dr && t && (t.starter||0)<5){ if(P.drawPending>Date.now()) return; P.drawPending=Date.now()+700; send({t:'draw', g:dr.dataset.draw}); SND.pop(); dr.animate([{transform:'scale(.9)'},{transform:'none'}],{duration:200}); return; }
+  const dr=tgt.closest('[data-draw]'); if(dr && t && (t.starter||0)<STARTER_N){ if(P.drawPending>Date.now()) return; P.drawPending=Date.now()+700; send({t:'draw', g:dr.dataset.draw}); SND.pop(); dr.animate([{transform:'scale(.9)'},{transform:'none'}],{duration:200}); return; }
   const bd=tgt.closest('[data-bd]'); if(bd && t){ const v=bd.dataset.bd; P.bid = v==='max' ? t.coins : v==='0' ? 0 : Math.max(0, Math.min(t.coins, P.bid + (+v))); $('#bidV').textContent=P.bid; return; }
   if (tgt.id==='bidGo' && t && p.au){ P.sentBid=P.bid; send({t:'bid', amt:P.bid, card:p.au.card.id}); SND.pop(); const m=$('#bidMsg'); if(m) m.innerHTML=`<div class="notice">보내는 중… ${P.bid}코인</div>`; return; }
   const rs=tgt.closest('[data-rs]'); if(rs && t && p.au){ if(rs.disabled) return; send({t:'raise', to:p.au.price + (+rs.dataset.rs), card:p.au.card.id}); SND.pop(); rs.disabled=true; return; }

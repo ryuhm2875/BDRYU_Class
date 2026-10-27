@@ -132,15 +132,16 @@ function show(term) {
       <div class="unit-head">${u.단원 ? `<span class="unit-no">${u.단원}단원</span>` : ""}<h2 class="unit-title">${esc(u.제목)}</h2></div>
       <ul class="lessons">${u.소단원.map(l => {
         const f = Object.entries(l.files);
-        const pages = f.filter(([, h]) => /\.html?$/i.test(h));
+        const isPage = h => /\.html?$/i.test(h) || /^https?:/i.test(h);
+        const pages = f.filter(([, h]) => isPage(h));
         const many = pages.length > 1 || (pages.length === 1 && pages[0][0] !== "열기");
         const right = f.length
           ? f.map(([k, href]) => {
-              if (!/\.html?$/i.test(href)) {           // html이 아니면 내려받기
+              if (!isPage(href)) {           // html이 아니면 내려받기
                 const ext = href.split(".").pop();
                 return `<a class="chip dl" href="${esc(href)}" download="${esc(l.제목 + " " + k + "." + ext)}">${esc(k)} ↓</a>`;
               }
-              return `<a class="${many ? "chip" : ""}" href="${esc(href)}">${esc(k)}${many ? "" : " ›"}</a>`;
+              return `<a class="${many ? "chip" : ""}" href="${esc(href)}"${/^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : ""}>${esc(k)}${many ? "" : " ›"}</a>`;
             }).join("")
           : `<span class="soon">준비 중</span>`;
         return `<li class="lesson${f.length ? "" : " off"}">

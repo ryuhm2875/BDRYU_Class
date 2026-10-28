@@ -68,6 +68,8 @@ body.board{background:#cfcdc6;overflow:hidden}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .chip{padding:8px 15px;border-radius:30px;font-size:16px;font-weight:700;background:#fff;border:1.5px solid var(--line);min-width:44px}
 .chip.on{background:var(--ink);color:var(--y);border-color:var(--ink)}
+.chip.mfile{cursor:pointer;border-style:dashed;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill.mus{padding:11px 16px}
 .est{position:absolute;right:48px;top:150px;width:360px;background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:18px 22px}
 .est .ev{font-size:50px;font-weight:900;letter-spacing:-2px;margin:2px 0 6px}
 .est .ev.over{color:var(--red)}
@@ -1955,6 +1957,119 @@ const SND = { ctx:null, on:true,
   pop(){ this.beep(740,.07,'sine',.15); }
 };
 
+/* ================= 배경 음악 =================
+   기본: 코드로 연주하는 음악 (장면마다 분위기가 바뀜)
+   - lobby  : 경매장 대기실 재즈 (스윙, 워킹 베이스)
+   - auction: 긴장되는 경매 (빠른 베이스, 똑딱 시계)
+   - calm   : 문장 만들기·판정 (잔잔한 아르페지오)
+   - rank   : 순위 발표 (밝은 팡파르)
+   내 음악 파일을 고르면 장면과 상관없이 그 곡을 반복해서 틀어요. */
+const BGM = {
+  on:true, playing:false, scene:'lobby', want:'lobby', step:0, next:0, timer:null, ctx:null, bus:null, noise:null, custom:null, customName:'',
+  SC:{
+    lobby:{bpm:100, swing:.18, len:32},
+    auction:{bpm:124, swing:0, len:32},
+    calm:{bpm:80, swing:0, len:32},
+    rank:{bpm:112, swing:.1, len:32},
+  },
+  hz:m=>440*Math.pow(2,(m-69)/12),
+  init(){
+    this.ctx = SND.ctx = SND.ctx || new (window.AudioContext||window.webkitAudioContext)();
+    if (this.ctx.state==='suspended') this.ctx.resume();
+    if (this.bus) return;
+    const C=this.ctx; this.bus=C.createGain(); this.bus.gain.value=.42; this.bus.connect(C.destination);
+    const len=C.sampleRate*.5, b=C.createBuffer(1,len,C.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1; this.noise=b;
+  },
+  setScene(s){ this.want=s; },
+  start(){
+    if(!this.on) return;
+    if(this.custom){ this.custom.play().catch(()=>{}); return; }
+    try{ this.init(); }catch(e){ return; }
+    if(this.playing) return;
+    this.playing=true; this.scene=this.want; this.step=0; this.next=this.ctx.currentTime+.08;
+    this.timer=setInterval(()=>this.tick(),25);
+  },
+  stop(){ this.playing=false; clearInterval(this.timer); if(this.custom) this.custom.pause(); },
+  toggle(){ this.on=!this.on; if(this.on) this.start(); else this.stop(); return this.on; },
+  setFile(file){
+    const was=this.on; this.stop();
+    if(this.custom){ try{ URL.revokeObjectURL(this.custom.src); }catch(e){} }
+    if(file){ this.custom=new Audio(URL.createObjectURL(file)); this.custom.loop=true; this.custom.volume=.5; this.customName=file.name; }
+    else { this.custom=null; this.customName=''; }
+    if(was) this.start();
+  },
+  tick(){
+    const C=this.ctx;
+    while(this.next < C.currentTime+.12){
+      const sc=this.SC[this.scene], e=60/sc.bpm/2;
+      const sw=(this.step%2)? e*sc.swing : 0;
+      try{ this[this.scene](this.step, this.next+sw, e); }catch(err){}
+      this.next+=e; this.step=(this.step+1)%sc.len;
+      /* 장면 바꾸기는 마디 첫 박에서 */
+      if(this.want!==this.scene && this.step%8===0){ this.scene=this.want; this.step=0; }
+    }
+  },
+  /* ---- 소리 재료 ---- */
+  env(t,a,d,v){ const C=this.ctx,g=C.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+a); g.gain.exponentialRampToValueAtTime(.001,t+a+d); g.connect(this.bus); return g; },
+  osc(type,f,t,dur,dest){ const o=this.ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(f,t); o.connect(dest); o.start(t); o.stop(t+dur); return o; },
+  lp(freq,dest){ const f=this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=freq; f.connect(dest); return f; },
+  keys(ms,t,d,v=.05){ ms.forEach(m=>{ const g=this.env(t,.01,d,v); const f=this.lp(1800,g); this.osc('triangle',this.hz(m),t,d+.1,f); this.osc('sine',this.hz(m)*2,t,d*.5,(()=>{const q=this.ctx.createGain();q.gain.value=.2;q.connect(f);return q;})()); }); },
+  bass(m,t,d,v=.2){ const g=this.env(t,.008,d,v); this.osc('triangle',this.hz(m),t,d+.05,this.lp(900,g)); },
+  pluck(m,t,v=.07,d=.35){ const g=this.env(t,.004,d,v); this.osc('triangle',this.hz(m),t,d+.05,this.lp(2400,g)); },
+  pad(ms,t,d,v=.03){ ms.forEach(m=>{ const g=this.env(t,d*.35,d*.65,v); this.osc('sine',this.hz(m),t,d+.1,g); }); },
+  lead(m,t,d,v=.06){ const g=this.env(t,.02,d,v); this.osc('square',this.hz(m),t,d+.05,this.lp(2200,g)); },
+  kick(t,v=.3){ const C=this.ctx,g=this.env(t,.002,.15,v),o=C.createOscillator(); o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(45,t+.13); o.connect(g); o.start(t); o.stop(t+.2); },
+  hit(t,freq,q,d,v){ const C=this.ctx,s=C.createBufferSource(); s.buffer=this.noise; const f=C.createBiquadFilter(); f.type='bandpass'; f.frequency.value=freq; f.Q.value=q; const g=this.env(t,.002,d,v); s.connect(f); f.connect(g); s.start(t); s.stop(t+d+.05); },
+  tock(t,v=.05){ const g=this.env(t,.001,.04,v); this.osc('sine',1800,t,.06,g); },
+
+  /* ---- 장면 1: 경매장 대기실 재즈 (F장조 ii-V-I) ---- */
+  lobby(step,t,e){
+    const bar=Math.floor(step/8), i=step%8;
+    const CH=[[55,58,62,65],[52,55,58,64],[53,57,60,64],[50,53,57,60]];
+    const WALK=[[43,45,46,47],[48,50,52,49],[41,45,48,47],[38,40,41,42]];
+    if(i%2===0) this.bass(WALK[bar][i/2],t,e*1.7,.2);
+    if(i===0) this.keys(CH[bar],t,e*2.5,.04);
+    if(i===3) this.keys(CH[bar],t,e*1.2,.03);
+    if(i===6 && bar%2) this.keys(CH[bar],t,e*.8,.025);
+    this.hit(t,6000,1,.06,i%2?.03:.05);              /* 브러시 */
+    if(i===2||i===6) this.hit(t,1800,.7,.08,.08);     /* 스네어 브러시 */
+    const MEL=[[77,0,0,76,74,0,72,0],[70,0,72,0,74,0,0,0],[72,0,69,0,65,0,67,69],[0,0,65,0,0,0,0,0]];
+    const m=MEL[bar][i]; if(m) this.pluck(m,t,.05,e*2);
+  },
+  /* ---- 장면 2: 긴장되는 경매 (A단조) ---- */
+  auction(step,t,e){
+    const bar=Math.floor(step/8), i=step%8;
+    const ROOT=[45,41,38,40], CH=[[57,60,64],[57,60,65],[57,62,65],[56,59,64]];
+    this.bass(ROOT[bar]+(i%2?12:0),t,e*.8,.17);
+    if(i===0||i===3||i===6) this.keys(CH[bar],t,e*.7,.028);
+    if(i%2===0) this.tock(t,i===0?.06:.035);          /* 똑딱 시계 */
+    if(i===0||i===4) this.kick(t,.22);
+    this.hit(t,8000,1.5,.025,.035);
+    if(bar===3 && i>=4) this.pluck(76+(i-4),t,.04,e);  /* 끌어올리기 */
+  },
+  /* ---- 장면 3: 잔잔한 문장 만들기·판정 (C장조) ---- */
+  calm(step,t,e){
+    const bar=Math.floor(step/8), i=step%8;
+    const CH=[[60,64,67,71],[57,60,64,67],[53,57,60,64],[55,59,62,67]], B=[36,33,29,31];
+    if(i===0){ this.pad(CH[bar],t,e*8,.022); this.bass(B[bar],t,e*6,.12); }
+    const ARP=[0,1,2,3,2,1,2,1]; this.pluck(CH[bar][ARP[i]]+12,t,i===0?.05:.032,e*2.2);
+  },
+  /* ---- 장면 4: 순위 발표 팡파르 (C장조) ---- */
+  rank(step,t,e){
+    const bar=Math.floor(step/8), i=step%8;
+    const CH=[[60,64,67],[65,69,72],[67,71,74],[60,64,67]], B=[36,41,43,36];
+    if(i===0||i===3||i===6) this.keys(CH[bar].map(m=>m+12),t,e*.9,.035);
+    if(i%2===0) this.bass(B[bar]+(i===4?7:0),t,e*1.6,.18);
+    if(i===0||i===4) this.kick(t,.26); if(i===2||i===6) this.hit(t,1600,.7,.12,.15);
+    this.hit(t,7000,1.5,.03,.03);
+    const MEL=[[72,0,76,0,79,0,76,0],[77,0,76,0,74,0,72,0],[74,0,76,77,79,0,0,0],[84,0,79,0,76,0,72,0]];
+    const m=MEL[bar][i]; if(m) this.lead(m,t,e*1.6,.04);
+  },
+};
+const SCENE_OF = {intro:'lobby', setup:'lobby', lobby:'lobby', starter:'lobby', episode:'lobby', auction:'auction', market:'lobby', build:'calm', judge:'calm', rank:'rank'};
+
+
 /* ---------------- 조사 형태, 문장 이어 붙이기 ---------------- */
 function particleForm(w, prev){
   const f = PFORMS[w]; if(!f) return w;
@@ -2074,7 +2189,7 @@ const roomPath = code => `rooms/yusan-${code}`;
    선생님(칠판) — 게임 규칙의 주인
    ===================================================================== */
 const LS_T='ys-teacher-v1', LS_H='ys-history-v1';
-const DEFAULT_CFG = {rounds:3, perRound:8, bidSec:20, coins:100, specialFrom:2, finalMin:5, net:'on', sound:true};
+const DEFAULT_CFG = {rounds:3, perRound:8, bidSec:20, coins:100, specialFrom:2, finalMin:5, net:'on', sound:true, bgm:true};
 let S=null;            // 선생님 게임 상태
 let UI={modal:null};   // 화면만의 상태
 let unsubIn=null;
@@ -2401,7 +2516,7 @@ let lastAnim='';
 function boardFit(){ const st=$('#stage'); if(!st) return; const s=Math.min(innerWidth/1280, innerHeight/720); st.style.transform=`scale(${s})`; }
 function hdr(right=''){ return `<div class="hd"><b>류봉두</b>와 함께하는 역사수업</div>${right?`<div class="tr">${right}</div>`:''}`; }
 function connDot(){ if(S.cfg.net!=='on') return `<span>✋ 선생님 입력 모드</span>`; return `<span><i class="dot ${DB.ok?'':'off'}"></i>${DB.ok?`${S.teams.length}팀 · 연결 양호`:'연결 끊김 — 다시 잇는 중'}</span>`; }
-function bar(btns, left=''){ return `<div class="bar"><div class="lft">${left}</div>${btns}<button class="pill" data-act="rules">게임 설명</button><button class="pill" data-act="fs">전체 화면</button></div>`; }
+function bar(btns, left=''){ return `<div class="bar"><div class="lft">${left}</div>${btns}<button class="pill" data-act="rules">게임 설명</button><button class="pill mus" data-act="bgm" title="배경음 (B)">${S.cfg.bgm!==false?'🎵':'🔇'}</button><button class="pill" data-act="fs">전체 화면</button></div>`; }
 function teamList(mode){
   return `<div class="teams">${S.teams.map(t=>{
     let st='';
@@ -2463,7 +2578,7 @@ function viewSetup(){
       ${opt('가품 카드','specialFrom',[0,1,2,3],v=>v===0?'끄기':v+'라운드부터')}
       ${opt('전시실 꾸미기 시간','finalMin',[3,5,7],v=>v+'분')}
       ${opt('참여 방식','net',['on','off'],v=>v==='on'?'📱 태블릿 (온라인)':'✋ 선생님 입력')}
-      ${opt('효과음','sound',[true,false],v=>v?'켜기':'끄기')}
+      <div class="opt"><label>소리</label><div class="chips"><button class="chip ${c.sound?'on':''}" data-act="cfg" data-k="sound" data-v="${!c.sound}">🔊 효과음 ${c.sound?'켜짐':'꺼짐'}</button><button class="chip ${c.bgm!==false?'on':''}" data-act="cfg" data-k="bgm" data-v="${c.bgm===false}">🎵 배경음 ${c.bgm!==false?'켜짐':'꺼짐'}</button><label class="chip mfile" for="mfile">📁 ${BGM.custom?esc(BGM.customName.slice(0,14)):'내 음악 파일'}</label>${BGM.custom?'<button class="chip" data-act="mclear">기본 음악으로</button>':''}<input type="file" id="mfile" accept="audio/*" hidden></div></div>
     </div>
     <div class="est"><p>예상 시간 (6팀 기준)</p><div class="ev ${e.total>50?'over':''}">약 ${e.total}분</div>
       ${e.rows.map(r=>`<div class="row"><span>${r[0]}</span><b>${Math.round(r[1]*10)/10}분</b></div>`).join('')}
@@ -2663,6 +2778,7 @@ function renderBoard(){
   const keepBuilder = UI.modal && UI.modal.type==='builder' && UI.builder;
   const v = {intro:viewIntro, setup:viewSetup, lobby:viewLobby, starter:viewStarter, episode:viewEpisode, auction:viewAuction, market:viewMarket, build:viewBuild, judge:viewJudge, rank:viewRank}[S.phase] || viewIntro;
   if (keepBuilder){ /* 대신 만들기 중에는 화면을 새로 그리지 않음 */ updateTimers(); return; }
+  BGM.setScene(SCENE_OF[S.phase]||'lobby');
   let html=v(); const mh=modalHTML();
   html = html.replace(/<\/div>$/, mh+'</div>');
   $('#board').innerHTML = html; boardFit(); updateTimers();
@@ -2689,7 +2805,7 @@ function boardAct(act, d){
     case 'toSetup': if(S.phase==='intro' && S._resumable){ const old=S; S=newState(); S.cfg=old.cfg; } S.phase='setup'; S._resumable=false; break;
     case 'resume': { const saved=ls.get(LS_T,null); if(saved){ S=saved; S._resumable=false; if(S.au&&S.au.status==='reveal'){ S.au.status='bid'; S.au.deadline=0; } if(S.cfg.net==='on' && S.code){ DB.init().then(()=>{ listenRoom(); publish(); renderBoard(); }).catch(()=>{ UI.modal={type:'neterr'}; renderBoard(); }); } } break; }
     case 'toIntro': S.phase='intro'; break;
-    case 'cfg': { let v=d.v; if(cfgKeys.includes(d.k)) v=+v; else if(v==='true'||v==='false') v=(v==='true'); S.cfg[d.k]=v; SND.on=S.cfg.sound; break; }
+    case 'cfg': { let v=d.v; if(cfgKeys.includes(d.k)) v=+v; else if(v==='true'||v==='false') v=(v==='true'); S.cfg[d.k]=v; SND.on=S.cfg.sound; if(d.k==='bgm'){ BGM.on=v; if(v) BGM.start(); else BGM.stop(); } break; }
     case 'openRoom': UI.modal=null; openRoom(); return;
     case 'goOffline': S.cfg.net='off'; UI.modal=null; openRoom(); return;
     case 'addTeam': if(S.teams.length<MAX_TEAMS){ UI.modal={type:'addTeam'}; renderBoard(); setTimeout(()=>$('#atName')&&$('#atName').focus(),50); } return;
@@ -2726,6 +2842,8 @@ function boardAct(act, d){
     case 'detail': UI.modal={type:'detail'}; break;
     case 'cleanup': UI.modal={type:'confirm', title:'방을 정리할까요?', text:'서버에 저장된 팀 이름·팀원 이름·카드 기록을 모두 지우고 처음 화면으로 돌아갑니다.', ok:'cleanupGo', okLabel:'정리하기'}; break;
     case 'cleanupGo': { if(online()){ DB.api.remove(roomPath(S.code)); } if(unsubIn){unsubIn();unsubIn=null;} const cfg=S.cfg; S=newState(); S.cfg=cfg; UI.modal=null; ls.del(LS_T); break; }
+    case 'bgm': S.cfg.bgm=BGM.toggle(); break;
+    case 'mclear': BGM.setFile(null); break;
     case 'rules': UI.modal={type:'rules'}; UI.rp=0; renderBoard(); return;
     case 'credits': UI.modal={type:'credits'}; renderBoard(); return;
     case 'tGo': UI.rp=+d.tp; renderBoard(); return;
@@ -2762,10 +2880,15 @@ function bootBoard(){
     if (b.disabled) return;
     boardAct(b.dataset.act, b.dataset);
   });
+  BGM.on=S.cfg.bgm!==false;
+  const kick=()=>{ if(BGM.on && !BGM.playing && !(BGM.custom && !BGM.custom.paused)) BGM.start(); };
+  addEventListener('pointerdown', kick, true); addEventListener('keydown', kick, true);
+  $('#board').addEventListener('change', e=>{ if(e.target.id==='mfile'){ const f=e.target.files[0]; if(f){ BGM.setFile(f); S.cfg.bgm=BGM.on=true; BGM.start(); commit(); } } });
   addEventListener('resize', boardFit);
   addEventListener('keydown', e=>{
     if (e.target.tagName==='INPUT') return;
     if (e.key==='f'||e.key==='F') toggleFS();
+    if (e.key==='b'||e.key==='B') boardAct('bgm',{});
     if (e.key===' '){ e.preventDefault(); const p=$('.bar .pill.k:not([disabled])')||$('.bar .pill.y:not([disabled])'); if(p) p.click(); }
     if (e.key==='Escape' && UI.modal){ boardAct('closeModal',{}); }
   });

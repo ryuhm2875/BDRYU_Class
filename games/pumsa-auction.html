@@ -2534,7 +2534,7 @@ let lastAnim='';
 function boardFit(){ const st=$('#stage'); if(!st) return; const s=Math.min(innerWidth/1280, innerHeight/720); st.style.transform=`scale(${s})`; }
 function hdr(right=''){ return `<div class="hd"><b>류봉두</b>와 함께하는 국어수업</div>${right?`<div class="tr">${right}</div>`:''}`; }
 function connDot(){ if(S.cfg.net!=='on') return `<span>✋ 선생님 입력 모드</span>`; return `<span><i class="dot ${DB.ok?'':'off'}"></i>${DB.ok?`${S.teams.length}팀 · 연결 양호`:'연결 끊김 — 다시 잇는 중'}</span>`; }
-function bar(btns, left=''){ return `<div class="bar"><div class="lft">${left}</div>${btns}<button class="pill" data-act="rules">게임 설명</button><button class="pill mus" data-act="bgm" title="배경음 (B)">${S.cfg.bgm?'🎵':'🔇'}</button><button class="pill" data-act="fs">전체 화면</button></div>`; }
+function bar(btns, left=''){ return `<div class="bar"><div class="lft">${left}</div>${btns}<button class="pill" data-act="rules">게임 설명</button><button class="pill mus" data-act="bgm" title="배경음 (B)">${S.cfg.bgm!==false?'🎵':'🔇'}</button><button class="pill" data-act="fs">전체 화면</button></div>`; }
 function teamList(mode){
   return `<div class="teams">${S.teams.map(t=>{
     let st='';
@@ -2600,7 +2600,7 @@ function viewSetup(){
       ${opt('이름 카드','nameCards',[true,false],v=>v?'켜기':'끄기')}
       ${opt('최종 문장 시간','finalMin',[3,5,7],v=>v+'분')}
       ${opt('참여 방식','net',['on','off'],v=>v==='on'?'📱 태블릿 (온라인)':'✋ 선생님 입력')}
-      <div class="opt"><label>소리</label><div class="chips"><button class="chip ${c.sound?'on':''}" data-act="cfg" data-k="sound" data-v="${!c.sound}">🔊 효과음 ${c.sound?'켜짐':'꺼짐'}</button><button class="chip ${c.bgm?'on':''}" data-act="cfg" data-k="bgm" data-v="${!c.bgm}">🎵 배경음 ${c.bgm?'켜짐':'꺼짐'}</button><label class="chip mfile" for="mfile">📁 ${BGM.custom?esc(BGM.customName.slice(0,14)):'내 음악 파일'}</label>${BGM.custom?'<button class="chip" data-act="mclear">기본 음악으로</button>':''}<input type="file" id="mfile" accept="audio/*" hidden></div></div>
+      <div class="opt"><label>소리</label><div class="chips"><button class="chip ${c.sound?'on':''}" data-act="cfg" data-k="sound" data-v="${!c.sound}">🔊 효과음 ${c.sound?'켜짐':'꺼짐'}</button><button class="chip ${c.bgm!==false?'on':''}" data-act="cfg" data-k="bgm" data-v="${c.bgm===false}">🎵 배경음 ${c.bgm!==false?'켜짐':'꺼짐'}</button><label class="chip mfile" for="mfile">📁 ${BGM.custom?esc(BGM.customName.slice(0,14)):'내 음악 파일'}</label>${BGM.custom?'<button class="chip" data-act="mclear">기본 음악으로</button>':''}<input type="file" id="mfile" accept="audio/*" hidden></div></div>
     </div>
     <div class="est"><p>예상 시간 (6팀 기준)</p><div class="ev ${e.total>50?'over':''}">약 ${e.total}분</div>
       ${e.rows.map(r=>`<div class="row"><span>${r[0]}</span><b>${Math.round(r[1]*10)/10}분</b></div>`).join('')}

@@ -992,6 +992,116 @@ body.pad .sline{margin-bottom:6px}
 .lands2 .lb i{display:block;height:13px;border-radius:7px;background:var(--y)}
 .lands2 p{font-size:14px;color:#BFE5CC}
 .aw1{color:var(--bm-k)}
+/* ===== 게임 설명 (전자칠판용) ===== */
+.tutbox{background:var(--cream);border:4px solid var(--bm-k)}
+.tutbox .tp{display:flex;flex-direction:column}
+.tuh{border-bottom:3px double var(--bm-k);padding-bottom:8px;margin-bottom:16px}
+.tun{display:inline-block;font-size:14px;font-weight:900;letter-spacing:3px;background:var(--bm-red);color:#fff;border-radius:6px;padding:2px 10px}
+.tuh h2{font-size:36px;font-weight:900;letter-spacing:-1.5px;margin-top:6px;line-height:1.15}
+.tuh p{font-size:18px;font-weight:700;color:#6b5a2a;margin-top:4px}
+.tu3{display:flex;align-items:stretch;justify-content:center;gap:14px}
+.tuc{flex:1;max-width:280px;background:#fff;border:3px solid var(--bm-k);border-radius:18px;box-shadow:5px 5px 0 var(--bm-k);padding:16px;text-align:center}
+.tuc .ic{font-size:52px;line-height:1.1}
+.tuc b{display:block;font-size:25px;font-weight:900;margin:6px 0 4px}
+.tuc p{font-size:19px;font-weight:700;line-height:1.5;color:#333}
+.tua{align-self:center;font-size:34px;font-weight:900;color:var(--bm-red)}
+.tu3.sm .tuc{padding:10px 12px}.tu3.sm .ic{font-size:36px}.tu3.sm b{font-size:22px}.tu3.sm p{font-size:17px}
+.tuwin{margin-top:auto;background:var(--bm-k);color:#fff;border-radius:14px;padding:12px 18px;font-size:21px;font-weight:800;text-align:center}
+.tuwin b{color:var(--y)}
+.tu2{display:flex;gap:26px;align-items:center;flex:1;min-height:0}
+.tu2.even>*{flex:1}
+.tumap{width:360px;height:360px;flex:none;position:relative}
+.tumap .brd{transform:scale(.577);transform-origin:0 0;left:0;top:0;filter:drop-shadow(0 6px 10px rgba(0,0,0,.3))}
+.tumap .ctr{display:flex}
+.tumc{font-size:60px;line-height:1.1;text-align:center}.tumc b{font-size:30px}
+.tuleg{flex:1;display:flex;flex-direction:column;gap:9px}
+.lg{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #D8CBA0;border-radius:12px;padding:6px 12px}
+.lg .em{font-size:28px;width:40px;text-align:center}
+.lg .sw2{display:grid;grid-template-columns:repeat(5,7px);gap:1px;width:40px}.lg .sw2 i{height:28px;border-radius:2px}
+.lg b{display:block;font-size:20px;font-weight:900}
+.lg small{display:block;font-size:15px;font-weight:700;color:#6b5a2a}
+.tufake{width:330px;flex:none;background:#fff;border:3px solid var(--bm-k);border-radius:16px;padding:12px 14px;box-shadow:5px 5px 0 var(--bm-k)}
+.tufake .fh{font-size:18px;font-weight:900;display:flex;justify-content:space-between;margin-bottom:6px}
+.tufake .fh span{color:var(--bm-red)}
+.tufake .fr{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1.5px dashed #D8CBA0}
+.tufake .fr b{font-size:24px;font-weight:900;flex:1;text-align:center}
+.tufake .fb{font-size:14px;font-weight:900;border:2px solid var(--bm-k);border-radius:8px;padding:2px 6px}
+.tufake .fgo{margin-top:10px;background:var(--bm-red);color:#fff;text-align:center;border-radius:12px;padding:8px;font-size:18px;font-weight:900;border:2.5px solid var(--bm-k)}
+.tut1{display:inline-flex;align-items:center;justify-content:center;position:relative;width:46px;height:50px;border:2.5px solid var(--bm-k);border-radius:6px;background:var(--cream);font-size:26px;font-weight:900;overflow:hidden;padding-top:8px;vertical-align:middle;margin:0 2px}
+.tut1 i{position:absolute;left:0;right:0;top:0;height:9px;background:var(--gc);border-bottom:2px solid var(--bm-k)}
+.tuol{flex:1;list-style:none;counter-reset:n;display:flex;flex-direction:column;gap:10px}
+.tuol li{counter-increment:n;font-size:21px;font-weight:800;line-height:1.45;padding-left:44px;position:relative}
+.tuol li::before{content:counter(n);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--bm-k);color:var(--y);display:grid;place-items:center;font-size:17px}
+.tuol li small{font-size:16px;color:#6b5a2a}
+.tuol li.tip{counter-increment:none;padding-left:0;background:#FFF3B0;border:2px dashed #CDB98A;border-radius:12px;padding:8px 12px;font-size:19px}
+.tuol li.tip::before{display:none}
+.tuex{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 0 6px}
+.tuex .dw{font-size:40px;font-weight:900;background:#fff;border:3px solid var(--bm-k);border-radius:14px;padding:4px 16px;box-shadow:4px 4px 0 var(--bm-k);margin-right:4px}
+.tuex .eq{font-size:30px;font-weight:900;color:var(--bm-red);margin:0 6px}
+.tuex .pc{width:46px;height:52px;border:2.5px solid var(--bm-k);border-radius:10px;background:#fff;display:grid;place-items:center;font-size:28px;font-weight:900}
+.tuex .pc.sil{opacity:.35;border-style:dashed;text-decoration:line-through}
+.tuex .gap{width:8px}
+.tuex .cnt8{font-size:40px;font-weight:900;color:#fff;background:var(--bm-red);border:3px solid var(--bm-k);border-radius:14px;padding:2px 14px}
+.tunote{text-align:center;font-size:19px;font-weight:800;margin:4px 0 14px;color:#6b5a2a}
+.tunote b{color:var(--bm-red)}
+.tu4{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1}
+.tud{background:#fff;border:3px solid var(--bm-k);border-radius:16px;box-shadow:5px 5px 0 var(--bm-k);overflow:hidden}
+.tud .hd2{font-size:24px;font-weight:900;padding:8px 16px;background:#EDE6D2;border-bottom:3px solid var(--bm-k)}
+.tud.r .hd2{background:#FFD9D9}.tud.g .hd2{background:#DDF3DD}.tud.y .hd2{background:#FFE89A}
+.tud p{padding:10px 16px;font-size:21px;font-weight:800;line-height:1.5}
+.tud p small{font-size:16px;color:#6b5a2a}
+.tuproof{width:250px;flex:none;display:flex;flex-direction:column;align-items:center;gap:10px;background:#fff;border:3px solid var(--bm-k);border-radius:16px;box-shadow:5px 5px 0 var(--bm-k);padding:20px 14px;text-align:center}
+.tuproof .tut1{width:96px;height:110px;font-size:62px;padding-top:16px}.tuproof .tut1 i{height:18px}
+.tuproof small{display:block;font-size:15px;font-weight:800;color:#6b5a2a}
+.tuproof b{display:block;font-size:22px;font-weight:900}
+.tuproof em{font-style:normal;font-size:32px;font-weight:900;color:var(--bm-red)}
+.tuq{flex:1;display:flex;flex-direction:column;gap:8px}
+.q1{display:flex;gap:12px;align-items:flex-start;background:#fff;border:2px solid #D8CBA0;border-radius:12px;padding:8px 14px}
+.q1 .qn{font-size:28px;font-weight:900;color:var(--bm-red);line-height:1.1}
+.q1 b{display:block;font-size:21px;font-weight:900}
+.q1 small{display:block;font-size:17px;font-weight:700}
+.q1 i{display:block;font-style:normal;font-size:15px;font-weight:800;color:#1B5E20;margin-top:2px}
+.tuq .tunote{margin:2px 0 0}
+.tuk{align-self:stretch;background:linear-gradient(160deg,#FFE15A,#FFC400);border:3px solid var(--bm-k);border-radius:16px;box-shadow:5px 5px 0 var(--bm-k);padding:14px 16px}
+.tuk.ev{background:linear-gradient(160deg,#FFF3B0,#FFD966)}
+.tuk .kh{font-size:20px;font-weight:900;display:flex;justify-content:space-between;align-items:center}
+.tuk .kh span{font-size:14px;background:var(--bm-k);color:var(--y);border-radius:10px;padding:2px 10px}
+.tuk>b{display:block;font-size:26px;font-weight:900;margin:10px 0 8px}
+.tuk .ko{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.tuk .ko span{background:#fff;border:2px solid var(--bm-k);border-radius:10px;padding:6px 10px;font-size:20px;font-weight:900}
+.tuk .ko span.on{background:var(--bm-red);color:#fff}
+.tuk p{font-size:19px;font-weight:800;line-height:1.55}
+.tuk .evd{background:#fff;border-radius:10px;padding:6px 10px;margin-bottom:6px}
+.tutbox mark{background:linear-gradient(transparent 55%,var(--y) 55%)}
+/* 태블릿에서 볼 때 */
+.pmodal .tutbox{border-width:3px}
+.pmodal .tuh h2{font-size:26px}.pmodal .tuh p{font-size:15px}
+.pmodal .tu3,.pmodal .tu2{flex-direction:column;align-items:stretch;gap:10px}
+.pmodal .tua{transform:rotate(90deg);text-align:center;font-size:22px}
+.pmodal .tuc{max-width:none}
+.pmodal .tumap{display:none}
+.pmodal .tufake,.pmodal .tuproof{width:auto}
+.pmodal .tu4{grid-template-columns:1fr}
+.pmodal .tuex{flex-wrap:wrap}
+.pmodal .tuex .pc{width:34px;height:40px;font-size:20px}
+.pmodal .tuwin{margin-top:12px;font-size:17px}
+.tuleg{gap:6px}
+.lg{padding:4px 12px}
+.lg b{font-size:19px}.lg small{font-size:14px}
+.lg .em{font-size:24px}
+.tu2{align-items:flex-start}
+.tuc .ic{font-size:60px}.tuc b{font-size:27px}.tuc p{font-size:20px}
+.tu3{margin-top:8px}
+.tuh{margin-bottom:12px;padding-bottom:6px}
+.tuh h2{font-size:33px}
+.tuh p{font-size:17px}
+.tumap{width:330px;height:330px}
+.tumap .brd{transform:scale(.529)}
+.tuleg{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-self:center}
+.lg{flex-direction:column;align-items:flex-start;gap:4px;padding:10px 12px;min-height:96px}
+.lg .em,.lg .sw2{width:auto}
+.lg b{font-size:21px}.lg small{font-size:15px}
+.lg{min-height:0;padding:8px 12px}.tuleg{gap:8px}
 </style>
 </head>
 <body>
@@ -3066,17 +3176,75 @@ function viewResult(){
 /* 설명 · 모달 */
 function proofHTML(k, q, cur, act){ if(!q || q.type==='three' || !q.type) return qrowsHTML(k, cur, act); return `<div class="qrow"><div class="ql" style="font-size:17px;color:var(--ink)">${esc(q.q)}</div><div class="qo pq">${arr(q.opts).map((o,i)=>`<button class="${cur&&cur.pick===i?'on':''}" ${act}="${k}|pick|${i}">${esc(o)}</button>`).join('')}</div></div>`; }
 function qrowsHTML(k, cur, act){ return QS(k).map(q=>`<div class="qrow"><div class="ql">${q.label}</div><div class="qo">${q.opts.map((o,i)=>`<button class="${cur&&cur[q.key]===i?'on':''}" ${act}="${k}|${q.key}|${i}">${o}</button>`).join('')}</div></div>`).join(''); }
+const cfgv=(k,d)=> (typeof S!=='undefined' && S && S.cfg) ? S.cfg[k] : (typeof P!=='undefined' && P.pub && P.pub.cfg && P.pub.cfg[k]!=null ? P.pub.cfg[k] : d);
+const tuHead=(n,t,sub='')=>`<div class="tuh"><span class="tun">STEP ${n} / 7</span><h2>${t}</h2>${sub?`<p>${sub}</p>`:''}</div>`;
+const tuTile=(k,extra='')=>`<span class="tut1" style="--gc:${gcol(k)}"><i></i>${k}${extra}</span>`;
 const TUT = [
-  ()=>`<div class="tut-h">1 / 4</div><div class="tut-t">이렇게 놀아요</div>
-    <div class="flow"><div class="fstep"><div class="i">🏠</div><b>① 땅 사기</b><span>자음 19개가<br>곧 땅이에요</span></div><div class="farr">→</div>
-    <div class="fstep"><div class="i">🎲</div><b>② 단어 주사위</b><span>음운 개수만큼<br>말이 움직여요</span></div><div class="farr">→</div>
-    <div class="fstep"><div class="i">💰</div><b>③ 통행료</b><span>소리를 증명해야<br>받을 수 있어요</span></div></div>`,
-  ()=>`<div class="tut-h">2 / 4</div><div class="tut-t">땅 경매 · 몰래 값을 써요</div>
-    <p style="font-size:20px;line-height:1.8;font-weight:700">처음엔 땅 10칸만 5칸씩 매물로 나와요. 칸마다 <mark>몰래</mark> 값을 써요.<br>가장 높게 쓴 모둠이 가져가요. 같으면 먼저 낸 모둠!<br>못 산 땅은 여행하다 그 칸에 멈추면 ${LAND_FIX}원에 살 수 있어요.</p>`,
-  ()=>`<div class="tut-h">3 / 4</div><div class="tut-t">단어 주사위 · 음운 수만큼 달려요</div>
-    <p style="font-size:20px;line-height:1.8;font-weight:700">주사위 대신 낱말이 나와요. <mark>${S?S.cfg.countSec:5}초 안에</mark> 음운 개수를 맞혀요.<br>‘탕수육’ → ㅌ ㅏ ㅇ ㅅ ㅜ ㅇ ㅠ ㄱ = 8칸 (첫소리 ㅇ은 안 세요!)<br>맞히면 <mark>±1칸 조정권</mark>! 다른 모둠도 같이 세서 맞히면 +${ALL_BONUS}원!</p>`,
-  ()=>`<div class="tut-h">4 / 4</div><div class="tut-t">도착한 칸에서는?</div>
-    <p style="font-size:19px;line-height:1.75;font-weight:700">🚩 남의 땅: 땅 주인이 그 소리를 증명해야 통행료를 받아요. 문제는 차례마다 바뀌어요!<br>　 (위치·방법·세기 / 같은 자음 찾기 / 바른 설명 찾기) 못 받은 돈 → 💝 사회복지기금<br>🏠 내 땅: 건물을 지어 통행료를 올려요 · 빈 땅: 사기<br>🔑 황금열쇠: 음운 퀴즈(+${QUIZ_WIN} / ${QUIZ_LOSE}) 또는 깜짝 사건<br>🏦 출발 지나기 +${SALARY} · 🍋 유자 농장 +${FARM} · 🚀 우주여행: 원하는 칸으로!</p>`
+  ()=>tuHead(1,'이렇게 하면 이겨요','땅을 사고, 단어 주사위로 달리고, 소리를 증명해 돈을 모아요')+`
+    <div class="tu3">
+      <div class="tuc"><div class="ic">🏠</div><b>① 땅 사기</b><p>자음 19개가 곧 땅!<br>경매로 땅을 사요</p></div><div class="tua">➜</div>
+      <div class="tuc"><div class="ic">🎲</div><b>② 단어 주사위</b><p>나온 낱말의<br><mark>음운 개수</mark>만큼 이동</p></div><div class="tua">➜</div>
+      <div class="tuc"><div class="ic">💰</div><b>③ 통행료</b><p>내 땅에 손님이 오면<br><mark>소리를 증명</mark>하고 받기</p></div>
+    </div>
+    <div class="tuwin">🏆 모둠마다 <b>${cfgv('rounds',5)}번</b>씩 차례가 돌면 끝! <b>총자산</b>(현금 + 땅값 + 건물값)이 가장 많은 모둠이 우승</div>`,
+  ()=>tuHead(2,'게임판 살펴보기','판 둘레 28칸을 말이 시계 방향으로 돌아요')+`
+    <div class="tu2">
+      <div class="tumap">${boardHTML({}, '<div class="tumc">🎲<br><b>단어 주사위</b></div>')}</div>
+      <div class="tuleg">
+        <div class="lg"><span class="sw2">${['ㅂ','ㄷ','ㅈ','ㄱ','ㅎ'].map(k=>`<i style="background:${gcol(k)}"></i>`).join('')}</span><div><b>자음 땅 19칸</b><small>색 띠 = 소리 나는 위치 (입술 · 잇몸 · 센입천장 · 여린입천장 · 목청)</small></div></div>
+        <div class="lg"><span class="em">🔑</span><div><b>황금열쇠 5칸</b><small>음운 퀴즈 또는 깜짝 사건</small></div></div>
+        <div class="lg"><span class="em">🏦</span><div><b>출발</b><small>지나갈 때마다 월급 +${SALARY}원</small></div></div>
+        <div class="lg"><span class="em">💝</span><div><b>사회복지기금</b><small>멈추면 쌓인 돈을 몽땅!</small></div></div>
+        <div class="lg"><span class="em">🚀</span><div><b>우주여행</b><small>원하는 칸으로 날아가요</small></div></div>
+        <div class="lg"><span class="em">🍋</span><div><b>유자 농장</b><small>일손 돕고 +${FARM}원</small></div></div>
+      </div>
+    </div>`,
+  ()=>tuHead(3,'땅 경매','게임을 시작하기 전에 땅을 먼저 사요')+`
+    <div class="tu2">
+      <div class="tufake"><div class="fh">🔒 비밀 입찰 <span>30초</span></div>
+        ${[['ㅈ',50],['ㅁ',0],['ㅇ',150]].map(([k,v])=>`<div class="fr">${tuTile(k)}<b>${v}</b><span class="fb">−10</span><span class="fb">+10</span><span class="fb">+50</span></div>`).join('')}
+        <div class="fgo">🔒 입찰 확정</div></div>
+      <ol class="tuol">
+        <li>땅 <b>10칸</b>이 <b>5칸씩 두 번</b> 매물로 나와요.</li>
+        <li>태블릿에서 칸마다 <mark>몰래</mark> 값을 써요. <small>10원 단위, 안 사려면 0원</small></li>
+        <li>가장 높게 쓴 모둠이 가져가요. <small>같은 값이면 먼저 낸 모둠</small></li>
+        <li>못 판 땅은 여행하다 그 칸에 멈추면 <b>${LAND_FIX}원</b>에 살 수 있어요.</li>
+        <li class="tip">💡 낱말에 자주 나오는 자음일수록 손님이 자주 와요!</li>
+      </ol>
+    </div>`,
+  ()=>tuHead(4,'단어 주사위 · 음운 세기','주사위 대신 낱말이 나와요. 음운 개수만큼 앞으로!')+`
+    <div class="tuex"><span class="dw">탕수육</span><span class="eq">➜</span>
+      <span class="pc">ㅌ</span><span class="pc">ㅏ</span><span class="pc">ㅇ</span><span class="gap"></span><span class="pc">ㅅ</span><span class="pc">ㅜ</span><span class="gap"></span><span class="pc sil">ㅇ</span><span class="pc">ㅠ</span><span class="pc">ㄱ</span>
+      <span class="eq">=</span><span class="cnt8">8칸</span></div>
+    <div class="tunote">첫소리 <b>ㅇ</b>은 소리가 없어 안 세요. 받침 <b>ㅇ</b>은 세요!</div>
+    <div class="tu3 sm">
+      <div class="tuc"><div class="ic">⏱️</div><b>${cfgv('countSec',5)}초 안에</b><p>음운 개수를<br>숫자판으로 눌러요</p></div>
+      <div class="tuc"><div class="ic">⭕</div><b>맞히면</b><p><mark>±1칸 조정권</mark><br>틀려도 정답만큼은 가요</p></div>
+      <div class="tuc"><div class="ic">👥</div><b>다른 모둠도</b><p>같이 세서 맞히면<br><mark>+${ALL_BONUS}원</mark></p></div>
+    </div>`,
+  ()=>tuHead(5,'도착한 칸에서는?','말이 멈춘 칸에 따라 할 일이 달라요')+`
+    <div class="tu4">
+      <div class="tud r"><div class="hd2">🚩 남의 땅</div><p>통행료를 내요.<br><small>땅 주인이 소리를 증명해야 받을 수 있어요 → STEP 6</small></p></div>
+      <div class="tud"><div class="hd2">🏳️ 빈 땅</div><p><b>${LAND_FIX}원</b>에 살 수 있어요.<br><small>안 사고 지나가도 돼요</small></p></div>
+      <div class="tud g"><div class="hd2">🏠 우리 땅</div><p>건물을 지어요 (<b>${BUILD_COST}원</b>, 최대 3채)<br><small>통행료 ×2.5 → ×4 → ×6 으로 껑충!</small></p></div>
+      <div class="tud y"><div class="hd2">🔑 황금열쇠</div><p>음운 퀴즈 또는 깜짝 사건<br><small>→ STEP 7</small></p></div>
+    </div>`,
+  ()=>tuHead(6,'통행료는 증명해야 받아요','손님이 오면 땅 주인 태블릿에 문제가 떠요 · 문제 모양은 올 때마다 바뀌어요')+`
+    <div class="tu2">
+      <div class="tuproof">${tuTile('ㅌ')}<div><small>도착!</small><b>ㅌ 땅 통행료</b><em>₩${Math.round(cfgv('toll',80))}</em></div></div>
+      <div class="tuq">
+        <div class="q1"><span class="qn">①</span><div><b>위치 · 방법 · 세기 고르기</b><small>잇몸소리 · 파열음 · 거센소리</small><i>다 맞히면 전부 / 하나 틀리면 절반 / 둘 이상 틀리면 0원</i></div></div>
+        <div class="q1"><span class="qn">②</span><div><b>같은 자음 찾기</b><small>‘ㅌ’과 소리 내는 방법이 같은 자음은? → ㄱ</small><i>맞히면 전부 / 틀리면 0원</i></div></div>
+        <div class="q1"><span class="qn">③</span><div><b>바른 설명 찾기</b><small>‘ㅌ’에 대한 설명으로 맞는 것은?</small><i>맞히면 전부 / 틀리면 0원</i></div></div>
+        <div class="tunote">못 받은 돈은 💝 <b>사회복지기금</b>에 쌓여요</div>
+      </div>
+    </div>`,
+  ()=>tuHead(7,'황금열쇠 · 게임 끝','열어 보기 전까지는 무엇이 나올지 몰라요')+`
+    <div class="tu2 even">
+      <div class="tuk"><div class="kh">🔑 음운 퀴즈 <span>열에 여섯 번</span></div><b>다음 중 파찰음은?</b><div class="ko"><span>① ㅌ</span><span class="on">② ㅊ</span><span>③ ㅆ</span><span>④ ㅋ</span></div><p>맞히면 <mark>+${QUIZ_WIN}원</mark> · 틀리면 <mark>${QUIZ_LOSE}원</mark></p></div>
+      <div class="tuk ev"><div class="kh">🔔 깜짝 사건 <span>열에 네 번</span></div><b>울림소리 특구 지정!</b><p class="evd">목청이 떨리는 땅의 통행료가 한 바퀴 동안 2배</p><p>체계표의 말로 나와요. <mark>어느 땅일까?</mark><br>→ ${['ㄴ','ㄹ','ㅁ','ㅇ'].map(k=>tuTile(k)).join('')}</p></div>
+    </div>
+    <div class="tuwin">🏁 모둠마다 <b>${cfgv('rounds',5)}번</b>씩 하면 끝 → <b>총자산</b>으로 순위 발표!</div>`
 ];
 function tutHTML(i){ return `<div class="tp">${TUT[i]()}</div><div class="tnav"><button class="pill" data-tp="${i-1}" data-act="tGo" ${i<=0?'disabled':''}>◀ 이전</button><div class="dots">${TUT.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>${i<TUT.length-1?`<button class="pill k" data-tp="${i+1}" data-act="tGo">다음 ▶</button>`:`<button class="pill k" data-act="closeModal" data-tclose="1">알겠어요! 시작!</button>`}</div>`; }
 function modalHTML(){

@@ -1102,6 +1102,14 @@ body.pad .sline{margin-bottom:6px}
 .lg .em,.lg .sw2{width:auto}
 .lg b{font-size:21px}.lg small{font-size:15px}
 .lg{min-height:0;padding:8px 12px}.tuleg{gap:8px}
+.kqc.all{background:linear-gradient(160deg,#B9E6FF,#7CC7F2)}
+.kqc .gchips{justify-content:center;margin-top:8px}
+.kqc .gchips span{width:32px;height:32px;font-size:16px}
+.keycard.chal{background:linear-gradient(160deg,#FFD6E0,#FF9FB8)}
+.keycard.chal::before{content:"황금열쇠 · 도전"}
+.keycard .kq small{font-size:12px;color:var(--gray)}
+.kqc + .ringS{position:relative!important;right:auto;top:auto}
+.ctr .kqc + .ringS.qt{position:absolute!important;right:-4px;top:-4px;margin:0}
 </style>
 </head>
 <body>
@@ -2527,7 +2535,42 @@ const QUIZ = [
   ['‘개’와 ‘걔’는 무엇이 다를까?', ['단모음과 이중 모음','평순 모음과 원순 모음','고모음과 저모음','예사소리와 된소리']],
   ['‘온양’의 ㅗ와 ‘언양’의 ㅓ는 무엇이 다를까?', ['원순 모음과 평순 모음','전설 모음과 후설 모음','고모음과 저모음','단모음과 이중 모음']]
 ];
-const QUIZ_WIN=50, QUIZ_LOSE=-30;
+const QUIZ_WIN=50, QUIZ_LOSE=-30, ALLQ_WIN=40, CHAL_WIN=60;
+const VOW = {'ㅣ':[0,0,0],'ㅟ':[0,0,1],'ㅡ':[1,0,0],'ㅜ':[1,0,1],'ㅔ':[0,1,0],'ㅚ':[0,1,1],'ㅓ':[1,1,0],'ㅗ':[1,1,1],'ㅐ':[0,2,0],'ㅏ':[1,2,0]};
+/* 황금열쇠 퀴즈: 문제 은행 + 그때그때 새로 만드는 문제 (첫 번째 보기가 정답) */
+function genQuiz(){
+  const r=Math.random(), pool=wordPool();
+  if (r<0.3){ const [q,o]=pick(QUIZ); return {q,o}; }
+  if (r<0.48){ const w=pick(pool), n=countOf(w); const o=[n]; [n+1,n-1,n+2,n-2,n+3].forEach(x=>{ if(x>0 && o.length<4 && !o.includes(x)) o.push(x); }); return {q:`‘${w}’의 음운은 몇 개일까?`, o:o.map(x=>x+'개')}; }
+  if (r<0.6){ const ws=shuffle(pool), w=ws[0], n=countOf(w), others=[]; ws.slice(1).forEach(x=>{ const c=countOf(x); if(c!==n && others.length<3 && !others.some(y=>countOf(y)===c)) others.push(x); }); if(others.length<3) return genQuiz(); return {q:`다음 중 음운이 ${n}개인 낱말은?`, o:[w,...others]}; }
+  if (r<0.82){
+    const props=[[0,0,'입술소리(양순음)'],[0,1,'잇몸소리(치조음)'],[0,2,'센입천장소리(경구개음)'],[0,3,'여린입천장소리(연구개음)'],[1,0,'파열음'],[1,1,'마찰음'],[1,2,'파찰음'],[1,3,'비음'],[2,0,'예사소리'],[2,1,'된소리'],[2,2,'거센소리'],[2,3,'울림소리']];
+    const [d,v,name]=pick(props); const yes=CLANDS.filter(k=>CONS[k][d]===v), no=CLANDS.filter(k=>CONS[k][d]!=null && CONS[k][d]!==v);
+    if (yes.length>=3 && Math.random()<.4) return {q:`다음 중 ${J(name,'이/가')} 아닌 것은?`, o:[pick(no),...shuffle(yes).slice(0,3)]};
+    return {q:`다음 중 ${J(name,'은/는')}?`, o:[pick(yes),...shuffle(no).slice(0,3)]};
+  }
+  const props=[[0,0,'전설 모음'],[0,1,'후설 모음'],[1,0,'고모음'],[1,1,'중모음'],[1,2,'저모음'],[2,0,'평순 모음'],[2,1,'원순 모음']];
+  const VK=Object.keys(VOW), [d,v,name]=pick(props); const yes=VK.filter(k=>VOW[k][d]===v), no=VK.filter(k=>VOW[k][d]!==v);
+  if (Math.random()<.35){ const [d2,v2,n2]=pick(props.filter(x=>x[0]!==d)); const both=VK.filter(k=>VOW[k][d]===v&&VOW[k][d2]===v2), not=VK.filter(k=>!(VOW[k][d]===v&&VOW[k][d2]===v2)); if(both.length) return {q:`다음 중 ${name}이면서 ${J(n2,'인/인')} 것은?`, o:[pick(both),...shuffle(not).slice(0,3)]}; }
+  return {q:`다음 중 ${J(name,'은/는')}?`, o:[pick(yes),...shuffle(no).slice(0,3)]};
+}
+/* 황금열쇠 도전: 선생님이 성공/실패를 판정해요 */
+const CHALS = [
+  {i:'🗣️', t:'또박또박 발음 도전', d:'‘순천 · 춘천 · 순천’을 또박또박 읽어요. ㅅ과 ㅊ이 구별되게 들리면 성공!', a:'ㅅ은 마찰음, ㅊ은 파찰음(거센소리)'},
+  {i:'🗣️', t:'또박또박 발음 도전', d:'‘불고기 · 풀고기 · 불고기’를 또박또박 읽어요. 두 소리가 구별되면 성공!', a:'ㅂ은 예사소리, ㅍ은 거센소리'},
+  {i:'🗣️', t:'또박또박 발음 도전', d:'‘개 · 걔 · 개’를 또박또박 읽어요. 두 소리가 구별되면 성공!', a:'ㅐ는 단모음, ㅒ는 이중 모음'},
+  {i:'🗣️', t:'또박또박 발음 도전', d:'‘온양 · 언양 · 온양’을 또박또박 읽어요. 두 소리가 구별되면 성공!', a:'ㅗ는 원순 모음, ㅓ는 평순 모음'},
+  {i:'💥', t:'소리 흉내 3종 세트', d:'파열음 ‘팡!’, 마찰음 ‘스~’, 파찰음 ‘츠~’를 흉내 내고, 해당하는 자음을 하나씩 말해요.', a:'예) 파열음 ㅂ·ㄷ·ㄱ / 마찰음 ㅅ·ㅆ·ㅎ / 파찰음 ㅈ·ㅉ·ㅊ'},
+  {i:'👃', t:'코 막고 실험', d:'코를 막고 ‘음~ 은~ 응~ 을~’을 소리 내요. 코를 막아도 계속 나는 소리와 그 이름을 말해요.', a:'‘을’의 ㄹ, 유음'},
+  {i:'✋', t:'목에 손 대고 실험', d:'목에 손을 대고 ‘감~’과 ‘갑’을 길게 소리 내요. 목이 떨리는 받침과 그 소리의 이름은?', a:'ㅁ, 울림소리'},
+  {i:'👄', t:'입 모양 릴레이', d:'모둠원이 번갈아 ‘ㅣ → ㅟ’, ‘ㅡ → ㅜ’를 소리 내고, 무엇이 바뀌는지 말해요.', a:'혀는 그대로, 입술만 둥글게(평순 → 원순)'},
+  {i:'⏱️', t:'10초 안에 말하기', d:'10초 안에 입술소리 4개를 모두 말해요!', a:'ㅂ ㅃ ㅍ ㅁ'},
+  {i:'⏱️', t:'10초 안에 말하기', d:'10초 안에 울림소리 4개를 모두 말해요!', a:'ㄴ ㄹ ㅁ ㅇ'},
+  {i:'⏱️', t:'10초 안에 말하기', d:'10초 안에 거센소리 4개를 모두 말해요!', a:'ㅋ ㅌ ㅍ ㅊ'},
+  {i:'⏱️', t:'10초 안에 말하기', d:'10초 안에 원순 모음 4개를 모두 말해요!', a:'ㅟ ㅚ ㅜ ㅗ'},
+  {i:'⏱️', t:'10초 안에 말하기', d:'10초 안에 단모음 10개 중 7개 이상 말해요!', a:'ㅏ ㅐ ㅓ ㅔ ㅗ ㅚ ㅜ ㅟ ㅡ ㅣ'},
+  {i:'🧭', t:'혀 위치 설명하기', d:'‘ㅣ’에서 ‘ㅡ’로 소리를 바꿀 때 혀가 어디로 움직이는지 설명해요.', a:'혀의 최고점이 앞(전설)에서 뒤(후설)로'}
+];
 /* ---------- 황금열쇠: 사건 ---------- */
 const lands = f => CLANDS.filter(k=>f(CONS[k]));
 const EVENTS = [
@@ -2545,9 +2588,26 @@ const EVENTS = [
   {id:'fund',  i:'🎁', t:'사회복지기금 당첨', d:'모인 사회복지기금을 모두 가져가요!', fx:'fund'},
   {id:'refund',i:'💌', t:'세금 환급', d:'은행에서 100원을 돌려받아요!', fx:'self', v:100},
   {id:'fine',  i:'🚨', t:'과속 딱지', d:'은행에 벌금 80원을 내요.', fx:'self', v:-80},
-  {id:'home',  i:'🏦', t:'출발로 순간 이동', d:'출발 칸으로 가서 월급을 받아요!', fx:'go'}
+  {id:'home',  i:'🏦', t:'출발로 순간 이동', d:'출발 칸으로 가서 월급을 받아요!', fx:'go'},
+  {id:'fwd3',  i:'⏩', t:'바람을 타고 3칸 앞으로', d:'3칸 앞으로 가서 그 칸의 일을 해요!', fx:'move', v:3},
+  {id:'back2', i:'⏪', t:'길을 잘못 들었다! 2칸 뒤로', d:'2칸 뒤로 가서 그 칸의 일을 해요!', fx:'move', v:-2},
+  {id:'rocket',i:'🚀', t:'우주여행 초대장', d:'우주여행 칸으로 가서 원하는 칸으로 날아가요!', fx:'space'},
+  {id:'pass',  i:'🎫', t:'통행료 면제권', d:'다음에 남의 땅에 멈추면 통행료를 한 번 안 내요!', fx:'pass'},
+  {id:'gift',  i:'🎂', t:'모둠 생일 파티', d:'다른 모둠이 모두 30원씩 축하금을 줘요!', fx:'gift', v:30},
+  {id:'donate',i:'🤝', t:'이웃 돕기 성금', d:'다른 모둠에 20원씩 나눠 줘요.', fx:'donate', v:20},
+  {id:'free1', i:'🏗️', t:'무료 건축 허가', d:'우리 땅 하나에 건물 한 채를 공짜로 지어 줘요!', fx:'build1'},
+  {id:'swap',  i:'🔄', t:'땅 맞바꾸기', d:'우리 땅 하나와 다른 모둠 땅 하나가 무작위로 바뀌어요!', fx:'swap'}
 ];
 const EV_BY = Object.fromEntries(EVENTS.map(k=>[k.id,k]));
+
+/* ---------- 조사 붙이기: 받침 있으면 앞, 없으면 뒤 (자음 이름은 모두 받침으로 끝나요: 기역, 니은 …) ---------- */
+const JAMO_C = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+function lastCh(w){ return String(w).replace(/\s*\([^)]*\)\s*$/,'').replace(/[’'"\s]+$/,'').slice(-1); }
+function hasJong(w){ const c=lastCh(w); if(!c) return false; const n=c.charCodeAt(0);
+  if (n>=0xAC00&&n<=0xD7A3) return (n-0xAC00)%28!==0; if (JAMO_C.includes(c)) return true; if (/[0-9]/.test(c)) return '013678'.includes(c); return false; }
+function isRieul(w){ const c=lastCh(w), n=c.charCodeAt(0); return c==='ㄹ' || c==='1' || c==='7' || c==='8' || (n>=0xAC00&&n<=0xD7A3&&(n-0xAC00)%28===8); }
+function J(w, pair){ const [a,b]=pair.split('/'); if (pair==='으로/로') return w+(hasJong(w)&&!isRieul(w)?'으로':'로'); return w+(hasJong(w)?a:b); }
+const jo = (w, pair) => J(w,pair).slice(String(w).length);
 
 /* ---------- 작은 도구 ---------- */
 const $ = (s, r=document) => r.querySelector(s);
@@ -2703,9 +2763,9 @@ function buildPub(){
   let ptr=null;
   if (tr){
     ptr={round:tr.round, turn:tr.turn, tid:tr.order[tr.turn], status:tr.status, word:tr.status==='spin'?'':(tr.word||''), deadline:tr.deadline||0,
-      guess:tr.guess??null, gin:Object.keys(tr.guesses||{}), winners:tr.winners||[], count: ['reveal','move','quiz','offer','space','kq','key','settle'].includes(tr.status)?tr.count:null, ok:tr.ok||false, adj:tr.adj||0,
+      guess:tr.guess??null, gin:Object.keys(tr.guesses||{}), winners:tr.winners||[], count: ['reveal','move','quiz','offer','space','kq','kqa','chal','key','settle'].includes(tr.status)?tr.count:null, ok:tr.ok||false, adj:tr.adj||0,
       pos:tr.pos??null, offer:tr.offer||null, quiz: tr.quiz?{own:tr.quiz.own, sent:Object.keys(tr.quiz.sent||{}), type:tr.quiz.type, q:tr.quiz.q||'', opts:tr.quiz.opts||[]}:null,
-      kq: tr.kq?{q:tr.kq.q, opts:tr.kq.opts}:null,
+      kq: tr.kq?{q:tr.kq.q, opts:tr.kq.opts, all:!!tr.kq.all, ain:Object.keys(tr.kq.ans||{})}:null, chal: tr.chal?{i:tr.chal.i, t:tr.chal.t, d:tr.chal.d}:null,
       key: tr.key?{id:tr.key.id, shown:tr.key.shown}:null, settle:tr.settle||null};
   }
   return {
@@ -2747,7 +2807,7 @@ function auNextBatch(){ const a=S.au; if (a.bi<a.batches.length-1){ a.bi++; a.st
 /* ---------- 말판 여행 ---------- */
 function startTour(){ S.teams.forEach(t=>t.pos=0); S.tr={round:1, turn:0, order:shuffle(S.teams.map(t=>t.id))}; S.phase='tour'; beginTurn(); }
 function curT(){ return T(S.tr.order[S.tr.turn]); }
-function beginTurn(){ const tr=S.tr; Object.assign(tr,{status:'roll', word:'', count:0, guess:null, guesses:{}, winners:[], ok:false, adj:0, deadline:0, mv:null, pos:null, offer:null, quiz:null, kq:null, key:null, proof:null, lines:[], settle:null}); commit(); }
+function beginTurn(){ const tr=S.tr; Object.assign(tr,{status:'roll', chal:null, word:'', count:0, guess:null, guesses:{}, winners:[], ok:false, adj:0, deadline:0, mv:null, pos:null, offer:null, quiz:null, kq:null, key:null, proof:null, lines:[], settle:null}); commit(); }
 function roll(){ const tr=S.tr; if(tr.status!=='roll') return; tr.word=pick(wordPool()); tr.count=countOf(tr.word); tr.status='spin'; tr.spinAt=DB.now(); SND.pop(); commit(); }
 function putGuess(tid, n){ const tr=S.tr; if(tr.status!=='count' || tr.guesses[tid]!=null) return; tr.guesses[tid]=+n; SND.pop();
   if (S.cfg.net!=='on' || S.teams.every(t=>tr.guesses[t.id]!=null)) reveal(); else commit(); }
@@ -2773,6 +2833,7 @@ function land(){
   if (!l.o){ tr.status='offer'; tr.offer={kind:'buy', k, price:LAND_FIX}; tr.deadline=DB.now()+OFFER_SEC*1000; commit(); return; }
   if (l.o===t.id){ if(l.lv<MAX_LV){ tr.status='offer'; tr.offer={kind:'build', k, price:BUILD_COST}; tr.deadline=DB.now()+OFFER_SEC*1000; commit(); return; } addLine('🏠',`${k} 땅은 이미 건물이 가득!`,null); return toSettle(); }
   const toll=tollOf(k);
+  if (toll && t.pass>0){ t.pass--; addLine('🎫',`통행료 면제권 사용! (${k} 땅)`,0,'g'); return toSettle(); }
   if (!toll){ addLine('🆓',`${k} 땅 통행료 면제!`,0,'g'); return toSettle(); }
   tr.status='quiz'; tr.quiz=Object.assign({own:{[l.o]:[k]}, ans:{}, sent:{}}, makeProof(k)); tr.deadline=DB.now()+S.cfg.quizSec*1000; commit();
 }
@@ -2786,7 +2847,7 @@ function makeProof(k){
     const dims=[0,1].filter(i=>CLANDS.some(x=>x!==k && CONS[x][i]===d[i]));
     if (dims.length){ const i=pick(dims); const lab=['소리 나는 위치','소리 내는 방법'][i];
       const right=pick(CLANDS.filter(x=>x!==k && CONS[x][i]===d[i])); const wrong=shuffle(CLANDS.filter(x=>CONS[x][i]!==d[i])).slice(0,3);
-      const opts=shuffle([right,...wrong]); return {type, q:`‘${k}’와 ${lab}이 같은 자음은?`, opts, right:opts.indexOf(right)}; }
+      const opts=shuffle([right,...wrong]); return {type, q:`‘${k}’${jo(k,'과/와')} ${J(lab,'이/가')} 같은 자음은?`, opts, right:opts.indexOf(right)}; }
     type='desc';
   }
   if (type==='desc'){
@@ -2832,17 +2893,29 @@ function putOffer(yes){
 function putSpace(i){
   const tr=S.tr, t=curT(); if(tr.status!=='space') return; i=+i;
   if (!(i>=0 && i<NCELL) || TRACK[i]==='SPACE'){ addLine('🚀','우주여행은 다음 기회에',null); return toSettle(); }
-  addLine('🚀',`${cellName(i)}(으)로 슝!`,null); t.pos=i; tr.pos=i; SND.key(); land();
+  addLine('🚀',`${J(cellName(i),'으로/로')} 슝!`,null); t.pos=i; tr.pos=i; SND.key(); land();
 }
 function drawKey(){
-  const tr=S.tr; SND.key();
-  if (Math.random()<0.6){
-    const [q,opts]=pick(QUIZ); const order=shuffle([0,1,2,3]);
-    tr.kq={q, opts:order.map(i=>opts[i]), right:order.indexOf(0), pick:null}; tr.status='kq'; tr.deadline=DB.now()+KQ_SEC*1000; commit(); return;
+  const tr=S.tr; SND.key(); const r=Math.random();
+  if (r<0.55){
+    const g=genQuiz(); const order=shuffle([0,1,2,3]); const all = r>=0.38;
+    tr.kq={q:g.q, opts:order.map(i=>g.o[i]), right:order.indexOf(0), pick:null, all, ans:{}};
+    tr.status= all?'kqa':'kq'; tr.deadline=DB.now()+KQ_SEC*1000; commit(); return;
   }
-  const ev=pick(EVENTS); tr.key={id:ev.id, shown:!ev.L}; tr.status='key'; tr.deadline=0;
-  if (!ev.L) applyKey(); else commit();
+  if (r<0.7){ tr.chal=Object.assign({}, pick(CHALS)); tr.status='chal'; tr.deadline=0; commit(); return; }
+  const ev=pick(EVENTS); tr.key={id:ev.id, shown:false}; tr.status='key'; tr.deadline=0; commit();
 }
+function putKqa(tid, i){ const tr=S.tr; if(tr.status!=='kqa' || tr.kq.ans[tid]!=null) return; tr.kq.ans[tid]=+i; SND.pop(); if(S.teams.every(t=>tr.kq.ans[t.id]!=null)) gradeKqa(); else commit(); }
+function gradeKqa(){
+  const tr=S.tr, kq=tr.kq; const win=S.teams.filter(t=>kq.ans[t.id]===kq.right);
+  win.forEach(t=>{ t.cash+=ALLQ_WIN; S.stat.kq[t.id]=(S.stat.kq[t.id]||0)+1; addLine(t.an, `${J(t.name,'이/가')} 맞혔어요`, ALLQ_WIN, 'g'); });
+  if (!win.length) addLine('🔑','아무도 못 맞혔어요',null);
+  addLine('📝', `정답: ${kq.opts[kq.right]}`, null);
+  win.length?SND.sold():SND.bad(); toSettle();
+}
+function putChal(ok){ const tr=S.tr, t=curT(); if(tr.status!=='chal') return; const c=tr.chal;
+  if (ok){ t.cash+=CHAL_WIN; addLine(c.i, `${c.t} 성공!`, CHAL_WIN, 'g'); SND.sold(); } else { addLine(c.i, `${c.t} 실패`, 0, 'r'); SND.bad(); }
+  addLine('📝', `정답 예시: ${c.a}`, null); toSettle(); }
 function putKq(i){
   const tr=S.tr, t=curT(); if(tr.status!=='kq') return; const kq=tr.kq; kq.pick = i==null?null:+i;
   const ok = kq.pick===kq.right; const v = ok?QUIZ_WIN:QUIZ_LOSE; t.cash+=v;
@@ -2862,6 +2935,15 @@ function applyKey(){
   if (ev.fx==='fund'){ const f=S.fund; t.cash+=f; S.fund=0; addLine(ev.i,'사회복지기금 당첨', f, 'g'); }
   if (ev.fx==='self'){ t.cash+=ev.v; addLine(ev.i, ev.t, ev.v, ev.v>0?'g':'r'); }
   if (ev.fx==='go'){ t.pos=0; tr.pos=0; t.cash+=SALARY; addLine(ev.i,'출발로 이동해 월급', SALARY, 'g'); }
+  if (ev.fx==='pass'){ t.pass=(t.pass||0)+1; addLine(ev.i,'통행료 면제권 1장 받음', null, 'g'); }
+  if (ev.fx==='gift'){ S.teams.filter(x=>x.id!==t.id).forEach(x=>{ x.cash-=ev.v; t.cash+=ev.v; }); addLine(ev.i, `모든 모둠에게 축하금`, ev.v*(S.teams.length-1), 'g'); }
+  if (ev.fx==='donate'){ S.teams.filter(x=>x.id!==t.id).forEach(x=>{ x.cash+=ev.v; t.cash-=ev.v; }); addLine(ev.i, `다른 모둠에 성금`, -ev.v*(S.teams.length-1), 'r'); }
+  if (ev.fx==='build1'){ const ks=landsOf(t.id).filter(k=>L(k).lv<MAX_LV); if(ks.length){ const k=pick(ks); L(k).lv++; tr.key.lands=[k]; addLine(ev.i, `${k} 땅에 건물 한 채 공짜!`, null, 'g'); } else addLine(ev.i,'지을 수 있는 우리 땅이 없어요',null); }
+  if (ev.fx==='swap'){ const mine=landsOf(t.id), other=CLANDS.filter(k=>L(k).o && L(k).o!==t.id);
+    if (mine.length && other.length){ const a=pick(mine), b=pick(other), ob=L(b).o; L(a).o=ob; L(b).o=t.id; tr.key.lands=[a,b]; addLine(ev.i, `우리 ${a} 땅 ↔ ${T(ob).name}의 ${b} 땅`, null); }
+    else addLine(ev.i,'바꿀 땅이 없어 그냥 지나가요',null); }
+  if (ev.fx==='move'){ let np=t.pos+ev.v; if(np>=NCELL){ t.cash+=SALARY; addLine('🏦','출발을 지나 월급', SALARY, 'g'); } np=(np+NCELL)%NCELL; addLine(ev.i, `${ev.t} → ${cellName(np)}`, null); t.pos=np; tr.pos=np; SND.sold(); land(); return; }
+  if (ev.fx==='space'){ addLine(ev.i, ev.t, null); t.pos=14; tr.pos=14; SND.sold(); land(); return; }
   SND.sold(); toSettle(true);
 }
 function toSettle(keepKey){ const tr=S.tr; tr.settle={lines:tr.lines, tid:curT().id}; if(!(keepKey && tr.status==='key')) tr.status='settle'; tr.deadline=0; commit(); }
@@ -2884,6 +2966,7 @@ function handleEvent(ev){
   const t=S.teams.find(x=>x.cid && x.cid===ev.cid); if(!t) return;
   if (ev.t==='bid' && S.phase==='auction' && S.au && S.au.bi===ev.bi){ putBid(t.id, ev.bids); return; }
   if (ev.t==='guess' && S.phase==='tour' && S.tr && S.tr.status==='count'){ putGuess(t.id, ev.n); return; }
+  if (ev.t==='kq' && S.phase==='tour' && S.tr && S.tr.status==='kqa'){ putKqa(t.id, ev.i); return; }
   if (ev.t==='ans' && S.phase==='tour' && S.tr && S.tr.status==='quiz'){ Object.entries(obj(ev.ans)).forEach(([k,a])=>putAns(t.id,k,a)); S.tr.quiz.sent[t.id]=1; SND.pop(); commit(); return; }
   if (S.phase!=='tour' || !S.tr || S.tr.order[S.tr.turn]!==t.id) return;   /* 아래는 차례인 모둠만 */
   const st=S.tr.status;
@@ -2939,6 +3022,7 @@ function tickTeacher(){
     else if (tr.status==='quiz'){ tickSound(tr.deadline,'q'); const all=Object.keys(tr.quiz.own).every(t=>tr.quiz.sent[t]); if(now>tr.deadline || (all&&S.cfg.net==='on')) gradeToll(); }
     else if (tr.status==='offer'){ if(now>tr.deadline) putOffer(false); }
     else if (tr.status==='kq'){ tickSound(tr.deadline,'k'); if(now>tr.deadline) putKq(null); }
+    else if (tr.status==='kqa'){ tickSound(tr.deadline,'k'); if(now>tr.deadline) gradeKqa(); }
     else if (tr.status==='space'){ if(now>tr.deadline) putSpace(-1); }
   }
   updateTimers();
@@ -3131,14 +3215,22 @@ function viewTour(){
     btns=`<button class="pill" data-act="offer" data-y="0">그냥 지나가기</button><button class="pill k" data-act="offer" data-y="1" ${me.cash<of.price?'disabled':''}>${of.kind==='buy'?'🚩 사기':'🏠 짓기'}</button>`;
   } else if (st==='space'){
     hl.at=tr.pos;
-    center=`${head}<div class="bigi">🚀</div><h3>우주여행!</h3><div class="note3">${who}는 원하는 칸으로 날아갈 수 있어요.<br>태블릿에서 고르거나, 판의 칸을 눌러요.</div>`;
+    center=`${head}<div class="bigi">🚀</div><h3>우주여행!</h3><div class="note3">${me.an} <b style="color:${me.col}">${esc(J(me.name,'은/는'))}</b> 원하는 칸으로 날아갈 수 있어요.<br>태블릿에서 고르거나, 판의 칸을 눌러요.</div>`;
     btns=`<button class="pill" data-act="spaceSkip">안 가기</button>`;
   } else if (st==='kq'){
     hl.at=tr.pos;
-    center=`<div class="kqc"><div class="kqh">🔑 황금열쇠 퀴즈 <span>맞히면 +${QUIZ_WIN} · 틀리면 ${QUIZ_LOSE}</span></div><div class="kqq">${esc(tr.kq.q)}</div><div class="kqo">${tr.kq.opts.map((o,i)=>`<button data-act="kq" data-i="${i}"><i>${'①②③④'[i]}</i>${esc(o)}</button>`).join('')}</div></div>${ringS('tm','')}`;
+    center=`<div class="kqc"><div class="kqh">🔑 황금열쇠 퀴즈 <span>맞히면 +${QUIZ_WIN} · 틀리면 ${QUIZ_LOSE}</span></div><div class="kqq">${esc(tr.kq.q)}</div><div class="kqo">${tr.kq.opts.map((o,i)=>`<button data-act="kq" data-i="${i}"><i>${'①②③④'[i]}</i>${esc(o)}</button>`).join('')}</div></div>${ringS('tm','','qt')}`;
+  } else if (st==='kqa'){
+    hl.at=tr.pos;
+    center=`<div class="kqc all"><div class="kqh">🔑 전원 퀴즈! <span>모든 모둠 · 맞히면 +${ALLQ_WIN}</span></div><div class="kqq">${esc(tr.kq.q)}</div><div class="kqo">${tr.kq.opts.map((o,i)=>`<button data-act="kq" data-i="${i}"><i>${'①②③④'[i]}</i>${esc(o)}</button>`).join('')}</div><div class="gchips">${S.teams.map(t=>`<span class="${tr.kq.ans[t.id]!=null?'on':''}" style="--oc:${t.col}">${t.an}</span>`).join('')}</div></div>${ringS('tm','','qt')}`;
+    btns=`<button class="pill k" data-act="kqaEnd">⏱ 채점하기</button>`;
+  } else if (st==='chal'){
+    const c=tr.chal; hl.at=tr.pos;
+    center=`<div class="keycard chal"><div class="ki">${c.i}</div><div class="kt">${c.t}</div><div class="kd">${esc(c.d)}</div><div class="kq">${who} 도전! 성공하면 +${CHAL_WIN}원<br><small>선생님이 듣고 판정해요</small></div></div>`;
+    btns=`<button class="pill" data-act="chal" data-y="0">❌ 실패</button><button class="pill k" data-act="chal" data-y="1">⭕ 성공</button>`;
   } else if (st==='key'){
     const ev=EV_BY[tr.key.id]; hl.at=tr.pos; if(tr.key.shown) hl.ev=tr.key.lands||[];
-    center=`<div class="keycard"><div class="ki">${ev.i}</div><div class="kt">${ev.t}</div><div class="kd">${ev.d}</div><div class="kq">${tr.key.shown?(tr.key.lands&&tr.key.lands.length?'해당 땅: '+tr.key.lands.join(' '):'적용 완료!'):'❓ 어느 땅일까요?'}</div></div>`;
+    center=`<div class="keycard"><div class="ki">${ev.i}</div><div class="kt">${ev.t}</div><div class="kd">${ev.d}</div><div class="kq">${tr.key.shown?(tr.key.lands&&tr.key.lands.length?'해당 땅: '+tr.key.lands.join(' '):'적용 완료!'):(ev.L?'❓ 어느 땅일까요? 모둠끼리 맞혀 봐요':'🔑 공개를 눌러 확인해요')}</div></div>`;
     btns = tr.key.shown ? `<button class="pill k" data-act="nextTurn">다음 차례 →</button>` : `<button class="pill k" data-act="keyShow">🔑 공개!</button>`;
   } else if (st==='settle'){
     hl.at=curT().pos;
@@ -3215,7 +3307,7 @@ const TUT = [
   ()=>tuHead(4,'단어 주사위 · 음운 세기','주사위 대신 낱말이 나와요. 음운 개수만큼 앞으로!')+`
     <div class="tuex"><span class="dw">탕수육</span><span class="eq">➜</span>
       <span class="pc">ㅌ</span><span class="pc">ㅏ</span><span class="pc">ㅇ</span><span class="gap"></span><span class="pc">ㅅ</span><span class="pc">ㅜ</span><span class="gap"></span><span class="pc sil">ㅇ</span><span class="pc">ㅠ</span><span class="pc">ㄱ</span>
-      <span class="eq">=</span><span class="cnt8">8칸</span></div>
+      <span class="eq">=</span><span class="cnt8">7칸</span></div>
     <div class="tunote">첫소리 <b>ㅇ</b>은 소리가 없어 안 세요. 받침 <b>ㅇ</b>은 세요!</div>
     <div class="tu3 sm">
       <div class="tuc"><div class="ic">⏱️</div><b>${cfgv('countSec',5)}초 안에</b><p>음운 개수를<br>숫자판으로 눌러요</p></div>
@@ -3277,7 +3369,7 @@ function renderBoard(){
 function updateTimers(){
   if (!S) return; const now=DB.now(); let dl=0, total=1;
   if (S.phase==='auction' && S.au && S.au.status==='bid'){ dl=S.au.deadline; total=S.cfg.bidSec*1000; }
-  else if (S.phase==='tour' && S.tr && S.tr.deadline){ dl=S.tr.deadline; total={count:S.cfg.countSec*1000, quiz:S.cfg.quizSec*1000, kq:KQ_SEC*1000}[S.tr.status]||1; }
+  else if (S.phase==='tour' && S.tr && S.tr.deadline){ dl=S.tr.deadline; total={count:S.cfg.countSec*1000, quiz:S.cfg.quizSec*1000, kq:KQ_SEC*1000, kqa:KQ_SEC*1000}[S.tr.status]||1; }
   const el=$('#tm'); if(!el||!dl) return;
   const left=Math.max(0,dl-now), Lc=2*Math.PI*50;
   const arc=el.querySelector('.arc'); if(arc) arc.setAttribute('stroke-dashoffset', Lc*(1-Math.min(1,left/total)));
@@ -3314,7 +3406,9 @@ function boardAct(act, d){
     case 'qtOk': { const tid=UI.modal.tid; if(S.tr.quiz) S.tr.quiz.sent[tid]=1; UI.modal=null; break; }
     case 'offer': putOffer(d.y==='1'); return;
     case 'spaceSkip': putSpace(-1); return;
-    case 'kq': putKq(+d.i); return;
+    case 'kq': if(S.tr&&S.tr.status==='kqa') putKqa(curT().id,+d.i); else putKq(+d.i); return;
+    case 'kqaEnd': if(S.tr&&S.tr.status==='kqa') gradeKqa(); return;
+    case 'chal': putChal(d.y==='1'); return;
     case 'keyShow': applyKey(); return;
     case 'nextTurn': if(S.tr && (S.tr.status==='settle' || (S.tr.status==='key' && S.tr.key && S.tr.key.shown))){ UI.kp=false; nextTurn(); } return;
     case 'cleanup': UI.modal={type:'confirm', title:'방을 정리할까요?', text:'서버에 저장된 모둠 이름·모둠원 이름·게임 기록을 모두 지우고 처음 화면으로 돌아갑니다.', ok:'cleanupGo', okLabel:'정리하기'}; break;
@@ -3425,10 +3519,14 @@ function padBody(p,t){
     }
     if (st==='count'){ const done=arr(tr.gin).includes(t.id);
       return `<div class="pbig"><div class="tag">${mine?'우리 차례! 음운은 몇 개?':`같이 세기! 맞히면 +${ALL_BONUS}원`}</div><div class="w">${esc(tr.word)}</div><div class="tmr" id="ptm"></div></div>${done?'<div class="notice">답을 보냈어요! 칠판을 보세요.</div>':`<div class="kpad big">${[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>`<button data-gs="${n}">${n}</button>`).join('')}</div>`}`; }
+    if (st==='kqa'){ const kq=tr.kq||{}; const done=arr(kq.ain).includes(t.id);
+      if (done) return `<div class="pbig"><div class="tag">🔑 전원 퀴즈</div><div class="w" style="font-size:32px">답을 보냈어요!</div><div class="h">칠판에서 정답을 확인해요</div></div>`;
+      return `<div class="kqp"><div class="kqh">🔑 전원 퀴즈! 모든 모둠이 풀어요 <span class="ptm" id="ptm"></span></div><div class="kqq">${esc(kq.q)}</div>${arr(kq.opts).map((o,i)=>`<button data-kq="${i}"><i>${'①②③④'[i]}</i>${esc(o)}</button>`).join('')}<p>맞히면 +${ALLQ_WIN}원</p></div>`; }
+    if (st==='chal' && mine){ const c=tr.chal||{}; return `<div class="pbig"><div style="font-size:46px">${c.i||''}</div><div class="w" style="font-size:30px">${esc(c.t||'')}</div><div class="h" style="font-size:20px;line-height:1.5">${esc(c.d||'')}</div></div><div class="notice y">선생님 앞에서 도전! 성공하면 +${CHAL_WIN}원</div>`; }
     if (!mine && st==='reveal'){ const w=arr(tr.winners).includes(t.id);
       return `<div class="pbig" style="${w?'':'background:#fff'}"><div class="tag">🎲 ${esc(tr.word)} · 정답 ${tr.count}개</div><div class="w" style="font-size:36px">${w?`⭕ 같이 맞혔어요! +${ALL_BONUS}원`:'다음엔 맞혀 봐요!'}</div><div class="h">${curTag} 이동 준비 중</div></div>`; }
     if (!mine){
-      const msg = {roll:'단어 주사위를 굴릴 차례', spin:'주사위가 굴러가는 중…', count:'음운을 세는 중', reveal:'정답 확인 중', move:'말이 움직이는 중', quiz:'땅 주인이 소리를 증명하는 중', offer:'땅을 살지 고르는 중', space:'우주여행 중!', kq:'황금열쇠 퀴즈를 푸는 중', key:'황금열쇠!', settle:'정산'}[st]||'';
+      const msg = {roll:'단어 주사위를 굴릴 차례', spin:'주사위가 굴러가는 중…', count:'음운을 세는 중', reveal:'정답 확인 중', move:'말이 움직이는 중', quiz:'땅 주인이 소리를 증명하는 중', offer:'땅을 살지 고르는 중', space:'우주여행 중!', kq:'황금열쇠 퀴즈를 푸는 중', key:'황금열쇠!', chal:'황금열쇠 도전 중! 칠판을 보세요', settle:'정산'}[st]||'';
       return `<div class="pbig"><div class="tag">${curTag} 차례</div><div class="w" style="font-size:34px">${msg}</div>${tr.word&&st!=='roll'?`<div class="h" style="font-size:20px">🎲 ${esc(tr.word)}${tr.count!=null?` · 음운 ${tr.count}개`:''}</div>`:''}</div><div class="card"><h3>땅 지도</h3>${pmapHTML(t)}</div>`;
     }
     if (st==='roll') return `<button class="bigroll" id="rollGo"><span>🎲</span><b>단어 주사위 굴리기</b><small>우리 차례!</small></button><div class="card"><h3>땅 지도</h3>${pmapHTML(t)}</div>`;

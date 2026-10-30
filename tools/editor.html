@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>수업 화면 편집기 · 류봉두의 즐거운 국어 수업</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* 레이아웃: 위 막대(열기·모드·되돌리기·저장) / 왼쪽 슬라이드 목록 / 가운데 수업 화면 / 오른쪽 고른 부분 설정 */
+:root{
+  --bg:#f5f5f7; --panel:#ffffff; --fg:#1d1d1f; --muted:#6e6e73; --faint:#a1a1a6; --line:#e3e3e8;
+  --blue:#0071e3; --blue-soft:#e8f1fd; --red:#d70015; --hover:#f0f0f3; --stagebg:#e9e9ee;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000; --panel:#161618; --fg:#f5f5f7; --muted:#a1a1a6; --faint:#6e6e73; --line:#2c2c2e;
+  --blue:#0a84ff; --blue-soft:#0a2a4a; --red:#ff453a; --hover:#232326; --stagebg:#0c0c0d; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px;-webkit-font-smoothing:antialiased;display:grid;grid-template-rows:52px 1fr;overflow:hidden;word-break:keep-all}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.35;cursor:default}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* 위 막대 */
+.top{display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
+.brand{font-weight:700;white-space:nowrap;margin-right:4px}
+.brand small{font-weight:500;color:var(--muted);margin-left:6px}
+.fname{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.fname b{color:var(--fg);font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.dirty{width:8px;height:8px;border-radius:50%;background:#ff9f0a;flex:none}
+.btn{height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn:hover:not(:disabled){background:var(--hover)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08);background:var(--blue)}
+.btn.icon{width:32px;padding:0;justify-content:center;font-size:16px}
+.seg{display:inline-flex;background:var(--bg);border-radius:9px;padding:2px;border:1px solid var(--line)}
+.seg button{border:0;background:none;padding:0 14px;height:26px;border-radius:7px;color:var(--muted)}
+.seg button.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.sep{width:1px;height:22px;background:var(--line)}
+
+/* 본문 세 칸 */
+.main{display:grid;grid-template-columns:230px minmax(0,1fr) 270px;min-height:0}
+.left,.right{background:var(--panel);min-height:0;display:flex;flex-direction:column}
+.left{border-right:1px solid var(--line)}
+.right{border-left:1px solid var(--line);overflow:auto}
+.ph{padding:12px 14px 8px;font-size:12px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.slist{flex:1;overflow:auto;padding:0 8px 8px;margin:0;list-style:none}
+.slist li{display:flex;gap:8px;align-items:baseline;padding:7px 8px;border-radius:8px;cursor:pointer;line-height:1.35}
+.slist li:hover{background:var(--hover)}
+.slist li.on{background:var(--blue-soft)}
+.slist li i{font-style:normal;flex:none;width:22px;color:var(--faint);font-variant-numeric:tabular-nums;font-size:12px}
+.slist li.on i{color:var(--blue);font-weight:700}
+.slist li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sact{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px;border-top:1px solid var(--line)}
+.sact .btn{padding:0;justify-content:center;font-size:13px}
+.sact2{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 10px 10px}
+.sact2 .btn{justify-content:center}
+
+.center{position:relative;display:grid;grid-template-rows:1fr auto;min-height:0;min-width:0}
+.view{position:relative;background:var(--stagebg);min-height:0}
+#frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
+.hint{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding:8px 12px;font-size:12px;color:var(--muted);background:var(--panel);border-top:1px solid var(--line)}
+.hint b{color:var(--fg);font-weight:600}
+
+/* 첫 화면(파일 열기 전) */
+.welcome{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--stagebg)}
+.wbox{width:min(560px,100%);background:var(--panel);border-radius:18px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.08);text-align:center}
+.wbox h1{font-size:26px;margin:0;letter-spacing:-.02em}
+.wbox p{color:var(--muted);margin:8px 0 0;line-height:1.6}
+.drop{margin-top:22px;border:2px dashed var(--line);border-radius:14px;padding:26px 16px;transition:background .2s,border-color .2s}
+.drop.over{border-color:var(--blue);background:var(--blue-soft)}
+.drop .btn{margin-top:10px}
+.or{margin:18px 0 10px;color:var(--faint);font-size:12px}
+.sitepick{width:100%;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--panel);padding:0 10px}
+.loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.05);font-weight:600;color:var(--muted)}
+.loading.on{display:flex}
+
+/* 오른쪽 설정 */
+.empty{padding:16px 16px;color:var(--muted);line-height:1.7}
+.empty h3{margin:0 0 8px;color:var(--fg);font-size:15px}
+.empty ul{margin:0;padding-left:18px}
+.grp{padding:12px 14px;border-bottom:1px solid var(--line)}
+.grp h4{margin:0 0 10px;font-size:12px;color:var(--muted);font-weight:600}
+.what{font-weight:600;font-size:15px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.what small{display:block;font-weight:500;color:var(--faint);font-size:12px;margin-top:2px}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.row+.row{margin-top:8px}
+.row label{color:var(--muted);font-size:12px;width:42px;flex:none;white-space:nowrap}
+.num{width:58px;height:30px;border:1px solid var(--line);border-radius:7px;background:var(--panel);text-align:center;font-variant-numeric:tabular-nums}
+.tog{height:30px;min-width:32px;border:1px solid var(--line);border-radius:7px;background:var(--panel);padding:0 8px}
+.tog.on{background:var(--fg);color:var(--panel);border-color:var(--fg)}
+.sw{display:flex;flex-wrap:wrap;gap:6px}
+.sw button{width:24px;height:24px;border-radius:50%;border:1px solid rgba(0,0,0,.15);padding:0}
+.sw button.none{background:linear-gradient(45deg,transparent 45%,var(--red) 45%,var(--red) 55%,transparent 55%),var(--panel)}
+.sw input[type=color]{width:24px;height:24px;border:0;padding:0;background:none;border-radius:50%;cursor:pointer}
+.full{width:100%;justify-content:center}
+.danger{color:var(--red)}
+.note{font-size:12px;color:var(--muted);line-height:1.6;margin:8px 0 0}
+
+/* 찾아 바꾸기 */
+.pop{position:absolute;top:60px;right:290px;z-index:30;width:320px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:14px}
+.pop[hidden]{display:none}
+.pop h4{margin:0 0 10px;font-size:14px}
+.pop input{width:100%;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--bg);margin-bottom:8px}
+.pop .res{font-size:12px;color:var(--muted);min-height:18px;margin-bottom:8px}
+.toast{position:fixed;left:50%;bottom:52px;transform:translateX(-50%);background:var(--fg);color:var(--panel);padding:10px 16px;border-radius:999px;font-size:13px;z-index:40;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+input[type=file]{display:none}
+@media (max-width:1100px){.main{grid-template-columns:190px minmax(0,1fr) 240px}.brand small{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="brand">수업 화면 편집기<small>류봉두의 즐거운 국어 수업</small></span>
+  <button class="btn" id="bOpen" type="button">열기</button>
+  <span class="fname" id="fname"><span>파일을 열어 주세요</span></span>
+  <div class="seg" role="tablist" aria-label="보기 방식">
+    <button type="button" id="mEdit" class="on" role="tab" aria-selected="true">편집</button>
+    <button type="button" id="mPlay" role="tab" aria-selected="false">수업처럼 보기</button>
+  </div>
+  <span class="sep"></span>
+  <button class="btn" id="bFind" type="button" disabled>찾아 바꾸기</button>
+  <button class="btn icon" id="bUndo" type="button" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
+  <button class="btn icon" id="bRedo" type="button" title="다시 하기 (Ctrl+Y)" disabled>↷</button>
+  <button class="btn primary" id="bSave" type="button" disabled>저장</button>
+</header>
+
+<div class="main">
+  <aside class="left">
+    <div class="ph"><span>슬라이드</span><span id="scount"></span></div>
+    <ol class="slist" id="slist"></ol>
+    <div class="sact">
+      <button class="btn" id="sUp" type="button" title="앞으로 옮기기" disabled>↑</button>
+      <button class="btn" id="sDown" type="button" title="뒤로 옮기기" disabled>↓</button>
+      <button class="btn" id="sDup" type="button" title="이 슬라이드 복제" disabled>복제</button>
+      <button class="btn danger" id="sDel" type="button" title="이 슬라이드 지우기" disabled>삭제</button>
+    </div>
+    <div class="sact2">
+      <button class="btn" id="aText" type="button" disabled>＋ 글상자</button>
+      <button class="btn" id="aImg" type="button" disabled>＋ 그림</button>
+    </div>
+  </aside>
+
+  <section class="center">
+    <div class="view">
+      <iframe id="frame" title="수업 화면"></iframe>
+      <div class="welcome" id="welcome">
+        <div class="wbox">
+          <button class="btn" id="wClose" type="button" hidden style="float:right">닫기</button>
+          <h1>수업 화면 편집기</h1>
+          <p>글자, 크기, 위치, 그림, 슬라이드 순서를 화면에서 바로 고치고<br>고친 파일을 내려받습니다. 원본은 그대로 남아요.</p>
+          <div class="drop" id="drop">
+            <div>수업 HTML 파일을 여기로 끌어다 놓거나</div>
+            <button class="btn primary" id="bOpen2" type="button">내 컴퓨터에서 고르기</button>
+          </div>
+          <div id="siteWrap" hidden>
+            <div class="or">또는 사이트에 올라가 있는 수업 열기</div>
+            <select class="sitepick" id="sitePick"><option value="">수업을 고르세요</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="loading" id="loading">여는 중…</div>
+    </div>
+    <div class="hint" id="hint"><span><b>클릭</b> 고르기</span><span><b>두 번 클릭</b> 글자 고치기</span><span><b>끌기</b> 옮기기</span><span><b>오른쪽 아래 점</b> 크기</span><span><b>방향키</b> 1칸 이동 (Shift 10칸)</span><span><b>PageUp/Down</b> 슬라이드</span></div>
+  </section>
+
+  <aside class="right" id="props">
+    <div class="empty" id="propEmpty">
+      <h3>고를 부분을 클릭하세요</h3>
+      <ul>
+        <li>글자는 두 번 클릭하면 바로 고칠 수 있어요. 고치는 중에 Ctrl+B로 일부만 굵게 할 수도 있습니다.</li>
+        <li>안쪽 글자를 고르기 어려우면 한 번 더 클릭하세요.</li>
+        <li>바깥 상자를 고르려면 오른쪽의 <b>바깥 상자 고르기</b>를 누르세요.</li>
+        <li>다 고치면 <b>저장</b>을 눌러 새 파일을 받으세요.</li>
+      </ul>
+    </div>
+    <div id="propBody" hidden>
+      <div class="grp">
+        <div class="what" id="pWhat"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="pParent" type="button">바깥 상자 고르기</button>
+          <button class="btn" id="pEditText" type="button">글자 고치기</button>
+        </div>
+        <p class="note" id="pNoText" hidden>이 부분은 수업 화면이 스스로 만들어 내는 글자라서 여기서 고칠 수 없어요. 크기·색·위치는 바꿀 수 있습니다.</p>
+      </div>
+      <div class="grp">
+        <h4>글자</h4>
+        <div class="row"><label>크기</label><button class="tog" id="fMinus" type="button">−</button><input class="num" id="fSize" type="number" min="6" max="300"><button class="tog" id="fPlus" type="button">＋</button></div>
+        <div class="row"><label>모양</label><button class="tog" id="fBold" type="button" style="font-weight:800">굵게</button><button class="tog" id="fItal" type="button" style="font-style:italic">기울임</button><button class="tog" id="fUnder" type="button" style="text-decoration:underline">밑줄</button></div>
+        <div class="row"><label>정렬</label><button class="tog" data-al="left" type="button">왼쪽</button><button class="tog" data-al="center" type="button">가운데</button><button class="tog" data-al="right" type="button">오른쪽</button></div>
+        <div class="row"><label>줄 간격</label><button class="tog" id="lhMinus" type="button">−</button><input class="num" id="lh" type="number" step="0.1" min="0.8" max="3"><button class="tog" id="lhPlus" type="button">＋</button></div>
+      </div>
+      <div class="grp">
+        <h4>글자 색</h4>
+        <div class="sw" id="swFg"></div>
+      </div>
+      <div class="grp">
+        <h4>바탕 색</h4>
+        <div class="sw" id="swBg"></div>
+      </div>
+      <div class="grp">
+        <h4>위치와 크기</h4>
+        <div class="row"><label>옮김</label><span id="pMove" style="font-variant-numeric:tabular-nums;color:var(--muted)">0, 0</span></div>
+        <div class="row"><label>너비</label><input class="num" id="pW" type="number" min="10"><label style="width:auto">높이</label><input class="num" id="pH" type="number" min="10"></div>
+        <div class="row"><button class="btn" id="pResetPos" type="button">원래 자리로</button><button class="btn" id="pResetSize" type="button">원래 크기로</button></div>
+        <div class="row"><button class="btn" id="pFront" type="button">맨 앞으로</button><button class="btn" id="pBack" type="button">맨 뒤로</button></div>
+      </div>
+      <div class="grp" id="gImg" hidden>
+        <h4>그림</h4>
+        <button class="btn full" id="pImg" type="button">다른 그림으로 바꾸기</button>
+        <p class="note">큰 사진은 파일이 너무 커지지 않게 알맞게 줄여서 넣습니다.</p>
+      </div>
+      <div class="grp">
+        <div class="row"><button class="btn" id="pDupEl" type="button">복제</button><button class="btn danger" id="pDel" type="button">지우기</button></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="pop" id="findPop" hidden>
+  <h4>찾아 바꾸기 <small style="color:var(--muted);font-weight:400">· 모든 슬라이드</small></h4>
+  <input id="fq" placeholder="찾을 말" autocomplete="off">
+  <input id="fr" placeholder="바꿀 말 (비우면 지우기)" autocomplete="off">
+  <div class="res" id="fres"></div>
+  <div class="row"><button class="btn" id="fClose" type="button">닫기</button><button class="btn primary" id="fGo" type="button" disabled>모두 바꾸기</button></div>
+</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileIn" accept=".html,.htm,text/html">
+<input type="file" id="imgIn" accept="image/*">
+
+<script>
+"use strict";
+/* ============ 상태 ============ */
+const $ = id => document.getElementById(id);
+const frame = $("frame");
+let src = null;          // 원본 문서(스크립트가 돌지 않는 사본). 저장은 이것으로 한다.
+let fileName = "", sitePath = "";
+let nextId = 1;
+let cur = 0;             // 지금 보고 있는 슬라이드 번호
+let mode = "edit";
+let sel = null;          // 고른 요소(수업 화면 쪽)
+let editing = null;      // 글자 고치는 중인 요소
+let undoStack = [], redoStack = [], dirty = false;
+let W = null, D = null;  // 수업 화면의 window, document
+
+/* ============ 공용 ============ */
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 1800); }
+function setDirty(v) { dirty = v; drawName(); $("bSave").disabled = !src; }
+function drawName() {
+  const f = $("fname");
+  if (!src) { f.innerHTML = "<span>파일을 열어 주세요</span>"; return; }
+  f.innerHTML = (dirty ? '<span class="dirty" title="저장하지 않은 변경이 있어요"></span>' : "") + "<b></b>" + (sitePath ? "<span></span>" : "");
+  f.querySelector("b").textContent = fileName;
+  if (sitePath) f.querySelector("span:last-child").textContent = "· 사이트 " + sitePath;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const srcEl = id => src.querySelector(`[data-ed-id="${id}"]`);
+const liveEl = id => D && D.querySelector(`[data-ed-id="${id}"]`);
+const srcSlides = () => [...src.querySelectorAll(".slide")];
+
+/* ============ 열기 ============ */
+function openText(text, name, path) {
+  const doc = new DOMParser().parseFromString(text, "text/html");
+  if (!doc.querySelector(".slide")) { toast("슬라이드(.slide)가 없는 파일이에요. 수업 화면 파일인지 확인해 주세요."); return; }
+  src = doc; fileName = name; sitePath = path || "";
+  nextId = 1;
+  src.body.querySelectorAll("*").forEach(el => el.setAttribute("data-ed-id", nextId++));
+  undoStack = []; redoStack = []; cur = 0;
+  $("welcome").hidden = true;
+  ["bFind", "sUp", "sDown", "sDup", "sDel", "aText", "aImg"].forEach(k => $(k).disabled = false);
+  setDirty(false); updUndo();
+  render(0);
+}
+function readFile(f) {
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => openText(r.result, f.name, "");
+  r.readAsText(f, "utf-8");
+}
+$("bOpen").onclick = () => { if (dirty && !confirmLeave()) return; $("welcome").hidden = false; $("wClose").hidden = !src; };
+$("wClose").onclick = () => { $("welcome").hidden = true; };
+$("bOpen2").onclick = () => $("fileIn").click();
+$("fileIn").onchange = e => { readFile(e.target.files[0]); e.target.value = ""; };
+const drop = $("drop");
+["dragenter", "dragover"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); if (t === "dragleave" && e.relatedTarget) return; drop.classList.remove("over"); }));
+document.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) { if (dirty && !confirmLeave()) return; readFile(f); } });
+const wbox = document.querySelector(".wbox");
+function confirmLeave() { return window.confirm ? confirm("저장하지 않은 변경이 있어요. 다른 파일을 열까요?") : true; }
+addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+/* 사이트에 올라간 수업 목록 (사이트에서 열었을 때만) */
+(async function siteList() {
+  if (location.protocol === "file:") return;
+  const pick = (t, s, e) => { const a = t.indexOf(s); if (a < 0) return null; const b = t.indexOf(e, a); return b < 0 ? null : new Function("return " + t.slice(a + s.length - 1, b + e.length - 1))(); };
+  const opts = [];
+  for (const g of [1, 2, 3]) {
+    let data = null;
+    try { data = pick(await fetch(`../g${g}/index.html`).then(r => r.text()), "const 수업 = {", "\n};"); } catch (e) {}
+    if (!data) continue;
+    for (const term of [1, 2]) for (const u of (data[term] || [])) for (const s of u.소단원) for (const [k, h] of Object.entries(s.files)) {
+      if (!/\.html?$/i.test(h) || /^https?:/i.test(h)) continue;
+      opts.push({ g, label: `${term}학기 ${u.단원 ? u.단원 + "단원 " : ""}${s.머리 || "(" + s.번호 + ")"} ${s.제목}${k === "열기" ? "" : " · " + k}`, path: `g${g}/${h}` });
+    }
+  }
+  if (!opts.length) return;
+  const sp = $("sitePick");
+  for (const g of [1, 2, 3]) {
+    const list = opts.filter(o => o.g === g); if (!list.length) continue;
+    const og = document.createElement("optgroup"); og.label = g + "학년";
+    list.forEach(o => { const op = document.createElement("option"); op.value = o.path; op.textContent = o.label; og.appendChild(op); });
+    sp.appendChild(og);
+  }
+  $("siteWrap").hidden = false;
+  sp.onchange = async () => {
+    if (!sp.value) return;
+    if (dirty && !confirmLeave()) { sp.value = ""; return; }
+    $("loading").classList.add("on");
+    try {
+      const t = await fetch("../" + sp.value).then(r => { if (!r.ok) throw 0; return r.text(); });
+      openText(t, sp.value.replaceAll("/", "_"), sp.value);
+    } catch (e) { toast("파일을 불러오지 못했어요."); }
+    $("loading").classList.remove("on"); sp.value = "";
+  };
+})();
+
+/* ============ 수업 화면 그리기 ============ */
+function serialize(keepIds) {
+  const html = "<!DOCTYPE html>\n" + src.documentElement.outerHTML;
+  return keepIds ? html : html.replace(/ data-ed-id="\d+"/g, "");
+}
+let blobUrl = null;
+function render(goTo) {
+  sel = null; editing = null; drawProps();
+  $("loading").classList.add("on");
+  if (blobUrl) URL.revokeObjectURL(blobUrl);
+  blobUrl = URL.createObjectURL(new Blob([serialize(true)], { type: "text/html" }));
+  frame.onload = () => { setTimeout(() => { hook(); $("loading").classList.remove("on"); showSlide(Math.min(goTo || 0, srcSlides().length - 1)); }, 60); };
+  frame.src = blobUrl;
+  drawList();
+}
+
+const EDIT_CSS = `
+html.__ed .step{opacity:1!important;transform:none!important;visibility:visible!important}
+html.__ed .slide{transition:none!important}
+html.__ed .slide.active *{cursor:default}
+html.__ed [contenteditable="true"]{outline:2px solid #0071e3!important;outline-offset:3px;cursor:text!important;-webkit-user-select:text!important;user-select:text!important}
+#__edsel{position:fixed;z-index:2147483646;border:2px solid #0071e3;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.8);cursor:move;display:none;touch-action:none}
+#__edsel.txt{pointer-events:none;border-style:dashed}
+#__edsel i{position:absolute;right:-7px;bottom:-7px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #0071e3;cursor:nwse-resize}
+#__edsel b{position:absolute;left:-2px;top:-24px;background:#0071e3;color:#fff;font:600 12px/20px -apple-system,"Noto Sans KR",sans-serif;padding:0 7px;border-radius:5px;white-space:nowrap;pointer-events:none}
+#__edhov{position:fixed;z-index:2147483645;border:1px dashed rgba(0,113,227,.7);pointer-events:none;display:none}
+`;
+let box, hov;
+function hook() {
+  W = frame.contentWindow; D = frame.contentDocument;
+  if (!D) return;
+  const st = D.createElement("style"); st.textContent = EDIT_CSS; D.head.appendChild(st);
+  box = D.createElement("div"); box.id = "__edsel"; box.innerHTML = "<b></b><i></i>"; D.body.appendChild(box);
+  hov = D.createElement("div"); hov.id = "__edhov"; D.body.appendChild(hov);
+  setMode(mode, true);
+  const block = e => { if (mode === "edit") { if (editing && editing.contains(e.target) && e.type !== "click") { e.stopImmediatePropagation(); return; } e.stopImmediatePropagation(); } };
+  ["mousedown", "mouseup", "click", "touchstart", "touchend", "keyup", "contextmenu"].forEach(t => W.addEventListener(t, block, true));
+  W.addEventListener("click", e => { if (mode === "edit" && !(editing && editing.contains(e.target))) e.preventDefault(); }, true);
+  W.addEventListener("pointerdown", onDown, true);
+  W.addEventListener("pointermove", onHover, true);
+  W.addEventListener("dblclick", onDbl, true);
+  W.addEventListener("keydown", onKeyFrame, true);
+  W.addEventListener("resize", place);
+  const w = W; (function loop() { if (w === W && !w.closed) { place(); w.requestAnimationFrame(loop); } })();
+}
+function setMode(m, quiet) {
+  mode = m;
+  $("mEdit").classList.toggle("on", m === "edit"); $("mPlay").classList.toggle("on", m === "play");
+  $("mEdit").setAttribute("aria-selected", m === "edit"); $("mPlay").setAttribute("aria-selected", m === "play");
+  $("hint").style.visibility = m === "edit" ? "visible" : "hidden";
+  if (!D) return;
+  D.documentElement.classList.toggle("__ed", m === "edit");
+  if (m === "play") { endText(); select(null); }
+  if (!quiet && m === "play") { render(cur); mode = "play"; }
+}
+$("mEdit").onclick = () => { if (mode !== "edit") { mode = "edit"; render(cur); } };
+$("mPlay").onclick = () => { if (mode !== "play") { endText(); mode = "play"; render(cur); } };
+
+/* 슬라이드 목록 */
+function title(sl) {
+  if (sl.classList.contains("s-cover")) return "표지";
+  const h = sl.querySelector("h2"), k = sl.querySelector(".kicker");
+  let t = "";
+  if (h) { const c = h.cloneNode(true); c.querySelectorAll("small").forEach(x => x.remove()); t = c.textContent.replace(/\s+/g, " ").trim(); }
+  if (!t) { const tt = sl.querySelector(".ttl"); if (tt) t = tt.textContent.replace(/\s+/g, " ").trim(); }
+  if (!t) { const sc = sl.querySelector("b.sec"); if (sc) t = sc.textContent.trim(); }
+  if (!t && k) t = k.textContent.split("·")[0].trim();
+  if (!t) { const ln = [...sl.querySelectorAll("p,li,span,div,b")].map(x => x.children.length ? "" : x.textContent.replace(/\s+/g, " ").trim()).find(x => x.length >= 4 && !/^[\d\s./:%-]+$/.test(x)); if (ln) t = ln; }
+  return t || "(그림 장면)";
+}
+function drawList() {
+  const ss = srcSlides();
+  $("scount").textContent = ss.length + "장";
+  $("slist").innerHTML = ss.map((s, i) => `<li data-i="${i}" class="${i === cur ? "on" : ""}"><i>${i + 1}</i><span>${esc(title(s))}</span></li>`).join("");
+}
+$("slist").onclick = e => { const li = e.target.closest("li"); if (li) { endText(); showSlide(+li.dataset.i); } };
+function showSlide(i) {
+  const ss = srcSlides(); if (!ss.length) return;
+  cur = Math.max(0, Math.min(i, ss.length - 1));
+  select(null);
+  if (W) {
+    try { if (typeof W.go === "function") W.go(cur); else throw 0; }
+    catch (e) { const live = [...D.querySelectorAll(".slide")]; live.forEach((s, k) => s.classList.toggle("active", k === cur)); }
+  }
+  [...$("slist").children].forEach((li, k) => li.classList.toggle("on", k === cur));
+  $("slist").children[cur]?.scrollIntoView({ block: "nearest" });
+}
+
+/* ============ 고르기 ============ */
+function pickAt(x, y) {
+  const els = D.elementsFromPoint(x, y).filter(el => el !== box && el !== hov && el.hasAttribute && el.hasAttribute("data-ed-id"));
+  const slide = D.querySelectorAll(".slide")[cur];
+  const inside = els.filter(el => el !== slide && !el.classList.contains("slide") && el.closest("#stage, body"));
+  // 지금 슬라이드 안의 요소를 먼저, 없으면 머리말/꼬리말 같은 바깥 요소
+  const inSlide = inside.filter(el => slide && slide.contains(el) && isVisible(el));
+  const list = inSlide.length ? inSlide : inside.filter(el => !el.closest(".slide") && isVisible(el) && el.tagName !== "BODY" && el.tagName !== "HTML" && el.id !== "stage");
+  return list[0] || null;
+}
+function isVisible(el) { const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return false; const cs = W.getComputedStyle(el); return cs.visibility !== "hidden" && cs.display !== "none" && +cs.opacity > 0.05; }
+function onHover(e) {
+  if (mode !== "edit" || drag || editing) { if (hov) hov.style.display = "none"; return; }
+  const el = pickAt(e.clientX, e.clientY);
+  if (!el || el === sel) { hov.style.display = "none"; return; }
+  const r = el.getBoundingClientRect();
+  Object.assign(hov.style, { display: "block", left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+}
+function select(el) {
+  if (sel !== el) endText();
+  sel = el; place(); drawProps();
+}
+function place() {
+  if (!box) return;
+  if (!sel || !sel.isConnected || mode !== "edit") { box.style.display = "none"; return; }
+  const r = sel.getBoundingClientRect();
+  Object.assign(box.style, { display: "block", left: r.left - 2 + "px", top: r.top - 2 + "px", width: r.width + 4 + "px", height: r.height + 4 + "px" });
+  box.classList.toggle("txt", !!editing);
+  box.querySelector("b").textContent = label(sel);
+}
+function label(el) {
+  const t = el.tagName.toLowerCase();
+  if (t === "img") return "그림";
+  if (el.closest("svg")) return "그림 조각";
+  const txt = el.textContent.replace(/\s+/g, " ").trim();
+  return txt ? (txt.length > 14 ? txt.slice(0, 14) + "…" : txt) : "상자";
+}
+
+/* ============ 끌기 / 크기 ============ */
+let drag = null;
+function scaleOf(el) { const r = el.getBoundingClientRect(); return el.offsetWidth ? r.width / el.offsetWidth : (W.document.getElementById("stage") ? D.getElementById("stage").getBoundingClientRect().width / D.getElementById("stage").offsetWidth : 1); }
+function parseTr(el) { const t = (el.style.translate || "").trim(); if (!t || t === "none") return [0, 0]; const p = t.split(/\s+/).map(v => parseFloat(v) || 0); return [p[0] || 0, p[1] || 0]; }
+function onDown(e) {
+  if (mode !== "edit") return;
+  if (editing) { if (editing.contains(e.target)) { e.stopImmediatePropagation(); return; } endText(); }
+  e.stopImmediatePropagation(); e.preventDefault();
+  hov.style.display = "none";
+  const onBox = e.target === box || e.target.parentNode === box;
+  const resize = e.target.tagName === "I" && e.target.parentNode === box;
+  if (!onBox) { const el = pickAt(e.clientX, e.clientY); select(el); if (!el) return; }
+  else if (!resize) {
+    // 고른 상자를 다시 누르면 그 안쪽 요소로 들어가 볼 수 있게
+    const inner = pickAt(e.clientX, e.clientY);
+    drag = { inner: inner && inner !== sel && sel.contains(inner) ? inner : null };
+  }
+  if (!sel) return;
+  const s = scaleOf(sel), [tx, ty] = parseTr(sel), cs = W.getComputedStyle(sel);
+  drag = Object.assign(drag || {}, { x: e.clientX, y: e.clientY, s, tx, ty, w: sel.offsetWidth || parseFloat(cs.width), h: sel.offsetHeight || parseFloat(cs.height), resize, moved: false, snap: false });
+  W.addEventListener("pointermove", onMove, true);
+  W.addEventListener("pointerup", onUp, true);
+}
+function onMove(e) {
+  if (!drag) return;
+  e.stopImmediatePropagation();
+  const dx = (e.clientX - drag.x) / drag.s, dy = (e.clientY - drag.y) / drag.s;
+  if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+  if (!drag.snap) { snapshot(); drag.snap = true; }
+  drag.moved = true;
+  if (drag.resize) {
+    setStyle(sel, { width: Math.max(10, Math.round(drag.w + dx)) + "px", height: Math.max(10, Math.round(drag.h + dy)) + "px", "box-sizing": "border-box", "max-width": "none" }, true);
+  } else {
+    setStyle(sel, { translate: `${Math.round(drag.tx + dx)}px ${Math.round(drag.ty + dy)}px` }, true);
+  }
+  place(); drawPropsValues();
+}
+function onUp(e) {
+  W.removeEventListener("pointermove", onMove, true);
+  W.removeEventListener("pointerup", onUp, true);
+  if (drag && !drag.moved && drag.inner) select(drag.inner);
+  if (drag && drag.moved) setDirty(true);
+  drag = null;
+}
+
+/* ============ 글자 고치기 ============ */
+function canEditText(el) {
+  if (!el || el.closest("svg") || el.tagName === "IMG" || el.tagName === "INPUT") return false;
+  if (!el.textContent.trim()) return false;
+  const s = srcEl(el.dataset.edId); if (!s) return false;
+  if (s.textContent.replace(/\s+/g, "") !== el.textContent.replace(/\s+/g, "")) return false;     // 스크립트가 바꾼 글자
+  for (const c of el.querySelectorAll("*")) if (!c.hasAttribute("data-ed-id") || c.closest("svg")) return false; // 스크립트가 만든 요소
+  return true;
+}
+function onDbl(e) {
+  if (mode !== "edit") return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  const el = pickAt(e.clientX, e.clientY) || sel;
+  if (!el) return;
+  // 글자가 들어 있는 가장 바깥의 고칠 수 있는 요소를 찾는다 (한 문장 단위)
+  let t = el; while (t.parentElement && t.parentElement.hasAttribute("data-ed-id") && !t.parentElement.classList.contains("slide") && canEditText(t.parentElement) && t.parentElement.textContent.length < 400 && t.parentElement.children.length <= 6) t = t.parentElement;
+  if (!canEditText(t)) t = el;
+  select(t); startText(e.clientX, e.clientY);
+}
+function startText(x, y) {
+  if (!sel) return;
+  if (!canEditText(sel)) { toast("이 글자는 여기서 고칠 수 없어요. 크기·색·위치만 바꿀 수 있습니다."); return; }
+  snapshot();
+  editing = sel; editing.setAttribute("contenteditable", "true"); editing.spellcheck = false;
+  editing.focus();
+  box.style.display = "none"; hov.style.display = "none";
+  const s = W.getSelection();
+  let r = null;
+  try { if (x != null && D.caretRangeFromPoint) r = D.caretRangeFromPoint(x, y); } catch (e) {}
+  if (!r || !editing.contains(r.startContainer)) { r = D.createRange(); r.selectNodeContents(editing); r.collapse(false); }
+  s.removeAllRanges(); s.addRange(r);
+  place(); drawProps();
+}
+function endText() {
+  if (!editing) return;
+  const el = editing; editing = null;
+  el.removeAttribute("contenteditable"); el.removeAttribute("spellcheck");
+  syncHTML(el);
+  place(); drawProps(); drawList(); [...$("slist").children].forEach((li, k) => li.classList.toggle("on", k === cur));
+}
+function syncHTML(el) {
+  const s = srcEl(el.dataset.edId); if (!s) return;
+  const c = el.cloneNode(true);
+  // 화면이 돌아가면서 붙인 클래스(on 등)는 원본 것으로 되돌려 저장
+  c.querySelectorAll("[data-ed-id]").forEach(x => { const o = srcEl(x.dataset.edId); if (o) { o.hasAttribute("class") ? x.setAttribute("class", o.getAttribute("class")) : x.removeAttribute("class"); } });
+  c.querySelectorAll("*").forEach(x => { if (!x.hasAttribute("data-ed-id")) x.setAttribute("data-ed-id", nextId++); });
+  const before = s.innerHTML;
+  s.innerHTML = c.innerHTML;
+  // 새로 생긴 태그(굵게 등)에도 같은 번호를 붙여 둔다
+  const liveNew = [...el.querySelectorAll("*")], srcNew = [...s.querySelectorAll("*")];
+  if (liveNew.length === srcNew.length) liveNew.forEach((x, k) => x.setAttribute("data-ed-id", srcNew[k].getAttribute("data-ed-id")));
+  if (before !== s.innerHTML) setDirty(true); else undoStack.pop(), updUndo();
+}
+
+/* ============ 스타일 바꾸기 ============ */
+function setStyle(el, props, live) {
+  const s = srcEl(el.dataset.edId);
+  for (const [k, v] of Object.entries(props)) {
+    for (const t of [el, s]) { if (!t) continue; if (v === null) t.style.removeProperty(k); else t.style.setProperty(k, v); if (!t.getAttribute("style")) t.removeAttribute("style"); }
+  }
+  if (!live) setDirty(true);
+}
+function change(props) { if (!sel) return; endTextKeep(); snapshot(); setStyle(sel, props); place(); drawPropsValues(); }
+function endTextKeep() { if (editing) { const e = editing; endText(); sel = e; } }
+
+/* ============ 오른쪽 설정 ============ */
+function drawProps() {
+  const has = !!sel && mode === "edit";
+  $("propEmpty").hidden = has; $("propBody").hidden = !has;
+  if (!has) return;
+  const txt = sel.textContent.replace(/\s+/g, " ").trim();
+  $("pWhat").innerHTML = esc(label(sel) === "그림" ? "그림" : (txt ? (txt.length > 60 ? txt.slice(0, 60) + "…" : txt) : "상자")) + `<small>${editing ? "글자 고치는 중 · 다 고쳤으면 바깥을 클릭하세요" : sel.tagName.toLowerCase() + (sel.className && typeof sel.className === "string" ? " ." + sel.className.split(" ")[0] : "")}</small>`;
+  const ok = canEditText(sel);
+  $("pEditText").hidden = !ok || !!editing; $("pNoText").hidden = ok || !txt || sel.tagName === "IMG";
+  const p = sel.parentElement;
+  $("pParent").disabled = !p || !p.hasAttribute("data-ed-id") || p.classList.contains("slide") || p.id === "stage";
+  $("gImg").hidden = sel.tagName !== "IMG";
+  drawPropsValues();
+}
+function drawPropsValues() {
+  if (!sel) return;
+  const cs = W.getComputedStyle(sel);
+  $("fSize").value = Math.round(parseFloat(cs.fontSize));
+  $("fBold").classList.toggle("on", +cs.fontWeight >= 600);
+  $("fItal").classList.toggle("on", cs.fontStyle === "italic");
+  $("fUnder").classList.toggle("on", cs.textDecorationLine.includes("underline"));
+  document.querySelectorAll("[data-al]").forEach(b => b.classList.toggle("on", cs.textAlign === b.dataset.al || (b.dataset.al === "left" && cs.textAlign === "start")));
+  const lh = cs.lineHeight === "normal" ? 1.4 : parseFloat(cs.lineHeight) / parseFloat(cs.fontSize);
+  $("lh").value = (Math.round(lh * 10) / 10).toFixed(1);
+  const [tx, ty] = parseTr(sel); $("pMove").textContent = `${Math.round(tx)}, ${Math.round(ty)}`;
+  $("pW").value = Math.round(sel.offsetWidth || parseFloat(cs.width) || 0);
+  $("pH").value = Math.round(sel.offsetHeight || parseFloat(cs.height) || 0);
+}
+$("pParent").onclick = () => { if (sel && sel.parentElement) select(sel.parentElement); };
+$("pEditText").onclick = () => startText();
+$("fMinus").onclick = () => change({ "font-size": Math.max(6, (+$("fSize").value || 16) - 2) + "px" });
+$("fPlus").onclick = () => change({ "font-size": Math.min(300, (+$("fSize").value || 16) + 2) + "px" });
+$("fSize").onchange = () => change({ "font-size": Math.max(6, Math.min(300, +$("fSize").value || 16)) + "px" });
+$("fBold").onclick = () => change({ "font-weight": $("fBold").classList.contains("on") ? "400" : "800" });
+$("fItal").onclick = () => change({ "font-style": $("fItal").classList.contains("on") ? "normal" : "italic" });
+$("fUnder").onclick = () => change({ "text-decoration": $("fUnder").classList.contains("on") ? "none" : "underline" });
+document.querySelectorAll("[data-al]").forEach(b => b.onclick = () => change({ "text-align": b.dataset.al }));
+const setLh = v => change({ "line-height": Math.max(0.8, Math.min(3, v)).toFixed(1) });
+$("lhMinus").onclick = () => setLh(+$("lh").value - 0.1);
+$("lhPlus").onclick = () => setLh(+$("lh").value + 0.1);
+$("lh").onchange = () => setLh(+$("lh").value);
+$("pW").onchange = () => change({ width: Math.max(10, +$("pW").value) + "px", "box-sizing": "border-box", "max-width": "none" });
+$("pH").onchange = () => change({ height: Math.max(10, +$("pH").value) + "px", "box-sizing": "border-box" });
+$("pResetPos").onclick = () => change({ translate: null });
+$("pResetSize").onclick = () => change({ width: null, height: null, "max-width": null });
+$("pFront").onclick = () => change({ "z-index": "50", position: W.getComputedStyle(sel).position === "static" ? "relative" : null });
+$("pBack").onclick = () => change({ "z-index": "0", position: W.getComputedStyle(sel).position === "static" ? "relative" : null });
+
+/* 색: 수업 파일이 쓰는 색 + 기본 색 */
+function colors() {
+  const set = new Set();
+  try {
+    const rs = W.getComputedStyle(D.documentElement);
+    for (const sh of D.styleSheets) { let rules; try { rules = sh.cssRules; } catch (e) { continue; }
+      for (const r of rules) if (r.selectorText === ":root" && r.style) for (const p of r.style) if (p.startsWith("--")) { const v = rs.getPropertyValue(p).trim(); if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) set.add(v.toLowerCase()); } }
+  } catch (e) {}
+  ["#1c1b19", "#ffffff", "#fee500", "#e5484d", "#0071e3", "#2f9e44", "#8a8a8a"].forEach(c => set.add(c));
+  return [...set].slice(0, 16);
+}
+function drawSwatches() {
+  const cs = colors();
+  const mk = (id, prop) => {
+    $(id).innerHTML = (prop === "background-color" ? `<button class="none" type="button" title="바탕 없애기" data-c=""></button>` : "") + cs.map(c => `<button type="button" style="background:${c}" title="${c}" data-c="${c}"></button>`).join("") + `<input type="color" title="다른 색">`;
+    $(id).onclick = e => { const b = e.target.closest("button"); if (b) change({ [prop]: b.dataset.c || "transparent" }); };
+    $(id).querySelector("input").onchange = e => change({ [prop]: e.target.value });
+  };
+  mk("swFg", "color"); mk("swBg", "background-color");
+}
+frame.addEventListener("load", () => setTimeout(drawSwatches, 120));
+
+/* ============ 요소 복제 / 지우기 / 글상자 / 그림 ============ */
+$("pDel").onclick = () => {
+  if (!sel) return; endText(); snapshot();
+  const s = srcEl(sel.dataset.edId); if (s) s.remove(); sel.remove(); select(null); setDirty(true); drawList();
+};
+$("pDupEl").onclick = () => {
+  if (!sel) return; endText(); snapshot();
+  const s = srcEl(sel.dataset.edId); if (!s) return;
+  const c = s.cloneNode(true);
+  [c, ...c.querySelectorAll("*")].forEach(x => { x.setAttribute("data-ed-id", nextId++); x.removeAttribute("id"); });
+  const [tx, ty] = parseTr(s); c.style.translate = `${tx + 20}px ${ty + 20}px`;
+  s.after(c);
+  const lc = D.importNode(c, true); sel.after(lc);
+  select(lc); setDirty(true);
+};
+function curSlides() { return { s: srcSlides()[cur], l: D.querySelectorAll(".slide")[cur] }; }
+function addNode(html) {
+  endText(); snapshot();
+  const { s, l } = curSlides(); if (!s || !l) return null;
+  const t = src.createElement("template"); t.innerHTML = html.trim();
+  const n = t.content.firstElementChild; [n, ...n.querySelectorAll("*")].forEach(x => x.setAttribute("data-ed-id", nextId++));
+  s.appendChild(n);
+  const ln = D.importNode(n, true); l.appendChild(ln);
+  setDirty(true); return ln;
+}
+$("aText").onclick = () => {
+  const ln = addNode(`<div class="ed-box" style="position:absolute;left:440px;top:300px;z-index:20;font-size:40px;font-weight:700;line-height:1.3;color:#1c1b19;white-space:pre-wrap;padding:6px 10px">새 글상자</div>`);
+  if (ln) { select(ln); startText(); undoStack.pop(); updUndo(); toast("글자를 고친 뒤 끌어서 자리를 잡으세요."); }
+};
+let imgTarget = null;
+$("aImg").onclick = () => { imgTarget = "new"; $("imgIn").click(); };
+$("pImg").onclick = () => { imgTarget = sel; $("imgIn").click(); };
+$("imgIn").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const url = await shrink(f);
+  if (imgTarget === "new") {
+    const ln = addNode(`<img class="ed-img" alt="" style="position:absolute;left:390px;top:180px;width:500px;height:auto;z-index:20" src="${url}">`);
+    if (ln) select(ln);
+  } else if (imgTarget && imgTarget.tagName === "IMG") {
+    snapshot();
+    const s = srcEl(imgTarget.dataset.edId); imgTarget.src = url; imgTarget.removeAttribute("srcset");
+    if (s) { s.setAttribute("src", url); s.removeAttribute("srcset"); }
+    setDirty(true); place();
+  }
+  imgTarget = null;
+};
+function shrink(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => {
+      const data = r.result;
+      if (file.size < 250 * 1024 || /svg|gif/.test(file.type)) return res(data);
+      const im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, 1600 / Math.max(im.width, im.height));
+        const c = document.createElement("canvas"); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        res(file.type === "image/png" ? c.toDataURL("image/png") : c.toDataURL("image/jpeg", 0.85));
+      };
+      im.src = data;
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+/* ============ 슬라이드 정리 ============ */
+function slideOp(fn) { endText(); snapshot(); const r = fn(); setDirty(true); render(r); }
+$("sUp").onclick = () => { if (cur === 0) return; slideOp(() => { const ss = srcSlides(); ss[cur - 1].before(ss[cur]); return cur - 1; }); };
+$("sDown").onclick = () => { const ss = srcSlides(); if (cur >= ss.length - 1) return; slideOp(() => { ss[cur + 1].after(ss[cur]); return cur + 1; }); };
+$("sDup").onclick = () => slideOp(() => { const s = srcSlides()[cur]; const c = s.cloneNode(true); c.classList.remove("active"); [c, ...c.querySelectorAll("*")].forEach(x => x.setAttribute("data-ed-id", nextId++)); c.removeAttribute("id"); s.after(c); return cur + 1; });
+$("sDel").onclick = () => {
+  const ss = srcSlides(); if (ss.length < 2) { toast("슬라이드가 하나뿐이라 지울 수 없어요."); return; }
+  slideOp(() => { ss[cur].remove(); toast(`${cur + 1}번 슬라이드를 지웠어요. 되돌리려면 Ctrl+Z`); return Math.min(cur, ss.length - 2); });
+};
+
+/* ============ 찾아 바꾸기 ============ */
+function textNodes() {
+  const out = [], w = src.createTreeWalker(src.body, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement && /^(SCRIPT|STYLE|TEMPLATE)$/.test(n.parentElement.tagName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  while (w.nextNode()) out.push(w.currentNode);
+  return out;
+}
+function findCount() {
+  const q = $("fq").value; if (!q) { $("fres").textContent = ""; $("fGo").disabled = true; return; }
+  let n = 0; const where = new Set(), ss = srcSlides();
+  for (const t of textNodes()) { const k = t.nodeValue.split(q).length - 1; if (k) { n += k; const sl = t.parentElement.closest(".slide"); where.add(sl ? ss.indexOf(sl) + 1 : 0); } }
+  const list = [...where].sort((a, b) => a - b).map(x => x ? x + "번" : "공통 부분");
+  $("fres").textContent = n ? `${n}곳 · ${list.slice(0, 12).join(", ")}${list.length > 12 ? " …" : ""}` : "찾는 말이 없어요.";
+  $("fGo").disabled = !n;
+}
+$("bFind").onclick = () => { $("findPop").hidden = !$("findPop").hidden; if (!$("findPop").hidden) { $("fq").focus(); findCount(); } };
+$("fClose").onclick = () => $("findPop").hidden = true;
+$("fq").oninput = findCount;
+$("fGo").onclick = () => {
+  const q = $("fq").value, r = $("fr").value; if (!q) return;
+  endText(); snapshot(); let n = 0;
+  for (const t of textNodes()) { const k = t.nodeValue.split(q).length - 1; if (k) { n += k; t.nodeValue = t.nodeValue.split(q).join(r); } }
+  setDirty(true); render(cur); toast(`${n}곳을 바꿨어요.`); findCount();
+};
+
+/* ============ 되돌리기 ============ */
+function snapshot() { undoStack.push(src.documentElement.outerHTML); if (undoStack.length > 40) undoStack.shift(); redoStack = []; updUndo(); }
+function restore(html) {
+  const doc = new DOMParser().parseFromString("<!DOCTYPE html>" + html, "text/html");
+  src = doc;
+}
+function undo() { if (editing) { endText(); } if (!undoStack.length) return; redoStack.push(src.documentElement.outerHTML); restore(undoStack.pop()); setDirty(true); updUndo(); render(cur); }
+function redo() { if (!redoStack.length) return; undoStack.push(src.documentElement.outerHTML); restore(redoStack.pop()); setDirty(true); updUndo(); render(cur); }
+function updUndo() { $("bUndo").disabled = !undoStack.length; $("bRedo").disabled = !redoStack.length; }
+$("bUndo").onclick = undo; $("bRedo").onclick = redo;
+
+/* ============ 저장 ============ */
+function save() {
+  if (!src) return; endText();
+  const html = serialize(false);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  a.download = fileName || "수업.html";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  setDirty(false);
+  toast(`“${a.download}” 저장 · ${(html.length / 1048576).toFixed(1)}MB`);
+}
+$("bSave").onclick = save;
+
+/* ============ 단축키 ============ */
+function keys(e, fromFrame) {
+  const k = e.key, ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && k.toLowerCase() === "s") { e.preventDefault(); save(); return true; }
+  if (editing) { if (k === "Escape") { e.preventDefault(); endTextKeep(); return true; } return false; }
+  if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && !fromFrame) return false;
+  if (ctrl && k.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); return true; }
+  if (ctrl && k.toLowerCase() === "y") { e.preventDefault(); redo(); return true; }
+  if (!src || mode !== "edit") return false;
+  if (k === "PageDown") { e.preventDefault(); showSlide(cur + 1); return true; }
+  if (k === "PageUp") { e.preventDefault(); showSlide(cur - 1); return true; }
+  if (!sel) return false;
+  if (k === "Escape") { select(null); return true; }
+  if (k === "Enter" || k === "F2") { e.preventDefault(); startText(); return true; }
+  if (k === "Delete" || k === "Backspace") { e.preventDefault(); $("pDel").click(); return true; }
+  if (ctrl && k.toLowerCase() === "d") { e.preventDefault(); $("pDupEl").click(); return true; }
+  const step = e.shiftKey ? 10 : 1, mv = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[k];
+  if (mv) {
+    e.preventDefault();
+    if (!e.repeat) snapshot();
+    const [tx, ty] = parseTr(sel); setStyle(sel, { translate: `${tx + mv[0]}px ${ty + mv[1]}px` }); place(); drawPropsValues(); return true;
+  }
+  return false;
+}
+document.addEventListener("keydown", e => keys(e, false));
+function onKeyFrame(e) {
+  if (mode !== "edit") return;
+  e.stopImmediatePropagation();       // 수업 화면의 넘기기 키가 움직이지 않게
+  keys(e, true);
+}
+</script>
+</body>
+</html>

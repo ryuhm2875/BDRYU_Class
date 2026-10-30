@@ -61,7 +61,7 @@ button:disabled{opacity:.35;cursor:default}
 .sact{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px;border-top:1px solid var(--line)}
 .sact .btn{padding:0;justify-content:center;font-size:13px}
 .sact2{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 10px 10px}
-.sact2 .btn{justify-content:center}
+.sact2 .btn{justify-content:center;min-width:0;padding:0 6px;font-size:13px}
 
 .center{position:relative;display:grid;grid-template-rows:1fr auto;min-height:0;min-width:0}
 .view{position:relative;background:var(--stagebg);min-height:0}
@@ -121,9 +121,30 @@ button:disabled{opacity:.35;cursor:default}
 .mbox .acts{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .mbox a{color:var(--blue)}
 .mbox .err{color:var(--red);font-size:13px;min-height:18px;margin:-4px 0 10px}
+#tokModal{z-index:60}
 .toast{position:fixed;left:50%;bottom:52px;transform:translateX(-50%);background:var(--fg);color:var(--panel);padding:10px 16px;border-radius:999px;font-size:13px;z-index:40;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.on{opacity:1}
 input[type=file]{display:none}
+.menu{position:fixed;z-index:35;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:6px;min-width:220px}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 12px;border-radius:8px}
+.menu button:hover{background:var(--hover)}
+.menu small{display:block;color:var(--muted);font-size:12px}
+.mbox label.f{display:block;font-size:12px;color:var(--muted);margin:12px 0 4px}
+.mbox select,.mbox input[type=text],.mbox input[type=url]{width:100%;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:var(--bg)}
+.mbox input[type=file]{display:block;width:100%;padding:8px;border:1px dashed var(--line);border-radius:9px}
+.mbox .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mbox .preview{margin:14px 0 8px;padding:12px;border-radius:10px;background:var(--bg);font-size:13px;line-height:1.6}
+.mbox .preview small{color:var(--muted)}
+.mbox .bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin:8px 0}
+.mbox .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
+.hist{list-style:none;margin:0 0 12px;padding:0;max-height:50vh;overflow:auto}
+.hist li{display:flex;gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--line)}
+.hist li .t{flex:1;min-width:0}
+.hist li b{display:block;font-weight:600}
+.hist li small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fontsel{height:32px;border:1px solid var(--line);border-radius:7px;background:var(--panel);padding:0 8px}
+.scope{display:flex;gap:4px;flex-wrap:wrap}
+.scope .tog{height:28px;font-size:12px}
 @media (max-width:1100px){.main{grid-template-columns:190px minmax(0,1fr) 240px}.brand small{display:none}}
 </style>
 </head>
@@ -131,6 +152,7 @@ input[type=file]{display:none}
 <header class="top">
   <span class="brand">수업 화면 편집기<small>류봉두의 즐거운 국어 수업</small></span>
   <button class="btn" id="bOpen" type="button">열기</button>
+  <button class="btn" id="bNew" type="button" title="새 수업 자료를 사이트에 올리고 목차에 버튼 붙이기">새 수업 올리기</button>
   <span class="fname" id="fname"><span>파일을 열어 주세요</span></span>
   <div class="seg" role="tablist" aria-label="보기 방식">
     <button type="button" id="mEdit" class="on" role="tab" aria-selected="true">편집</button>
@@ -138,6 +160,7 @@ input[type=file]{display:none}
   </div>
   <span class="sep"></span>
   <button class="btn" id="bFind" type="button" disabled>찾아 바꾸기</button>
+  <button class="btn" id="bHist" type="button" disabled title="사이트에 반영했던 기록과 예전 버전">기록</button>
   <button class="btn icon" id="bUndo" type="button" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
   <button class="btn icon" id="bRedo" type="button" title="다시 하기 (Ctrl+Y)" disabled>↷</button>
   <button class="btn" id="bSave" type="button" disabled title="고친 파일을 내 컴퓨터로 내려받기 (Ctrl+S)">내려받기</button>
@@ -157,6 +180,8 @@ input[type=file]{display:none}
     <div class="sact2">
       <button class="btn" id="aText" type="button" disabled>＋ 글상자</button>
       <button class="btn" id="aImg" type="button" disabled>＋ 그림</button>
+      <button class="btn" id="aLink" type="button" disabled>＋ 링크·QR</button>
+      <button class="btn" id="aSlide" type="button" disabled>＋ 새 슬라이드</button>
     </div>
   </aside>
 
@@ -194,6 +219,12 @@ input[type=file]{display:none}
       </ul>
     </div>
     <div id="propBody" hidden>
+      <div class="grp" id="gMulti" hidden>
+        <h4>여러 개 줄 맞추기 <span style="font-weight:400">· Shift+클릭으로 더 고르기</span></h4>
+        <div class="row"><button class="tog" data-align="left" type="button">왼쪽</button><button class="tog" data-align="hc" type="button">가로 가운데</button><button class="tog" data-align="right" type="button">오른쪽</button></div>
+        <div class="row"><button class="tog" data-align="top" type="button">위</button><button class="tog" data-align="vc" type="button">세로 가운데</button><button class="tog" data-align="bottom" type="button">아래</button></div>
+        <div class="row"><button class="tog" data-dist="h" type="button">가로 간격 같게</button><button class="tog" data-dist="v" type="button">세로 간격 같게</button></div>
+      </div>
       <div class="grp">
         <div class="what" id="pWhat"></div>
         <div class="row" style="margin-top:10px">
@@ -205,9 +236,12 @@ input[type=file]{display:none}
       <div class="grp">
         <h4>글자</h4>
         <div class="row"><label>크기</label><button class="tog" id="fMinus" type="button">−</button><input class="num" id="fSize" type="number" min="6" max="300"><button class="tog" id="fPlus" type="button">＋</button></div>
-        <div class="row"><label>모양</label><button class="tog" id="fBold" type="button" style="font-weight:800">굵게</button><button class="tog" id="fItal" type="button" style="font-style:italic">기울임</button><button class="tog" id="fUnder" type="button" style="text-decoration:underline">밑줄</button></div>
+        <div class="row"><label>모양</label><button class="tog" id="fBold" type="button" style="font-weight:800">굵게</button><button class="tog" id="fItal" type="button" style="font-style:italic">기울임</button><button class="tog" id="fUnder" type="button" style="text-decoration:underline">밑줄</button><button class="tog" id="fHl" type="button" title="고친 중이면 고른 글자만, 아니면 상자 전체" style="background:linear-gradient(transparent 55%,#FEE500 55%)">형광펜</button></div>
         <div class="row"><label>정렬</label><button class="tog" data-al="left" type="button">왼쪽</button><button class="tog" data-al="center" type="button">가운데</button><button class="tog" data-al="right" type="button">오른쪽</button></div>
         <div class="row"><label>줄 간격</label><button class="tog" id="lhMinus" type="button">−</button><input class="num" id="lh" type="number" step="0.1" min="0.8" max="3"><button class="tog" id="lhPlus" type="button">＋</button></div>
+        <div class="row"><label>글꼴</label><select class="fontsel" id="ffSel" style="flex:1;min-width:0"></select></div>
+        <div class="row"><label>범위</label><span class="scope"><button class="tog on" data-sc="el" type="button">고른 부분</button><button class="tog" data-sc="slide" type="button">이 슬라이드</button><button class="tog" data-sc="all" type="button">파일 전체</button></span></div>
+        <p class="note" id="ffNote" hidden></p>
       </div>
       <div class="grp">
         <h4>글자 색</h4>
@@ -223,6 +257,12 @@ input[type=file]{display:none}
         <div class="row"><label>너비</label><input class="num" id="pW" type="number" min="10"><label style="width:auto">높이</label><input class="num" id="pH" type="number" min="10"></div>
         <div class="row"><button class="btn" id="pResetPos" type="button">원래 자리로</button><button class="btn" id="pResetSize" type="button">원래 크기로</button></div>
         <div class="row"><button class="btn" id="pFront" type="button">맨 앞으로</button><button class="btn" id="pBack" type="button">맨 뒤로</button></div>
+      </div>
+      <div class="grp" id="gStep">
+        <h4>나타나기</h4>
+        <button class="tog full" id="stTog" type="button" style="width:100%">다음을 누르면 나타나기</button>
+        <div class="row" id="stRow" hidden style="margin-top:8px"><label>순서</label><button class="tog" id="stMinus" type="button">−</button><input class="num" id="stNum" type="number" min="1" max="30"><button class="tog" id="stPlus" type="button">＋</button></div>
+        <p class="note">수업할 때 [다음]을 누르면 순서대로 나타나요. 같은 번호끼리는 함께 나타납니다. 편집 중에는 모두 보이고 주황 점선으로 표시돼요.</p>
       </div>
       <div class="grp" id="gImg" hidden>
         <h4>그림</h4>
@@ -268,10 +308,61 @@ input[type=file]{display:none}
     <div class="acts"><button class="btn" id="tokForget" type="button" style="margin-right:auto">저장된 토큰 지우기</button><button class="btn" id="pubCancel" type="button">취소</button><button class="btn primary" id="pubOk" type="button">반영하기</button></div>
   </div>
 </div>
+<div class="menu" id="slideMenu" hidden>
+  <button type="button" data-tpl="title">제목 + 본문<small>소제목, 큰 제목, 설명 글</small></button>
+  <button type="button" data-tpl="center">가운데 큰 제목<small>단원 시작, 활동 전환</small></button>
+  <button type="button" data-tpl="blank">빈 슬라이드<small>글상자·그림을 직접 놓기</small></button>
+</div>
+<div class="modal" id="linkModal" hidden>
+  <div class="mbox" role="dialog" aria-labelledby="lkT">
+    <h3 id="lkT">링크·QR 넣기</h3>
+    <p>유튜브 영상, 설문, 다른 활동 사이트로 가는 버튼이나 QR 코드를 지금 슬라이드에 넣어요.</p>
+    <label class="f" for="lkUrl">주소</label><input type="url" id="lkUrl" placeholder="https://…" autocomplete="off">
+    <label class="f" for="lkText">버튼에 쓸 말</label><input type="text" id="lkText" placeholder="예: 영상 보기" autocomplete="off">
+    <label class="chk" style="margin-top:12px;margin-bottom:6px"><input type="checkbox" id="lkBtn" checked> 누르면 새 창으로 열리는 버튼</label>
+    <label class="chk"><input type="checkbox" id="lkQr"> 휴대폰으로 찍는 QR 코드</label>
+    <div class="err" id="lkErr"></div>
+    <div class="acts"><button class="btn" id="lkCancel" type="button">취소</button><button class="btn primary" id="lkOk" type="button">넣기</button></div>
+  </div>
+</div>
+<div class="modal" id="histModal" hidden>
+  <div class="mbox" role="dialog" aria-labelledby="hiT">
+    <h3 id="hiT">반영 기록</h3>
+    <p id="histFor"></p>
+    <ul class="hist" id="histList"></ul>
+    <div class="acts"><button class="btn" id="histClose" type="button">닫기</button></div>
+  </div>
+</div>
+<div class="modal" id="newModal" hidden>
+  <div class="mbox" role="dialog" aria-labelledby="nuT" style="width:min(560px,100%)">
+    <h3 id="nuT">새 수업 자료 올리기</h3>
+    <p>파일을 고르고 들어갈 자리를 정하면, 이름을 붙여 사이트에 올리고 목차에 버튼까지 달아요.</p>
+    <label class="f" for="nuFile">파일 (수업 화면 HTML, 학습지 PDF·한글 등)</label><input type="file" id="nuFile">
+    <div class="two">
+      <div><label class="f" for="nuGrade">학년</label><select id="nuGrade"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option></select></div>
+      <div><label class="f" for="nuTerm">학기</label><select id="nuTerm"><option value="1">1학기</option><option value="2" selected>2학기</option></select></div>
+    </div>
+    <label class="f" for="nuUnit">단원</label><select id="nuUnit"></select>
+    <label class="f" for="nuRow">들어갈 줄</label><select id="nuRow"></select>
+    <div class="two" id="nuNewRow" hidden>
+      <div><label class="f" for="nuHead">앞에 붙일 말</label><input type="text" id="nuHead" value="수행평가"></div>
+      <div><label class="f" for="nuTitle">줄 이름</label><input type="text" id="nuTitle" placeholder="예: 한글 홍보물 만들기"></div>
+    </div>
+    <div class="two">
+      <div><label class="f" for="nuLabel">버튼 이름</label><select id="nuLabel"><option>열기</option><option>1차시</option><option>2차시</option><option>3차시</option><option>4차시</option><option>5차시</option><option>학습지</option><option>활동지</option><option value="__custom">직접 쓰기</option></select></div>
+      <div id="nuCustomWrap" hidden><label class="f" for="nuCustom">버튼에 쓸 말</label><input type="text" id="nuCustom" placeholder="예: 안내, 기획서"></div>
+    </div>
+    <div class="preview" id="nuPrev">올릴 파일을 고르세요.</div>
+    <div class="bar" id="nuBar" hidden><i></i></div>
+    <div class="err" id="nuErr"></div>
+    <div class="acts"><button class="btn" id="nuCancel" type="button">닫기</button><button class="btn" id="nuOpenNew" type="button" hidden>편집기로 열기</button><button class="btn primary" id="nuOk" type="button" disabled>올리기</button></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <input type="file" id="fileIn" accept=".html,.htm,text/html">
 <input type="file" id="imgIn" accept="image/*">
 
+<script src="../games/qr.js"></script>
 <script>
 "use strict";
 /* ============ 상태 ============ */
@@ -283,13 +374,15 @@ let nextId = 1;
 let cur = 0;             // 지금 보고 있는 슬라이드 번호
 let mode = "edit";
 let sel = null;          // 고른 요소(수업 화면 쪽)
+let extra = [];          // Shift+클릭으로 더 고른 요소들
+let exPool = [];
 let editing = null;      // 글자 고치는 중인 요소
 let undoStack = [], redoStack = [], dirty = false;
 let W = null, D = null;  // 수업 화면의 window, document
 
 /* ============ 공용 ============ */
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 1800); }
-function setDirty(v) { dirty = v; drawName(); $("bSave").disabled = !src; $("bPub").disabled = !src || !sitePath || location.protocol === "file:"; $("bPub").title = sitePath ? "고친 내용을 사이트에 바로 반영" : "사이트에서 연 수업만 바로 반영할 수 있어요"; }
+function setDirty(v) { dirty = v; drawName(); $("bHist").disabled = !sitePath || location.protocol === "file:"; $("bSave").disabled = !src; $("bPub").disabled = !src || !sitePath || location.protocol === "file:"; $("bPub").title = sitePath ? "고친 내용을 사이트에 바로 반영" : "사이트에서 연 수업만 바로 반영할 수 있어요"; }
 function drawName() {
   const f = $("fname");
   if (!src) { f.innerHTML = "<span>파일을 열어 주세요</span>"; return; }
@@ -311,7 +404,8 @@ function openText(text, name, path) {
   src.body.querySelectorAll("*").forEach(el => el.setAttribute("data-ed-id", nextId++));
   undoStack = []; redoStack = []; cur = 0;
   $("welcome").hidden = true;
-  ["bFind", "sUp", "sDown", "sDup", "sDel", "aText", "aImg"].forEach(k => $(k).disabled = false);
+  ["bFind", "sUp", "sDown", "sDup", "sDel", "aText", "aImg", "aLink", "aSlide"].forEach(k => $(k).disabled = false);
+  $("ffSel").innerHTML = "";
   setDirty(false); updUndo();
   render(0);
 }
@@ -334,13 +428,13 @@ function confirmLeave() { return window.confirm ? confirm("저장하지 않은 �
 addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
 /* 사이트에 올라간 수업 목록 (사이트에서 열었을 때만) */
-(async function siteList() {
+async function siteList() {
   if (location.protocol === "file:") return;
   const pick = (t, s, e) => { const a = t.indexOf(s); if (a < 0) return null; const b = t.indexOf(e, a); return b < 0 ? null : new Function("return " + t.slice(a + s.length - 1, b + e.length - 1))(); };
   const opts = [];
   for (const g of [1, 2, 3]) {
     let data = null;
-    try { data = pick(await fetch(`../g${g}/index.html`).then(r => r.text()), "const 수업 = {", "\n};"); } catch (e) {}
+    try { data = pick(await fetch(`../g${g}/index.html`, { cache: "no-store" }).then(r => r.text()), "const 수업 = {", "\n};"); } catch (e) {}
     if (!data) continue;
     for (const term of [1, 2]) for (const u of (data[term] || [])) for (const s of u.소단원) for (const [k, h] of Object.entries(s.files)) {
       if (!/\.html?$/i.test(h) || /^https?:/i.test(h)) continue;
@@ -349,6 +443,7 @@ addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.retur
   }
   if (!opts.length) return;
   const sp = $("sitePick");
+  sp.querySelectorAll("optgroup").forEach(o => o.remove());
   for (const g of [1, 2, 3]) {
     const list = opts.filter(o => o.g === g); if (!list.length) continue;
     const og = document.createElement("optgroup"); og.label = g + "학년";
@@ -366,7 +461,8 @@ addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.retur
     } catch (e) { toast("파일을 불러오지 못했어요."); }
     $("loading").classList.remove("on"); sp.value = "";
   };
-})();
+}
+siteList();
 
 /* ============ 수업 화면 그리기 ============ */
 function serialize(keepIds) {
@@ -393,6 +489,8 @@ html.__ed [contenteditable="true"]{outline:2px solid #0071e3!important;outline-o
 #__edsel.txt{pointer-events:none;border-style:dashed}
 #__edsel i{position:absolute;right:-7px;bottom:-7px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #0071e3;cursor:nwse-resize}
 #__edsel b{position:absolute;left:-2px;top:-24px;background:#0071e3;color:#fff;font:600 12px/20px -apple-system,"Noto Sans KR",sans-serif;padding:0 7px;border-radius:5px;white-space:nowrap;pointer-events:none}
+.__edex{position:fixed;z-index:2147483646;border:2px dashed #0071e3;border-radius:3px;pointer-events:none;display:none}
+html.__ed .step{outline:2px dashed rgba(255,149,0,.9)!important;outline-offset:2px}
 #__edhov{position:fixed;z-index:2147483645;border:1px dashed rgba(0,113,227,.7);pointer-events:none;display:none}
 `;
 let box, hov;
@@ -400,6 +498,7 @@ function hook() {
   W = frame.contentWindow; D = frame.contentDocument;
   if (!D) return;
   const st = D.createElement("style"); st.textContent = EDIT_CSS; D.head.appendChild(st);
+  exPool = []; extra = [];
   box = D.createElement("div"); box.id = "__edsel"; box.innerHTML = "<b></b><i></i>"; D.body.appendChild(box);
   hov = D.createElement("div"); hov.id = "__edhov"; D.body.appendChild(hov);
   setMode(mode, true);
@@ -474,12 +573,17 @@ function onHover(e) {
   const r = el.getBoundingClientRect();
   Object.assign(hov.style, { display: "block", left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
 }
-function select(el) {
+function select(el, keepExtra) {
   if (sel !== el) endText();
+  if (!keepExtra) extra = [];
   sel = el; place(); drawProps();
 }
+function exBox(i) { while (exPool.length <= i) { const d = D.createElement("div"); d.className = "__edex"; D.body.appendChild(d); exPool.push(d); } return exPool[i]; }
 function place() {
   if (!box) return;
+  extra = extra.filter(x => x.isConnected);
+  exPool.forEach((b, i) => { const el = extra[i]; if (!el || !sel || mode !== "edit") { b.style.display = "none"; return; } const r = el.getBoundingClientRect(); Object.assign(b.style, { display: "block", left: r.left - 2 + "px", top: r.top - 2 + "px", width: r.width + 4 + "px", height: r.height + 4 + "px" }); });
+  extra.forEach((_, i) => { if (i >= exPool.length) { exBox(i); } });
   if (!sel || !sel.isConnected || mode !== "edit") { box.style.display = "none"; return; }
   const r = sel.getBoundingClientRect();
   Object.assign(box.style, { display: "block", left: r.left - 2 + "px", top: r.top - 2 + "px", width: r.width + 4 + "px", height: r.height + 4 + "px" });
@@ -505,6 +609,16 @@ function onDown(e) {
   hov.style.display = "none";
   const onBox = e.target === box || e.target.parentNode === box;
   const resize = e.target.tagName === "I" && e.target.parentNode === box;
+  if (e.shiftKey && !resize) {
+    const el = pickAt(e.clientX, e.clientY);
+    if (el) {
+      if (!sel) select(el);
+      else if (el === sel) { if (extra.length) { sel = extra.shift(); } }
+      else { const i = extra.indexOf(el); if (i >= 0) extra.splice(i, 1); else if (!el.contains(sel) && !sel.contains(el)) extra.push(el); }
+      endText(); place(); drawProps();
+    }
+    return;
+  }
   if (!onBox) { const el = pickAt(e.clientX, e.clientY); select(el); if (!el) return; }
   else if (!resize) {
     // 고른 상자를 다시 누르면 그 안쪽 요소로 들어가 볼 수 있게
@@ -513,7 +627,7 @@ function onDown(e) {
   }
   if (!sel) return;
   const s = scaleOf(sel), [tx, ty] = parseTr(sel), cs = W.getComputedStyle(sel);
-  drag = Object.assign(drag || {}, { x: e.clientX, y: e.clientY, s, tx, ty, w: sel.offsetWidth || parseFloat(cs.width), h: sel.offsetHeight || parseFloat(cs.height), resize, moved: false, snap: false });
+  drag = Object.assign(drag || {}, { others: extra.map(x => ({ el: x, t: parseTr(x), s: scaleOf(x) })), x: e.clientX, y: e.clientY, s, tx, ty, w: sel.offsetWidth || parseFloat(cs.width), h: sel.offsetHeight || parseFloat(cs.height), resize, moved: false, snap: false });
   W.addEventListener("pointermove", onMove, true);
   W.addEventListener("pointerup", onUp, true);
 }
@@ -528,6 +642,8 @@ function onMove(e) {
     setStyle(sel, { width: Math.max(10, Math.round(drag.w + dx)) + "px", height: Math.max(10, Math.round(drag.h + dy)) + "px", "box-sizing": "border-box", "max-width": "none" }, true);
   } else {
     setStyle(sel, { translate: `${Math.round(drag.tx + dx)}px ${Math.round(drag.ty + dy)}px` }, true);
+    const sx = e.clientX - drag.x, sy = e.clientY - drag.y;
+    drag.others.forEach(o => setStyle(o.el, { translate: `${Math.round(o.t[0] + sx / o.s)}px ${Math.round(o.t[1] + sy / o.s)}px` }, true));
   }
   place(); drawPropsValues();
 }
@@ -601,7 +717,7 @@ function setStyle(el, props, live) {
   }
   if (!live) setDirty(true);
 }
-function change(props) { if (!sel) return; endTextKeep(); snapshot(); setStyle(sel, props); place(); drawPropsValues(); }
+function change(props) { if (!sel) return; endTextKeep(); snapshot(); [sel, ...extra].forEach(t => setStyle(t, props)); place(); drawPropsValues(); }
 function endTextKeep() { if (editing) { const e = editing; endText(); sel = e; } }
 
 /* ============ 오른쪽 설정 ============ */
@@ -615,8 +731,10 @@ function drawProps() {
   $("pEditText").hidden = !ok || !!editing; $("pNoText").hidden = ok || !txt || sel.tagName === "IMG";
   const p = sel.parentElement;
   $("pParent").disabled = !p || !p.hasAttribute("data-ed-id") || p.classList.contains("slide") || p.id === "stage";
-  $("gImg").hidden = sel.tagName !== "IMG";
-  drawPropsValues();
+  $("gImg").hidden = sel.tagName !== "IMG" || !!extra.length;
+  $("gMulti").hidden = !extra.length;
+  if (extra.length) { $("pWhat").innerHTML = `${extra.length + 1}개를 골랐어요<small>Shift+클릭으로 더하거나 빼기 · 바꾸는 설정이 모두에 적용돼요</small>`; $("pEditText").hidden = true; $("pNoText").hidden = true; }
+  drawPropsValues(); drawStep(); drawFontSel();
 }
 function drawPropsValues() {
   if (!sel) return;
@@ -677,7 +795,8 @@ frame.addEventListener("load", () => setTimeout(drawSwatches, 120));
 /* ============ 요소 복제 / 지우기 / 글상자 / 그림 ============ */
 $("pDel").onclick = () => {
   if (!sel) return; endText(); snapshot();
-  const s = srcEl(sel.dataset.edId); if (s) s.remove(); sel.remove(); select(null); setDirty(true); drawList();
+  [sel, ...extra].forEach(t => { const s = srcEl(t.dataset.edId); if (s) s.remove(); t.remove(); });
+  select(null); setDirty(true); drawList();
 };
 $("pDupEl").onclick = () => {
   if (!sel) return; endText(); snapshot();
@@ -785,8 +904,9 @@ function updUndo() { $("bUndo").disabled = !undoStack.length; $("bRedo").disable
 $("bUndo").onclick = undo; $("bRedo").onclick = redo;
 
 /* ============ 저장 ============ */
-function save() {
+async function save() {
   if (!src) return; endText();
+  await refreshFonts();
   const html = serialize(false);
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
@@ -805,20 +925,26 @@ const REPO = (() => {
 })();
 let token = "";
 try { token = localStorage.getItem("bdryu-gh-token") || ""; } catch (e) {}
-const api = (path, opt = {}) => fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}${path ? "/" + path : ""}`, Object.assign({}, opt, { headers: Object.assign({ "Accept": "application/vnd.github+json", "Authorization": "Bearer " + token, "X-GitHub-Api-Version": "2022-11-28" }, opt.headers || {}) }));
+const api = (path, opt = {}) => fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}${path ? "/" + path : ""}`, Object.assign({}, opt, { headers: Object.assign({ "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }, token ? { "Authorization": "Bearer " + token } : {}, opt.headers || {}) }));
 function b64(str) {
   const bytes = new TextEncoder().encode(str); let bin = "";
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
   return btoa(bin);
 }
+let pendingTok = null;
+function withToken(fn) {
+  if (token) return fn();
+  pendingTok = fn; $("tokErr").textContent = ""; $("tokIn").value = ""; $("tokModal").hidden = false; $("tokIn").focus();
+}
 $("bPub").onclick = () => {
   if (!src || !sitePath) return; endText();
-  if (!token) { $("tokErr").textContent = ""; $("tokIn").value = ""; $("tokModal").hidden = false; $("tokIn").focus(); return; }
+  withToken(() => {
   $("pubMsg").textContent = `${sitePath} 파일을 지금 고친 내용으로 바꿉니다. 1~2분 뒤 사이트에서 보여요. 바꾸기 전 내용은 GitHub 기록에 남아 있어서 나중에 되살릴 수 있습니다.`;
   $("tokForget").hidden = !token; $("pubModal").hidden = false;
+  });
 };
 $("pubCancel").onclick = () => $("pubModal").hidden = true;
-$("tokCancel").onclick = () => $("tokModal").hidden = true;
+$("tokCancel").onclick = () => { $("tokModal").hidden = true; pendingTok = null; };
 $("tokForget").onclick = () => { token = ""; try { localStorage.removeItem("bdryu-gh-token"); } catch (e) {} $("pubModal").hidden = true; toast("이 컴퓨터에 저장된 토큰을 지웠어요."); };
 $("tokOk").onclick = async () => {
   const t = $("tokIn").value.trim();
@@ -832,12 +958,15 @@ $("tokOk").onclick = async () => {
   } catch (e) { token = ""; $("tokErr").textContent = e.message.includes("토큰") ? e.message : "GitHub에 연결하지 못했어요. 인터넷 연결을 확인해 주세요."; $("tokOk").disabled = false; return; }
   $("tokOk").disabled = false;
   if ($("tokKeep").checked) { try { localStorage.setItem("bdryu-gh-token", token); } catch (e) {} }
-  $("tokModal").hidden = true; publish();
+  $("tokModal").hidden = true;
+  const next = pendingTok; pendingTok = null; if (next) next();
 };
 $("pubOk").onclick = () => { $("pubModal").hidden = true; publish(); };
 async function publish() {
-  const path = sitePath, html = serialize(false);
+  const path = sitePath;
   $("bPub").disabled = true; $("bPub").textContent = "올리는 중…";
+  await refreshFonts();
+  const html = serialize(false);
   try {
     const enc = path.split("/").map(encodeURIComponent).join("/");
     const g = await api(`contents/${enc}?ref=main`);
@@ -859,6 +988,8 @@ function alertBox(msg) { $("pubT").textContent = "반영하지 못했어요"; $(
 /* ============ 단축키 ============ */
 function keys(e, fromFrame) {
   const k = e.key, ctrl = e.ctrlKey || e.metaKey;
+  const openM = [...document.querySelectorAll(".modal:not([hidden]), #slideMenu:not([hidden]), #findPop:not([hidden])")];
+  if (openM.length) { if (k === "Escape") { openM.forEach(m => m.hidden = true); return true; } if (!fromFrame) return false; }
   if (ctrl && k.toLowerCase() === "s") { e.preventDefault(); save(); return true; }
   if (editing) { if (k === "Escape") { e.preventDefault(); endTextKeep(); return true; } return false; }
   if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) && !fromFrame) return false;
@@ -876,11 +1007,494 @@ function keys(e, fromFrame) {
   if (mv) {
     e.preventDefault();
     if (!e.repeat) snapshot();
-    const [tx, ty] = parseTr(sel); setStyle(sel, { translate: `${tx + mv[0]}px ${ty + mv[1]}px` }); place(); drawPropsValues(); return true;
+    [sel, ...extra].forEach(t => { const [tx, ty] = parseTr(t); setStyle(t, { translate: `${tx + mv[0]}px ${ty + mv[1]}px` }); }); place(); drawPropsValues(); return true;
   }
   return false;
 }
 document.addEventListener("keydown", e => keys(e, false));
+
+/* ================================================================
+   추가 기능: 여러 개 고르기 · 글꼴 · 나타나기 · 형광펜 · 링크/QR · 새 슬라이드 · 기록 · 새 수업 올리기
+   ================================================================ */
+
+/* ---------- 여러 개 고르기: 줄 맞추기 ---------- */
+function alignAll(how) {
+  const ts = [sel, ...extra]; if (ts.length < 2) return;
+  endTextKeep(); snapshot();
+  const rs = ts.map(t => t.getBoundingClientRect());
+  const L = Math.min(...rs.map(r => r.left)), R = Math.max(...rs.map(r => r.right)), T = Math.min(...rs.map(r => r.top)), B = Math.max(...rs.map(r => r.bottom));
+  ts.forEach((t, i) => {
+    const r = rs[i], s = scaleOf(t); let dx = 0, dy = 0;
+    if (how === "left") dx = L - r.left; if (how === "right") dx = R - r.right; if (how === "hc") dx = (L + R) / 2 - (r.left + r.right) / 2;
+    if (how === "top") dy = T - r.top; if (how === "bottom") dy = B - r.bottom; if (how === "vc") dy = (T + B) / 2 - (r.top + r.bottom) / 2;
+    const [tx, ty] = parseTr(t); setStyle(t, { translate: `${Math.round(tx + dx / s)}px ${Math.round(ty + dy / s)}px` });
+  });
+  place(); drawPropsValues();
+}
+function distribute(dir) {
+  const ts = [sel, ...extra]; if (ts.length < 3) { toast("간격을 같게 하려면 셋 이상 골라 주세요."); return; }
+  endTextKeep(); snapshot();
+  const h = dir === "h", items = ts.map(t => ({ t, r: t.getBoundingClientRect() })).sort((a, b) => h ? a.r.left - b.r.left : a.r.top - b.r.top);
+  const first = items[0].r, last = items[items.length - 1].r;
+  const span = h ? last.right - first.left : last.bottom - first.top;
+  const sizes = items.reduce((s, x) => s + (h ? x.r.width : x.r.height), 0);
+  const gap = (span - sizes) / (items.length - 1);
+  let pos = h ? first.left : first.top;
+  items.forEach(x => {
+    const now = h ? x.r.left : x.r.top, d = pos - now, s = scaleOf(x.t), [tx, ty] = parseTr(x.t);
+    setStyle(x.t, { translate: h ? `${Math.round(tx + d / s)}px ${Math.round(ty)}px` : `${Math.round(tx)}px ${Math.round(ty + d / s)}px` });
+    pos += (h ? x.r.width : x.r.height) + gap;
+  });
+  place();
+}
+document.querySelectorAll("[data-align]").forEach(b => b.onclick = () => alignAll(b.dataset.align));
+document.querySelectorAll("[data-dist]").forEach(b => b.onclick = () => distribute(b.dataset.dist));
+
+/* ---------- 글꼴 ---------- */
+const GFONTS = [
+  ["Noto Sans KR", "본고딕", [400, 500, 700, 900]],
+  ["Nanum Gothic", "나눔고딕", [400, 700, 800]],
+  ["Nanum Myeongjo", "나눔명조", [400, 700, 800]],
+  ["Gothic A1", "고딕 A1", [400, 600, 800]],
+  ["IBM Plex Sans KR", "IBM 플렉스 산스", [400, 600, 700]],
+  ["Gowun Dodum", "고운돋움", [400]],
+  ["Gowun Batang", "고운바탕", [400, 700]],
+  ["Song Myung", "송명", [400]],
+  ["Hahmlet", "함렛", [400, 700, 900]],
+  ["Black Han Sans", "검은고딕(블랙한산스)", [400]],
+  ["Do Hyeon", "도현", [400]],
+  ["Jua", "주아", [400]],
+  ["Sunflower", "해바라기", [300, 500, 700]],
+  ["Dongle", "동글", [400, 700]],
+  ["Gaegu", "개구", [400, 700]],
+  ["Nanum Pen Script", "나눔손글씨 펜", [400]],
+  ["Nanum Brush Script", "나눔손글씨 붓", [400]],
+  ["Single Day", "싱글데이", [400]],
+  ["Hi Melody", "하이멜로디", [400]],
+  ["Gamja Flower", "감자꽃", [400]],
+  ["Poor Story", "푸어스토리", [400]],
+  ["Yeon Sung", "연성", [400]],
+  ["Orbit", "오르빗", [400]],
+];
+let ffScope = "el";
+document.querySelectorAll("[data-sc]").forEach(b => b.onclick = () => { ffScope = b.dataset.sc; document.querySelectorAll("[data-sc]").forEach(x => x.classList.toggle("on", x === b)); });
+function fileFamilies() {
+  const set = new Set();
+  src.querySelectorAll("style").forEach(st => { if (st.hasAttribute("data-ed-font")) return; for (const m of st.textContent.matchAll(/@font-face\s*{[^}]*?font-family\s*:\s*["']?([^"';}]+)["']?/g)) set.add(m[1].trim()); });
+  return [...set];
+}
+function drawFontOptions() {
+  const fams = fileFamilies(), added = [...src.querySelectorAll("style[data-ed-font]")].map(s => s.getAttribute("data-ed-font"));
+  const gname = f => (GFONTS.find(g => g[0] === f) || [f, f])[1];
+  $("ffSel").innerHTML = `<option value="">원래 글꼴로 되돌리기</option>`
+    + (fams.length ? `<optgroup label="이 파일에 들어 있는 글꼴">${fams.map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join("")}</optgroup>` : "")
+    + (added.length ? `<optgroup label="편집기로 넣은 글꼴">${added.map(f => `<option value="${esc(f)}">${esc(gname(f))}</option>`).join("")}</optgroup>` : "")
+    + `<optgroup label="새로 넣기 (쓰인 글자만 담아요)">${GFONTS.filter(g => !added.includes(g[0])).map(g => `<option value="${esc(g[0])}">${esc(g[1])}</option>`).join("")}</optgroup>`;
+}
+function drawFontSel() {
+  if (!sel || !W) return;
+  if (!$("ffSel").options.length) drawFontOptions();
+  const first = (W.getComputedStyle(sel).fontFamily.split(",")[0] || "").replace(/["']/g, "").trim();
+  const opt = [...$("ffSel").options].find(o => o.value === first);
+  $("ffSel").dataset.cur = first;
+  $("ffSel").value = opt ? first : "";
+  $("ffNote").hidden = !!opt; $("ffNote").textContent = opt ? "" : `지금 글꼴: ${first || "기본"}`;
+}
+function ensureFfRule() {
+  for (const doc of [src, D]) {
+    if (!doc || doc.head.querySelector("style[data-ed-ffrule]")) continue;
+    const st = doc.createElement("style"); st.setAttribute("data-ed-ffrule", "");
+    st.textContent = ".ed-ff,.ed-ff *{font-family:var(--ed-ff)!important}";
+    doc.head.appendChild(st);
+  }
+}
+function setFF(liveEl, fam) {
+  const s = liveEl === D.body ? src.body : srcEl(liveEl.dataset.edId);
+  for (const t of [liveEl, s]) {
+    if (!t) continue;
+    if (fam) { t.classList.add("ed-ff"); t.style.setProperty("--ed-ff", `"${fam}", sans-serif`); }
+    else { t.classList.remove("ed-ff"); t.style.removeProperty("--ed-ff"); if (!t.getAttribute("class")) t.removeAttribute("class"); if (!t.getAttribute("style")) t.removeAttribute("style"); }
+  }
+}
+function docChars() {
+  const set = new Set();
+  for (let c = 0x20; c < 0x7f; c++) set.add(String.fromCharCode(c));
+  for (const ch of src.body.textContent + src.title) { const c = ch.codePointAt(0); if (c >= 0xa0) set.add(ch); }
+  return [...set].sort().join("");
+}
+function ranges(str) {
+  const cps = [...new Set([...str].map(c => c.codePointAt(0)))].sort((a, b) => a - b); const out = [];
+  for (let i = 0; i < cps.length; i++) { let j = i; while (j + 1 < cps.length && cps[j + 1] === cps[j] + 1) j++; out.push(cps[i] === cps[j] ? "U+" + cps[i].toString(16) : `U+${cps[i].toString(16)}-${cps[j].toString(16)}`); i = j; }
+  return out.join(",");
+}
+function bufB64(buf) { const b = new Uint8Array(buf); let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); }
+async function buildFontCSS(fam, weights, chars) {
+  const chunks = []; let c = "";
+  for (const ch of chars) { if (encodeURIComponent(c + ch).length > 4500) { chunks.push(c); c = ""; } c += ch; }
+  if (c) chunks.push(c);
+  let out = "";
+  for (const part of chunks) {
+    const w = weights.length === 1 && weights[0] === 400 ? "" : ":wght@" + weights.join(";");
+    const css = await fetch(`https://fonts.googleapis.com/css2?family=${fam.replace(/ /g, "+")}${w}&text=${encodeURIComponent(part)}&display=swap`).then(r => { if (!r.ok) throw new Error("font css"); return r.text(); });
+    const faces = [...css.matchAll(/@font-face\s*{([^}]*)}/g)];
+    if (!faces.length) throw new Error("no face");
+    for (const f of faces) {
+      const wt = (f[1].match(/font-weight:\s*(\d+)/) || [])[1] || "400";
+      const u = (f[1].match(/url\(([^)]+)\)/) || [])[1]; if (!u) continue;
+      const buf = await fetch(u.replace(/["']/g, "")).then(r => { if (!r.ok) throw new Error("font file"); return r.arrayBuffer(); });
+      out += `@font-face{font-family:"${fam}";font-style:normal;font-weight:${wt};font-display:swap;src:url(data:font/woff2;base64,${bufB64(buf)}) format("woff2");unicode-range:${ranges(part)}}\n`;
+    }
+  }
+  return out;
+}
+async function embedFont(fam) {
+  const g = GFONTS.find(f => f[0] === fam); if (!g) return;
+  const chars = docChars(), css = await buildFontCSS(fam, g[2], chars);
+  for (const doc of [src, D]) {
+    if (!doc) continue;
+    let st = doc.head.querySelector(`style[data-ed-font="${CSS.escape(fam)}"]`);
+    if (!st) { st = doc.createElement("style"); st.setAttribute("data-ed-font", fam); doc.head.appendChild(st); }
+    st.textContent = css; st.setAttribute("data-ed-chars", chars);
+  }
+}
+async function refreshFonts() {
+  const sts = [...src.querySelectorAll("style[data-ed-font]")]; if (!sts.length) return;
+  const need = docChars();
+  for (const st of sts) {
+    const have = new Set(st.getAttribute("data-ed-chars") || "");
+    if ([...need].every(c => have.has(c))) continue;
+    toast("새로 쓴 글자를 글꼴에 담는 중…");
+    try { await embedFont(st.getAttribute("data-ed-font")); }
+    catch (e) { toast("인터넷이 안 돼서 새 글자 몇 개는 다른 글꼴로 보일 수 있어요."); }
+  }
+}
+$("ffSel").onchange = async () => {
+  if (!sel) return;
+  const fam = $("ffSel").value; endTextKeep();
+  const isG = GFONTS.some(g => g[0] === fam) && !src.head.querySelector(`style[data-ed-font="${CSS.escape(fam)}"]`);
+  snapshot();
+  if (fam && isG) {
+    $("ffSel").disabled = true; $("ffNote").hidden = false; $("ffNote").textContent = "글꼴을 받아서 파일에 넣는 중… (몇 초 걸려요)";
+    try { await embedFont(fam); }
+    catch (e) { undoStack.pop(); updUndo(); $("ffSel").disabled = false; drawFontSel(); toast("글꼴을 받아 오지 못했어요. 인터넷 연결을 확인해 주세요."); return; }
+    $("ffSel").disabled = false; drawFontOptions();
+  }
+  ensureFfRule();
+  const targets = ffScope === "el" ? [sel, ...extra] : ffScope === "slide" ? [curSlides().l] : [D.getElementById("stage") || D.body];
+  targets.forEach(t => t && setFF(t, fam));
+  if (!fam && ffScope !== "el") toast("이 범위에 넣었던 글꼴을 뺐어요. 고른 부분에 따로 넣은 글꼴은 그대로예요.");
+  setDirty(true); place(); drawPropsValues(); drawFontSel();
+};
+
+/* ---------- 나타나기 ---------- */
+function drawStep() {
+  if (!sel) return;
+  const on = sel.classList.contains("step");
+  $("stTog").classList.toggle("on", on);
+  $("stTog").textContent = on ? "나타나기 켜짐 · 누르면 끄기" : "다음을 누르면 나타나기";
+  $("stRow").hidden = !on;
+  if (on) $("stNum").value = sel.dataset.step || 1;
+}
+function stepTargets() { return [sel, ...extra].filter(Boolean); }
+$("stTog").onclick = () => {
+  if (!sel) return; endTextKeep(); snapshot();
+  const on = !sel.classList.contains("step");
+  let n = 1;
+  if (on) { const live = curSlides().l; n = Math.max(0, ...[...live.querySelectorAll(".step")].map(x => +x.dataset.step || 0)) + 1; }
+  stepTargets().forEach(t => {
+    const s = srcEl(t.dataset.edId);
+    [t, s].forEach(x => { if (!x) return;
+      if (on) { x.classList.add("step"); x.setAttribute("data-step", n); }
+      else { x.classList.remove("step", "on"); x.removeAttribute("data-step"); if (!x.getAttribute("class")) x.removeAttribute("class"); } });
+  });
+  setDirty(true); drawStep(); place();
+  toast(on ? `수업할 때 ${n}번째로 나타나요.` : "나타나기를 껐어요.");
+};
+function setStepNum(v) {
+  v = Math.max(1, Math.min(30, v | 0)); endTextKeep(); snapshot();
+  stepTargets().forEach(t => { const s = srcEl(t.dataset.edId); [t, s].forEach(x => x && x.setAttribute("data-step", v)); });
+  setDirty(true); drawStep();
+}
+$("stMinus").onclick = () => setStepNum((+$("stNum").value || 1) - 1);
+$("stPlus").onclick = () => setStepNum((+$("stNum").value || 1) + 1);
+$("stNum").onchange = () => setStepNum(+$("stNum").value || 1);
+
+/* ---------- 형광펜 ---------- */
+const HL_BG = "linear-gradient(transparent 58%,#FEE500 58%,#FEE500 90%,transparent 90%)";
+$("fHl").onmousedown = e => e.preventDefault();
+$("fHl").onclick = () => {
+  if (!sel) return;
+  if (editing) {
+    const s = W.getSelection();
+    if (!s.rangeCount || s.isCollapsed) { toast("칠할 글자를 먼저 끌어서 고르세요."); return; }
+    const r = s.getRangeAt(0); if (!editing.contains(r.commonAncestorContainer)) return;
+    const sp = D.createElement("span"); sp.className = "ed-hl"; sp.setAttribute("style", `background:${HL_BG};padding:0 2px`);
+    sp.appendChild(r.extractContents()); r.insertNode(sp); s.removeAllRanges(); place();
+    return;
+  }
+  const has = (W.getComputedStyle(sel).backgroundImage || "").includes("gradient");
+  change({ "background-image": has ? null : HL_BG });
+};
+
+/* ---------- 링크 · QR ---------- */
+$("aLink").onclick = () => {
+  if (!src) return; endText();
+  $("lkUrl").value = ""; $("lkText").value = ""; $("lkErr").textContent = "";
+  const qrOk = typeof qrSVG === "function"; $("lkQr").disabled = !qrOk; if (!qrOk) $("lkQr").checked = false;
+  $("linkModal").hidden = false; $("lkUrl").focus();
+};
+$("lkCancel").onclick = () => $("linkModal").hidden = true;
+$("lkOk").onclick = () => {
+  let u = $("lkUrl").value.trim();
+  if (!u) { $("lkErr").textContent = "주소를 넣어 주세요."; return; }
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+  const t = $("lkText").value.trim() || "바로 가기", btn = $("lkBtn").checked, qr = $("lkQr").checked && !$("lkQr").disabled;
+  if (!btn && !qr) { $("lkErr").textContent = "버튼이나 QR 중 하나는 골라 주세요."; return; }
+  $("linkModal").hidden = true;
+  let last = null;
+  if (btn) last = addNode(`<a class="ed-link" href="${esc(u)}" target="_blank" rel="noopener" style="position:absolute;left:${qr ? 120 : 480}px;top:420px;z-index:20;display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:999px;background:#1c1b19;color:#ffffff;font-size:26px;font-weight:700;text-decoration:none;white-space:nowrap">${esc(t)} ↗</a>`);
+  if (qr) {
+    const svg = qrSVG(u).replace("<svg ", '<svg style="display:block;width:100%;height:auto" ');
+    const n = addNode(`<div class="ed-qr" style="position:absolute;right:90px;top:70px;z-index:20;width:250px;background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,.12);text-align:center;color:#1c1b19">${svg}<div style="font-size:19px;font-weight:700;margin-top:8px">${esc(t)}</div></div>`);
+    if (btn && n) { undoStack.splice(undoStack.length - 1, 1); updUndo(); }
+    last = n || last;
+  }
+  if (last) { select(last); toast("끌어서 자리를 잡으세요. 수업할 때 버튼을 누르면 새 창으로 열려요."); }
+};
+
+/* ---------- 새 슬라이드 ---------- */
+const TPL = {
+  title: `<section class="slide pad"><div class="kicker">소제목</div><h2>제목을 입력하세요</h2><p style="font-size:28px;line-height:1.7;margin-top:24px">본문을 입력하세요. 두 번 클릭하면 고칠 수 있어요.</p></section>`,
+  center: `<section class="slide pad" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><h2 style="font-size:64px;margin:0">큰 제목</h2><p style="font-size:26px;margin-top:18px;opacity:.75">한 줄 설명</p></section>`,
+  blank: `<section class="slide pad"></section>`,
+};
+$("aSlide").onclick = e => {
+  if (!src) return;
+  const m = $("slideMenu"), r = $("aSlide").getBoundingClientRect();
+  m.hidden = !m.hidden; m.style.left = r.left + "px"; m.style.bottom = (innerHeight - r.top + 6) + "px";
+  e.stopPropagation();
+};
+document.addEventListener("click", e => { if (!e.target.closest("#slideMenu")) $("slideMenu").hidden = true; });
+$("slideMenu").onclick = e => {
+  const b = e.target.closest("[data-tpl]"); if (!b) return;
+  $("slideMenu").hidden = true;
+  slideOp(() => {
+    const s = srcSlides()[cur]; const t = src.createElement("template"); t.innerHTML = TPL[b.dataset.tpl];
+    const n = t.content.firstElementChild; [n, ...n.querySelectorAll("*")].forEach(x => x.setAttribute("data-ed-id", nextId++));
+    s.after(n); return cur + 1;
+  });
+  toast(`${cur + 2}번째에 새 슬라이드를 넣었어요.`);
+};
+
+/* ---------- GitHub 공용 ---------- */
+function b64ToBytes(s) { const bin = atob(s.replace(/\s/g, "")); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+const encPath = p => p.split("/").map(encodeURIComponent).join("/");
+async function ghGet(path, ref) {
+  const r = await api(`contents/${encPath(path)}?ref=${encodeURIComponent(ref || "main")}`);
+  if (r.status === 404) return null;
+  if (r.status === 401) throw new Error("토큰이 만료되었거나 지워졌어요. 새 토큰을 만들어 주세요.");
+  if (!r.ok) throw new Error("GitHub에서 파일을 읽지 못했어요. (" + r.status + ")");
+  const j = await r.json(); let c = j.content;
+  if (!c || j.encoding !== "base64") { const b = await api(`git/blobs/${j.sha}`); if (!b.ok) throw new Error("GitHub에서 파일을 읽지 못했어요."); c = (await b.json()).content; }
+  return { sha: j.sha, bytes: b64ToBytes(c) };
+}
+async function ghPut(path, base64, sha, message) {
+  const body = { message, content: base64, branch: "main" }; if (sha) body.sha = sha;
+  const r = await api(`contents/${encPath(path)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (r.status === 409 || r.status === 422) { const e = new Error("conflict"); e.conflict = true; throw e; }
+  if (r.status === 401) throw new Error("토큰이 만료되었거나 지워졌어요. 새 토큰을 만들어 주세요.");
+  if (!r.ok) throw new Error("올리지 못했어요. (" + r.status + ")");
+  return r.json();
+}
+
+/* ---------- 반영 기록 / 이전 버전 ---------- */
+const fmtDate = iso => { const d = new Date(iso); return `${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+$("bHist").onclick = async () => {
+  if (!sitePath) return; endText();
+  $("histFor").textContent = sitePath + " 파일이 사이트에서 바뀐 기록이에요. 예전 버전을 열어 확인한 뒤 [사이트에 반영]을 누르면 그 버전으로 돌아갑니다.";
+  $("histList").innerHTML = "<li>불러오는 중…</li>"; $("histModal").hidden = false;
+  try {
+    const r = await api(`commits?path=${encodeURIComponent(sitePath)}&sha=main&per_page=30`);
+    if (!r.ok) throw 0;
+    const cs = await r.json();
+    $("histList").innerHTML = cs.length ? cs.map((c, i) => `<li><span class="t"><b>${fmtDate(c.commit.author.date)}${i === 0 ? " · 지금 사이트" : ""}</b><small>${esc(c.commit.message.split("\n")[0])}</small></span>${i === 0 ? "" : `<button class="btn" type="button" data-sha="${c.sha}">이 버전 열기</button>`}</li>`).join("") : "<li>기록이 없어요.</li>";
+  } catch (e) { $("histList").innerHTML = "<li>기록을 불러오지 못했어요. 잠시 뒤 다시 해 보세요.</li>"; }
+};
+$("histClose").onclick = () => $("histModal").hidden = true;
+$("histList").onclick = async e => {
+  const b = e.target.closest("[data-sha]"); if (!b) return;
+  if (dirty && !confirmLeave()) return;
+  const when = b.closest("li").querySelector("b").textContent;
+  b.disabled = true; b.textContent = "여는 중…";
+  try {
+    const g = await ghGet(sitePath, b.dataset.sha); if (!g) throw 0;
+    const keep = [fileName, sitePath];
+    openText(new TextDecoder().decode(g.bytes), keep[0], keep[1]);
+    setDirty(true); $("histModal").hidden = true;
+    toast(`${when} 버전을 열었어요. 확인한 뒤 [사이트에 반영]을 누르면 이 버전으로 돌아갑니다.`);
+  } catch (err) { b.disabled = false; b.textContent = "열지 못했어요"; }
+};
+
+/* ---------- 새 수업 올리기 ---------- */
+const NAV = {"css": "\n/* 바로가기 (추가) */\n#toc{position:absolute;inset:0;z-index:50;background:rgba(28,27,25,.55);display:none;align-items:center;justify-content:center}\n#toc.on{display:flex}\n#toc .tocin{width:1180px;max-width:94%;max-height:660px;background:var(--paper2,#FBFAF7);border-radius:22px;padding:18px 24px 20px;box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;color:var(--k,#1C1B19)}\n#toc .toch{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}\n#toc .toch b{font-size:24px;font-weight:900}\n#toc .toch button{font:inherit;font-size:16px;font-weight:800;background:#EAE8E2;border:0;border-radius:999px;padding:8px 16px;cursor:pointer}\n#toc .tocg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 14px;overflow:auto}\n#toc .tocc h4{font-size:16px;font-weight:900;background:var(--k,#1C1B19);color:var(--y,#FEE500);border-radius:8px;padding:4px 12px;margin:0 0 6px;width:fit-content}\n#toc .tocg button{font:inherit;display:flex;gap:8px;width:100%;text-align:left;font-size:14.5px;font-weight:700;padding:4px 8px;border:0;background:none;border-radius:8px;line-height:1.35;cursor:pointer;color:inherit}\n#toc .tocg button i{font-style:normal;flex:none;width:26px;font-weight:900;color:var(--gray,#8A8A8A)}\n#toc .tocg button:hover{background:var(--y2,#FFF7B3)}\n#toc .tocg button.cur{background:var(--y,#FEE500)}\n", "toc": "<div id=\"toc\"><div class=\"tocin\"><div class=\"toch\"><b>페이지 바로가기<\/b><button id=\"tocX\">✕ 닫기<\/button><\/div><div class=\"tocg\" id=\"tocG\"><\/div><\/div><\/div>", "js": "<script>\n/* 바로가기 (추가) */\n(function(){\n  const toc=document.getElementById('toc'), G=document.getElementById('tocG');\n  function title(sl){\n    if(sl.classList.contains('s-cover')) return '표지';\n    const h=sl.querySelector('h2'), k=sl.querySelector('.kicker');\n    let t=h?h.cloneNode(true):null; if(t){ t.querySelectorAll('small').forEach(x=>x.remove()); t.querySelectorAll('br').forEach(x=>x.replaceWith(' ')); }\n    t=t?t.textContent.replace(/\\s+/g,' ').trim():'';\n    if(!t){ const tt=sl.querySelector('.ttl'); if(tt) t=tt.textContent.replace(/\\s+/g,' ').trim(); }\n    if(!t){ const sc=sl.querySelector('b.sec'); if(sc) t=sc.textContent.trim(); }\n    if(!t && k) t=k.textContent.split('·')[0].trim();\n    if(!t){ const lines=[...sl.querySelectorAll('p,li,span,div,b')].map(x=>x.children.length?'':x.textContent.replace(/\\s+/g,' ').trim()).filter(x=>x.length>=4&&!/^[\\d\\s./:%-]+$/.test(x)); if(lines[0]) t=lines[0].length>24?lines[0].slice(0,24)+'…':lines[0]; }\n    return t||'(그림 장면)';\n  }\n  function build(){\n    let st=[0];\n    try{ if(typeof STARTS!=='undefined' && STARTS.length>1) st=STARTS; }catch(e){}\n    if(st.length===1){ const cv=[...slides.keys()].filter(i=>i>0&&slides[i].classList.contains('s-cover')); if(cv.length) st=[0,...cv]; }\n    let nm=null; try{ if(typeof LNAME!=='undefined') nm=LNAME; }catch(e){}\n    let h='';\n    st.forEach((s,k)=>{\n      const en=k+1<st.length?st[k+1]:slides.length;\n      h+='<div class=\"tocc\">'+(st.length>1?'<h4>'+((nm&&nm[k])||(k+1))+'차시<\/h4>':'');\n      for(let i=s;i<en;i++) h+='<button data-go=\"'+i+'\"'+(i===cur?' class=\"cur\"':'')+'><i>'+(i+1)+'<\/i>'+title(slides[i])+'<\/button>';\n      h+='<\/div>';\n    });\n    if(st.length===1){ // 차시 구분이 없으면 세 줄로 나눠 담기\n      const all=[...slides.keys()], n=Math.ceil(all.length/3); h='';\n      for(let c=0;c<3;c++){ h+='<div class=\"tocc\">'; all.slice(c*n,(c+1)*n).forEach(i=>{ h+='<button data-go=\"'+i+'\"'+(i===cur?' class=\"cur\"':'')+'><i>'+(i+1)+'<\/i>'+title(slides[i])+'<\/button>'; }); h+='<\/div>'; }\n    }\n    G.innerHTML=h;\n  }\n  const open=()=>{ build(); toc.classList.add('on'); }, close=()=>toc.classList.remove('on');\n  document.getElementById('tocB').onclick=open;\n  document.getElementById('pno').style.cursor='pointer';\n  document.getElementById('pno').addEventListener('click',open);\n  document.getElementById('tocX').onclick=close;\n  toc.addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b){ close(); go(+b.dataset.go); return; } if(e.target===toc) close(); });\n  window.addEventListener('keydown',e=>{\n    const on=toc.classList.contains('on');\n    if(on){ if(e.key==='Escape') close(); e.stopImmediatePropagation(); return; }\n    if(e.key==='g'||e.key==='G'||e.key==='m'||e.key==='M') open();\n  },true);\n})();\n<\/script>\n", "home": "<button id=\"homeB\" onclick=\"location.href='../index.html'\">⌂ 목차<\/button>", "tocB": "<button id=\"tocB\">☰ 바로가기<\/button>"};
+function injectNav(html) {
+  if (html.split('<div class="nav">').length !== 2 || html.includes('id="homeB"')) return html;
+  const hasToc = html.includes('id="toc"');
+  html = html.replace('<div class="nav">', '<div class="nav">' + NAV.home + (hasToc ? "" : NAV.tocB));
+  if (!hasToc) {
+    const nav = html.indexOf('<div class="nav">'), fe = html.indexOf("</footer>", nav);
+    if (fe > 0) html = html.slice(0, fe + 9) + NAV.toc + html.slice(fe + 9);
+    const so = html.lastIndexOf("</style>"); if (so > 0) html = html.slice(0, so) + NAV.css + html.slice(so);
+    const bo = html.lastIndexOf("</body>"); if (bo > 0) html = html.slice(0, bo) + NAV.js + html.slice(bo);
+  }
+  return html;
+}
+function genData(d) {
+  const q = v => typeof v === "number" ? String(v) : JSON.stringify(v);
+  const files = f => { const e = Object.entries(f || {}); return e.length ? "{ " + e.map(([k, v]) => `${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(", ") + " }" : "{}"; };
+  let out = "{\n";
+  for (const term of Object.keys(d)) {
+    const units = d[term] || [];
+    if (!units.length) { out += `  ${term}: [],\n`; continue; }
+    out += `  ${term}: [\n`;
+    for (const u of units) {
+      const head = Object.entries(u).filter(([k]) => k !== "소단원").map(([k, v]) => `${k}: ${q(v)}`).join(", ");
+      out += `    { ${head}, 소단원: [\n`;
+      for (const s of u.소단원 || []) {
+        const parts = Object.entries(s).filter(([k]) => k !== "files").map(([k, v]) => `${k}: ${q(v)}`);
+        parts.push(`files: ${files(s.files)}`);
+        out += `      { ${parts.join(", ")} },\n`;
+      }
+      out += "    ]},\n";
+    }
+    out += "  ],\n";
+  }
+  return out + "}";
+}
+function replaceData(text, block) {
+  const a = text.indexOf("const 수업 = {"), b = text.indexOf("\n};", a);
+  if (a < 0 || b < 0) throw new Error("목차 파일 모양이 달라서 고칠 수 없어요.");
+  return text.slice(0, a) + "const 수업 = " + block + ";" + text.slice(b + 3);
+}
+function readData(text) {
+  const a = text.indexOf("const 수업 = {"), b = text.indexOf("\n};", a);
+  if (a < 0 || b < 0) return null;
+  return new Function("return " + text.slice(a + 11, b + 2))();
+}
+const siteData = {};
+async function loadSiteData(g, fresh) {
+  if (siteData[g] && !fresh) return siteData[g];
+  const t = await fetch(`../g${g}/index.html`, { cache: "no-store" }).then(r => r.text());
+  return siteData[g] = readData(t);
+}
+let nuBytes = null, nuName = "";
+function nuSel() { return { g: +$("nuGrade").value, term: +$("nuTerm").value, ui: $("nuUnit").value === "" ? -1 : +$("nuUnit").value, row: $("nuRow").value }; }
+async function nuFillUnits() {
+  const { g, term } = nuSel();
+  $("nuUnit").innerHTML = "<option>불러오는 중…</option>";
+  let d = null; try { d = await loadSiteData(g); } catch (e) {}
+  const us = (d && d[term]) || [];
+  $("nuUnit").innerHTML = us.length ? us.map((u, i) => `<option value="${i}">${u.단원 ? u.단원 + "단원 " : ""}${esc(u.제목)}</option>`).join("") : `<option value="">이 학기에는 아직 단원이 없어요</option>`;
+  nuFillRows();
+}
+function nuFillRows() {
+  const { g, term, ui } = nuSel(); const d = siteData[g]; const u = d && d[term] && d[term][ui];
+  $("nuRow").innerHTML = (u ? u.소단원.map((s, j) => `<option value="${j}">${esc(s.머리 || "(" + s.번호 + ")")} ${esc(s.제목)}${Object.keys(s.files || {}).length ? " · 버튼 " + Object.keys(s.files).length + "개" : ""}</option>`).join("") : "")
+    + `<option value="new">＋ 새 줄 만들기 (수행평가·활동 등)</option>`;
+  nuUpdate();
+}
+function nuLabel() { return $("nuLabel").value === "__custom" ? $("nuCustom").value.trim() : $("nuLabel").value; }
+function nuPlan() {
+  const { g, term, ui, row } = nuSel(); const d = siteData[g]; const u = d && d[term] && d[term][ui];
+  if (!nuBytes || !u) return null;
+  const label = nuLabel(); if (!label) return null;
+  const ext = (nuName.match(/\.([a-z0-9]+)$/i) || [, "html"])[1].toLowerCase();
+  const s = row === "new" ? null : u.소단원[+row];
+  const unitNo = u.단원 || "u";
+  const base = s && s.번호 ? `${unitNo}-${s.번호}` : `${unitNo}-x`;
+  let suf = "";
+  const m = label.match(/^(\d+)\s*(~\s*\d+\s*)?차시$/);
+  if (label === "열기") suf = ""; else if (m) suf = "-" + m[1]; else if (label === "학습지") suf = "-worksheet"; else if (label === "활동지") suf = "-activity";
+  else suf = "-" + ((label.normalize("NFKD").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()) || "file");
+  const folder = `${g}-${term}`;
+  const existing = s && s.files && s.files[label];
+  let rel;
+  if (existing && !/^https?:/.test(existing) && existing.toLowerCase().endsWith("." + ext)) rel = existing;
+  else {
+    const used = new Set(); for (const t of [1, 2]) for (const uu of (d[t] || [])) for (const ss of uu.소단원) for (const v of Object.values(ss.files || {})) used.add(v);
+    rel = `${folder}/${base}${suf}.${ext}`; let k = 2;
+    while (used.has(rel)) rel = `${folder}/${base}${suf}-${k++}.${ext}`;
+  }
+  return { g, term, ui, row, label, ext, rel, path: `g${g}/${rel}`, replace: !!(existing && rel === existing), s, u };
+}
+function nuUpdate() {
+  $("nuNewRow").hidden = $("nuRow").value !== "new";
+  $("nuCustomWrap").hidden = $("nuLabel").value !== "__custom";
+  const p = nuPlan(); $("nuErr").textContent = "";
+  if (!nuBytes) { $("nuPrev").textContent = "올릴 파일을 고르세요."; $("nuOk").disabled = true; return; }
+  if (!p) { $("nuPrev").textContent = "단원과 버튼 이름을 정해 주세요."; $("nuOk").disabled = true; return; }
+  if ($("nuRow").value === "new" && !$("nuTitle").value.trim()) { $("nuPrev").textContent = "새 줄의 이름을 적어 주세요."; $("nuOk").disabled = true; return; }
+  const rowName = p.s ? `${p.s.머리 || "(" + p.s.번호 + ")"} ${p.s.제목}` : `${$("nuHead").value.trim() || "활동"} ${$("nuTitle").value.trim()}`;
+  $("nuPrev").innerHTML = `<b>${esc(p.path)}</b>로 올리고<br>${p.g}학년 ${p.term}학기 · ${esc(p.u.단원 ? p.u.단원 + "단원 " : "")}${esc(rowName)} 줄에 <b>[${esc(p.label)}]</b> 버튼을 ${p.replace ? "그대로 두고 파일만 새것으로 바꿉니다." : "붙입니다."}`
+    + (p.ext === "html" ? "<br><small>목차·바로가기 버튼이 없으면 자동으로 넣어요.</small>" : "");
+  $("nuOk").disabled = false;
+}
+$("bNew").onclick = async () => {
+  if (location.protocol === "file:") { toast("새 수업 올리기는 사이트에서 편집기를 열었을 때만 돼요."); return; }
+  nuBytes = null; nuName = ""; $("nuFile").value = ""; $("nuBar").hidden = true; $("nuOk").hidden = false; $("nuOk").disabled = true; $("nuOpenNew").hidden = true; $("nuCancel").textContent = "닫기";
+  const m = (sitePath || "").match(/^g(\d)\/\d-(\d)\//);
+  if (m) { $("nuGrade").value = m[1]; $("nuTerm").value = m[2]; }
+  $("newModal").hidden = false; await nuFillUnits();
+};
+$("nuFile").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  nuName = f.name; nuBytes = new Uint8Array(await f.arrayBuffer());
+  if (/\.html?$/i.test(f.name)) $("nuLabel").value = "열기"; else if (/\.(pdf|hwpx?|docx?)$/i.test(f.name)) $("nuLabel").value = "학습지";
+  if (f.size > 25 * 1048576) { $("nuErr").textContent = "25MB가 넘는 파일은 올릴 수 없어요."; nuBytes = null; }
+  nuUpdate();
+};
+$("nuGrade").onchange = nuFillUnits; $("nuTerm").onchange = nuFillUnits; $("nuUnit").onchange = nuFillRows;
+["nuRow", "nuLabel"].forEach(id => $(id).onchange = nuUpdate);
+["nuCustom", "nuTitle", "nuHead"].forEach(id => $(id).oninput = nuUpdate);
+$("nuCancel").onclick = () => $("newModal").hidden = true;
+$("nuOk").onclick = () => withToken(nuUpload);
+function nuProg(p, msg) { $("nuBar").hidden = false; $("nuBar").firstElementChild.style.width = p + "%"; $("nuPrev").textContent = msg; }
+async function nuUpload() {
+  const p = nuPlan(); if (!p) return;
+  $("newModal").hidden = false;
+  $("nuOk").disabled = true; $("nuErr").textContent = "";
+  try {
+    let bytes = nuBytes;
+    if (p.ext === "html") bytes = new TextEncoder().encode(injectNav(new TextDecoder().decode(nuBytes)));
+    nuProg(15, "사이트에 같은 이름의 파일이 있는지 보는 중…");
+    const old = await ghGet(p.path).catch(e => { if (/토큰/.test(e.message)) throw e; return null; });
+    nuProg(35, "파일을 올리는 중…");
+    await ghPut(p.path, bufB64(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)), old && old.sha, `새 자료 올림: ${p.path}`);
+    for (let tryN = 0; tryN < 2; tryN++) {
+      nuProg(65, "목차에 버튼을 붙이는 중…");
+      const idx = await ghGet(`g${p.g}/index.html`); if (!idx) throw new Error("목차 파일을 찾지 못했어요.");
+      const text = new TextDecoder().decode(idx.bytes); const d = readData(text);
+      const u = d && d[p.term] && d[p.term][p.ui]; if (!u) throw new Error("목차에서 그 단원을 찾지 못했어요.");
+      if (p.row === "new") u.소단원.push({ 머리: $("nuHead").value.trim() || "활동", 제목: $("nuTitle").value.trim(), files: { [p.label]: p.rel } });
+      else { const s = u.소단원[+p.row]; s.files = s.files || {}; s.files[p.label] = p.rel; }
+      try { await ghPut(`g${p.g}/index.html`, b64(replaceData(text, genData(d))), idx.sha, `목차에 버튼 추가: ${p.g}학년 ${p.term}학기 ${p.label}`); break; }
+      catch (e) { if (!e.conflict || tryN) throw e; }
+    }
+    nuProg(100, "");
+    $("nuPrev").innerHTML = `다 올렸어요. <b>1~2분 뒤</b> 사이트 목차에 [${esc(p.label)}] 버튼이 생겨요.`;
+    $("nuOk").hidden = true; $("nuCancel").textContent = "닫기";
+    $("nuOpenNew").hidden = p.ext !== "html"; $("nuOpenNew").dataset.path = p.path;
+    delete siteData[p.g]; siteList();
+  } catch (e) {
+    $("nuErr").textContent = e.conflict ? "그사이 목차가 바뀌었어요. 잠시 뒤 다시 해 주세요." : (e.message || "올리지 못했어요.");
+    $("nuOk").disabled = false; $("nuBar").hidden = true;
+  }
+}
+$("nuOpenNew").onclick = async () => {
+  const path = $("nuOpenNew").dataset.path; $("newModal").hidden = true;
+  try { const g = await ghGet(path); openText(new TextDecoder().decode(g.bytes), path.replaceAll("/", "_"), path); } catch (e) { toast("파일을 열지 못했어요."); }
+};
+
 function onKeyFrame(e) {
   if (mode !== "edit") return;
   e.stopImmediatePropagation();       // 수업 화면의 넘기기 키가 움직이지 않게

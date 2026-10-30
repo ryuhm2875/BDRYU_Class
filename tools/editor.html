@@ -110,6 +110,17 @@ button:disabled{opacity:.35;cursor:default}
 .pop h4{margin:0 0 10px;font-size:14px}
 .pop input{width:100%;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--bg);margin-bottom:8px}
 .pop .res{font-size:12px;color:var(--muted);min-height:18px;margin-bottom:8px}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:20px}
+.mbox{width:min(520px,100%);max-height:calc(100vh - 40px);overflow:auto;background:var(--panel);border-radius:16px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.mbox h3{margin:0 0 6px;font-size:19px}
+.mbox p{margin:0 0 12px;color:var(--muted);line-height:1.6}
+.mbox ol{margin:0 0 14px;padding-left:20px;line-height:1.8}
+.mbox ol b{color:var(--fg)}
+.mbox input[type=password]{width:100%;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 12px;background:var(--bg);margin:4px 0 10px}
+.mbox .chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:16px}
+.mbox .acts{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.mbox a{color:var(--blue)}
+.mbox .err{color:var(--red);font-size:13px;min-height:18px;margin:-4px 0 10px}
 .toast{position:fixed;left:50%;bottom:52px;transform:translateX(-50%);background:var(--fg);color:var(--panel);padding:10px 16px;border-radius:999px;font-size:13px;z-index:40;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.on{opacity:1}
 input[type=file]{display:none}
@@ -129,7 +140,8 @@ input[type=file]{display:none}
   <button class="btn" id="bFind" type="button" disabled>찾아 바꾸기</button>
   <button class="btn icon" id="bUndo" type="button" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
   <button class="btn icon" id="bRedo" type="button" title="다시 하기 (Ctrl+Y)" disabled>↷</button>
-  <button class="btn primary" id="bSave" type="button" disabled>저장</button>
+  <button class="btn" id="bSave" type="button" disabled title="고친 파일을 내 컴퓨터로 내려받기 (Ctrl+S)">내려받기</button>
+  <button class="btn primary" id="bPub" type="button" disabled title="고친 내용을 사이트에 바로 반영">사이트에 반영</button>
 </header>
 
 <div class="main">
@@ -155,7 +167,7 @@ input[type=file]{display:none}
         <div class="wbox">
           <button class="btn" id="wClose" type="button" hidden style="float:right">닫기</button>
           <h1>수업 화면 편집기</h1>
-          <p>글자, 크기, 위치, 그림, 슬라이드 순서를 화면에서 바로 고치고<br>고친 파일을 내려받습니다. 원본은 그대로 남아요.</p>
+          <p>글자, 크기, 위치, 그림, 슬라이드 순서를 화면에서 바로 고치고<br>버튼 하나로 사이트에 반영합니다.</p>
           <div class="drop" id="drop">
             <div>수업 HTML 파일을 여기로 끌어다 놓거나</div>
             <button class="btn primary" id="bOpen2" type="button">내 컴퓨터에서 고르기</button>
@@ -178,7 +190,7 @@ input[type=file]{display:none}
         <li>글자는 두 번 클릭하면 바로 고칠 수 있어요. 고치는 중에 Ctrl+B로 일부만 굵게 할 수도 있습니다.</li>
         <li>안쪽 글자를 고르기 어려우면 한 번 더 클릭하세요.</li>
         <li>바깥 상자를 고르려면 오른쪽의 <b>바깥 상자 고르기</b>를 누르세요.</li>
-        <li>다 고치면 <b>저장</b>을 눌러 새 파일을 받으세요.</li>
+        <li>다 고치면 <b>사이트에 반영</b>을 누르세요. 1~2분 뒤 사이트가 바뀝니다. 파일로 갖고 싶으면 <b>내려받기</b>.</li>
       </ul>
     </div>
     <div id="propBody" hidden>
@@ -231,6 +243,31 @@ input[type=file]{display:none}
   <div class="res" id="fres"></div>
   <div class="row"><button class="btn" id="fClose" type="button">닫기</button><button class="btn primary" id="fGo" type="button" disabled>모두 바꾸기</button></div>
 </div>
+<div class="modal" id="tokModal" hidden>
+  <div class="mbox" role="dialog" aria-labelledby="tokT">
+    <h3 id="tokT">사이트에 바로 반영하려면 열쇠가 필요해요</h3>
+    <p>GitHub 저장소에 파일을 올릴 수 있는 <b>토큰</b>(열쇠 문자열)을 한 번 만들어 붙여 넣으면, 그다음부터는 버튼 하나로 사이트가 바뀝니다.</p>
+    <ol>
+      <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">토큰 만들기 화면</a>을 엽니다. (GitHub 로그인 필요)</li>
+      <li><b>Token name</b>: 아무 이름 (예: 수업 편집기)</li>
+      <li><b>Expiration</b>: 가장 긴 기간</li>
+      <li><b>Repository access</b>: Only select repositories → <b>BDRYU_Class</b></li>
+      <li><b>Permissions</b> → Repository permissions → <b>Contents</b>를 <b>Read and write</b>로</li>
+      <li>맨 아래 <b>Generate token</b>을 누르고 나온 <b>github_pat_…</b> 문자열을 복사해 아래에 붙여 넣기</li>
+    </ol>
+    <input type="password" id="tokIn" placeholder="github_pat_로 시작하는 토큰" autocomplete="off">
+    <div class="err" id="tokErr"></div>
+    <label class="chk"><input type="checkbox" id="tokKeep"> 이 컴퓨터에 기억하기 (내 컴퓨터일 때만 켜세요. 학교 공용 컴퓨터는 끄세요)</label>
+    <div class="acts"><button class="btn" id="tokCancel" type="button">취소</button><button class="btn primary" id="tokOk" type="button">이 토큰으로 반영하기</button></div>
+  </div>
+</div>
+<div class="modal" id="pubModal" hidden>
+  <div class="mbox" role="dialog" aria-labelledby="pubT">
+    <h3 id="pubT">사이트에 반영할까요?</h3>
+    <p id="pubMsg"></p>
+    <div class="acts"><button class="btn" id="tokForget" type="button" style="margin-right:auto">저장된 토큰 지우기</button><button class="btn" id="pubCancel" type="button">취소</button><button class="btn primary" id="pubOk" type="button">반영하기</button></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <input type="file" id="fileIn" accept=".html,.htm,text/html">
 <input type="file" id="imgIn" accept="image/*">
@@ -252,7 +289,7 @@ let W = null, D = null;  // 수업 화면의 window, document
 
 /* ============ 공용 ============ */
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 1800); }
-function setDirty(v) { dirty = v; drawName(); $("bSave").disabled = !src; }
+function setDirty(v) { dirty = v; drawName(); $("bSave").disabled = !src; $("bPub").disabled = !src || !sitePath || location.protocol === "file:"; $("bPub").title = sitePath ? "고친 내용을 사이트에 바로 반영" : "사이트에서 연 수업만 바로 반영할 수 있어요"; }
 function drawName() {
   const f = $("fname");
   if (!src) { f.innerHTML = "<span>파일을 열어 주세요</span>"; return; }
@@ -760,6 +797,64 @@ function save() {
   toast(`“${a.download}” 저장 · ${(html.length / 1048576).toFixed(1)}MB`);
 }
 $("bSave").onclick = save;
+
+/* ============ 사이트에 바로 반영 (GitHub) ============ */
+const REPO = (() => {
+  const h = location.hostname.match(/^([^.]+)\.github\.io$/i), seg = location.pathname.split("/").filter(Boolean)[0];
+  return h && seg ? { owner: h[1], repo: seg } : { owner: "ryuhm2875", repo: "BDRYU_Class" };
+})();
+let token = "";
+try { token = localStorage.getItem("bdryu-gh-token") || ""; } catch (e) {}
+const api = (path, opt = {}) => fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.repo}${path ? "/" + path : ""}`, Object.assign({}, opt, { headers: Object.assign({ "Accept": "application/vnd.github+json", "Authorization": "Bearer " + token, "X-GitHub-Api-Version": "2022-11-28" }, opt.headers || {}) }));
+function b64(str) {
+  const bytes = new TextEncoder().encode(str); let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+$("bPub").onclick = () => {
+  if (!src || !sitePath) return; endText();
+  if (!token) { $("tokErr").textContent = ""; $("tokIn").value = ""; $("tokModal").hidden = false; $("tokIn").focus(); return; }
+  $("pubMsg").textContent = `${sitePath} 파일을 지금 고친 내용으로 바꿉니다. 1~2분 뒤 사이트에서 보여요. 바꾸기 전 내용은 GitHub 기록에 남아 있어서 나중에 되살릴 수 있습니다.`;
+  $("tokForget").hidden = !token; $("pubModal").hidden = false;
+};
+$("pubCancel").onclick = () => $("pubModal").hidden = true;
+$("tokCancel").onclick = () => $("tokModal").hidden = true;
+$("tokForget").onclick = () => { token = ""; try { localStorage.removeItem("bdryu-gh-token"); } catch (e) {} $("pubModal").hidden = true; toast("이 컴퓨터에 저장된 토큰을 지웠어요."); };
+$("tokOk").onclick = async () => {
+  const t = $("tokIn").value.trim();
+  if (!/^(github_pat_|ghp_)/.test(t)) { $("tokErr").textContent = "github_pat_ 로 시작하는 토큰을 붙여 넣어 주세요."; return; }
+  token = t;
+  $("tokOk").disabled = true; $("tokErr").textContent = "확인하는 중…";
+  try {
+    const r = await api("");
+    const j = r.ok ? await r.json() : null;
+    if (!r.ok || !j.permissions || !j.permissions.push) throw new Error(r.status === 401 ? "토큰이 맞지 않아요. 다시 복사해 주세요." : "이 토큰으로는 BDRYU_Class에 올릴 수 없어요. Contents를 Read and write로 했는지 확인해 주세요.");
+  } catch (e) { token = ""; $("tokErr").textContent = e.message.includes("토큰") ? e.message : "GitHub에 연결하지 못했어요. 인터넷 연결을 확인해 주세요."; $("tokOk").disabled = false; return; }
+  $("tokOk").disabled = false;
+  if ($("tokKeep").checked) { try { localStorage.setItem("bdryu-gh-token", token); } catch (e) {} }
+  $("tokModal").hidden = true; publish();
+};
+$("pubOk").onclick = () => { $("pubModal").hidden = true; publish(); };
+async function publish() {
+  const path = sitePath, html = serialize(false);
+  $("bPub").disabled = true; $("bPub").textContent = "올리는 중…";
+  try {
+    const enc = path.split("/").map(encodeURIComponent).join("/");
+    const g = await api(`contents/${enc}?ref=main`);
+    if (g.status === 401) { token = ""; try { localStorage.removeItem("bdryu-gh-token"); } catch (e) {} throw new Error("토큰이 만료되었거나 지워졌어요. 새 토큰을 만들어 주세요."); }
+    if (!g.ok) throw new Error("사이트에서 이 파일을 찾지 못했어요.");
+    const { sha } = await g.json();
+    const r = await api(`contents/${enc}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: `편집기에서 수정: ${path}`, content: b64(html), sha, branch: "main" }) });
+    if (r.status === 409) throw new Error("그사이 이 파일이 사이트에서 바뀌었어요. 혹시 모르니 먼저 [내려받기]로 지금 고친 것을 저장한 뒤, 다시 열어 고쳐 주세요.");
+    if (!r.ok) throw new Error("올리지 못했어요. (" + r.status + ") 잠시 뒤 다시 해 보세요.");
+    setDirty(false);
+    toast("사이트에 반영했어요. 1~2분 뒤에 보입니다.");
+  } catch (e) {
+    alertBox(e.message || "올리지 못했어요.");
+  }
+  $("bPub").textContent = "사이트에 반영"; setDirty(dirty);
+}
+function alertBox(msg) { $("pubT").textContent = "반영하지 못했어요"; $("pubMsg").textContent = msg; $("pubOk").hidden = true; $("tokForget").hidden = true; $("pubModal").hidden = false; $("pubCancel").textContent = "닫기"; $("pubCancel").onclick = () => { $("pubModal").hidden = true; $("pubT").textContent = "사이트에 반영할까요?"; $("pubOk").hidden = false; $("pubCancel").textContent = "취소"; $("pubCancel").onclick = () => $("pubModal").hidden = true; }; }
 
 /* ============ 단축키 ============ */
 function keys(e, fromFrame) {

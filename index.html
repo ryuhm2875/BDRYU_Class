@@ -44,6 +44,10 @@ a.pocket:focus-visible{outline:3px solid var(--link);outline-offset:3px}
 .pocket .tt{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-0.02em;flex:1}
 .pocket .tt small{display:block;font-size:15px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:4px}
 .pocket .go{font-size:17px;color:var(--link);font-weight:500;white-space:nowrap}
+.tools{text-align:center;margin:40px 0 0;font-size:14px}
+.tools a{color:var(--muted);text-decoration:none;padding:8px 14px;border-radius:999px}
+.tools a:hover{color:var(--link);background:var(--tile)}
+.tools span{font-size:12px;opacity:.8;margin-left:4px}
 footer{text-align:center;color:var(--muted);font-size:12px;margin-top:56px;border-top:1px solid var(--line);padding-top:20px}
 @media (max-width:640px){.grades{grid-template-columns:1fr}.grade{min-height:0}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -79,6 +83,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:56px;borde
     <span class="go">들어가기 ›</span>
   </a>
 
+  <p class="tools"><a href="tools/editor.html">✎ 수업 화면 편집기 <span>선생님용</span></a></p>
 </div>
 </body>
 </html>

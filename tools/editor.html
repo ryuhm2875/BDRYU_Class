@@ -29,7 +29,8 @@ button:disabled{opacity:.35;cursor:default}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
 /* 위 막대 */
-.top{display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
+.top{display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);min-width:0;overflow-x:auto;scrollbar-width:thin}
+body.docmode .brand small{display:none}   /* 학습 문서일 때는 버튼 자리를 넓게 */
 .brand{font-weight:700;white-space:nowrap;margin-right:4px}
 .brand small{font-weight:500;color:var(--muted);margin-left:6px}
 .fname{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:var(--muted);white-space:nowrap;overflow:hidden}
@@ -165,12 +166,14 @@ input[type=file]{display:none}
   <button class="btn icon" id="bUndo" type="button" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
   <button class="btn icon" id="bRedo" type="button" title="다시 하기 (Ctrl+Y)" disabled>↷</button>
   <button class="btn" id="bSave" type="button" disabled title="고친 파일을 내 컴퓨터로 내려받기 (Ctrl+S)">내려받기</button>
+  <button class="btn" id="bPdf" type="button" hidden title="인쇄창을 열어 PDF로 저장하기">PDF로 뽑기</button>
+  <button class="btn" id="bPdfUp" type="button" hidden title="방금 저장한 PDF를 학생용 내려받기 파일로 올리기">PDF 올리기</button>
   <button class="btn primary" id="bPub" type="button" disabled title="고친 내용을 사이트에 바로 반영">사이트에 반영</button>
 </header>
 
 <div class="main">
   <aside class="left">
-    <div class="ph"><span>슬라이드</span><span id="scount"></span></div>
+    <div class="ph"><span id="lphTitle">슬라이드</span><span id="scount"></span></div>
     <ol class="slist" id="slist"></ol>
     <div class="sact">
       <button class="btn" id="sUp" type="button" title="앞으로 옮기기" disabled>↑</button>
@@ -201,6 +204,10 @@ input[type=file]{display:none}
           <div id="siteWrap" hidden>
             <div class="or">또는 사이트에 올라가 있는 수업 열기</div>
             <select class="sitepick" id="sitePick"><option value="">수업을 고르세요</option></select>
+          </div>
+          <div id="docWrap" hidden>
+            <div class="or">또는 학습지·개념노트 원본 열기</div>
+            <select class="sitepick" id="docPick"><option value="">문서를 고르세요</option></select>
           </div>
         </div>
       </div>
@@ -241,7 +248,7 @@ input[type=file]{display:none}
         <div class="row"><label>정렬</label><button class="tog" data-al="left" type="button">왼쪽</button><button class="tog" data-al="center" type="button">가운데</button><button class="tog" data-al="right" type="button">오른쪽</button></div>
         <div class="row"><label>줄 간격</label><button class="tog" id="lhMinus" type="button">−</button><input class="num" id="lh" type="number" step="0.1" min="0.8" max="3"><button class="tog" id="lhPlus" type="button">＋</button></div>
         <div class="row"><label>글꼴</label><select class="fontsel" id="ffSel" style="flex:1;min-width:0"></select></div>
-        <div class="row"><label>범위</label><span class="scope"><button class="tog on" data-sc="el" type="button">고른 부분</button><button class="tog" data-sc="slide" type="button">이 슬라이드</button><button class="tog" data-sc="all" type="button">파일 전체</button></span></div>
+        <div class="row"><label>범위</label><span class="scope"><button class="tog on" data-sc="el" type="button">고른 부분</button><button class="tog" data-sc="slide" id="scSlide" type="button">이 슬라이드</button><button class="tog" data-sc="all" type="button">파일 전체</button></span></div>
         <p class="note" id="ffNote" hidden></p>
       </div>
       <div class="grp">
@@ -252,7 +259,7 @@ input[type=file]{display:none}
         <h4>바탕 색</h4>
         <div class="sw" id="swBg"></div>
       </div>
-      <div class="grp">
+      <div class="grp" id="gPos">
         <h4>위치와 크기</h4>
         <div class="row"><label>옮김</label><span id="pMove" style="font-variant-numeric:tabular-nums;color:var(--muted)">0, 0</span></div>
         <div class="row"><label>너비</label><input class="num" id="pW" type="number" min="10"><label style="width:auto">높이</label><input class="num" id="pH" type="number" min="10"></div>
@@ -362,6 +369,7 @@ input[type=file]{display:none}
 <div class="toast" id="toast"></div>
 <input type="file" id="fileIn" accept=".html,.htm,text/html">
 <input type="file" id="imgIn" accept="image/*">
+<input type="file" id="pdfIn" accept="application/pdf,.pdf">
 
 <script src="../games/qr.js"></script>
 <script>
@@ -379,6 +387,7 @@ let extra = [];          // Shift+클릭으로 더 고른 요소들
 let exPool = [];
 let editing = null;      // 글자 고치는 중인 요소
 let undoStack = [], redoStack = [], dirty = false;
+let docMode = false;     // true면 A4 학습 문서(.page), false면 수업 슬라이드(.slide)
 let W = null, D = null;  // 수업 화면의 window, document
 
 /* ============ 공용 ============ */
@@ -394,18 +403,33 @@ function drawName() {
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const srcEl = id => src.querySelector(`[data-ed-id="${id}"]`);
 const liveEl = id => D && D.querySelector(`[data-ed-id="${id}"]`);
-const srcSlides = () => [...src.querySelectorAll(".slide")];
+const srcSlides = () => [...src.querySelectorAll(docMode ? ".page" : ".slide")];
 
 /* ============ 열기 ============ */
 function openText(text, name, path) {
   const doc = new DOMParser().parseFromString(text, "text/html");
-  if (!doc.querySelector(".slide")) { toast("슬라이드(.slide)가 없는 파일이에요. 수업 화면 파일인지 확인해 주세요."); return; }
+  const isDoc = !doc.querySelector(".slide") && !!doc.querySelector(".page");
+  if (!doc.querySelector(".slide") && !isDoc) { toast("슬라이드(.slide)도 쪽(.page)도 없는 파일이에요. 수업 화면이나 학습 문서 파일인지 확인해 주세요."); return; }
+  docMode = isDoc;
   src = doc; fileName = name; sitePath = path || "";
   nextId = 1;
   src.body.querySelectorAll("*").forEach(el => el.setAttribute("data-ed-id", nextId++));
   undoStack = []; redoStack = []; cur = 0;
   $("welcome").hidden = true;
-  ["bFind", "sUp", "sDown", "sDup", "sDel", "aText", "aImg", "aLink", "aSlide"].forEach(k => $(k).disabled = false);
+  ["bFind", "sUp", "sDown", "sDup", "sDel"].forEach(k => $(k).disabled = false);
+  ["aText", "aImg", "aLink", "aSlide"].forEach(k => $(k).disabled = docMode);
+  $("bPdf").hidden = !docMode;
+  $("bPdfUp").hidden = !docMode || !pdfPath || location.protocol === "file:";
+  $("bNew").hidden = docMode;          // 학습 문서를 보는 중에는 자리를 비워 둡니다
+  document.body.classList.toggle("docmode", docMode);
+  $("lphTitle").textContent = docMode ? "쪽" : "슬라이드";
+  $("mPlay").textContent = docMode ? "그대로 보기" : "수업처럼 보기";
+  $("scSlide").textContent = docMode ? "이 쪽" : "이 슬라이드";
+  $("sDup").title = docMode ? "이 쪽 복제" : "이 슬라이드 복제";
+  $("sDel").title = docMode ? "이 쪽 지우기" : "이 슬라이드 지우기";
+  $("hint").innerHTML = docMode
+    ? `<span><b>클릭</b> 고르기</span><span><b>두 번 클릭</b> 글자 고치기</span><span><b>표 칸</b>도 두 번 클릭하면 고쳐져요</span><span><b>PageUp/Down</b> 쪽 넘기기</span><span>다 고치면 <b>PDF로 뽑기</b> → <b>사이트에 반영</b></span>`
+    : `<span><b>클릭</b> 고르기</span><span><b>두 번 클릭</b> 글자 고치기</span><span><b>끌기</b> 옮기기</span><span><b>오른쪽 아래 점</b> 크기</span><span><b>방향키</b> 1칸 이동 (Shift 10칸)</span><span><b>PageUp/Down</b> 슬라이드</span>`;
   $("ffSel").innerHTML = "";
   setDirty(false); updUndo();
   render(0);
@@ -413,7 +437,7 @@ function openText(text, name, path) {
 function readFile(f) {
   if (!f) return;
   const r = new FileReader();
-  r.onload = () => openText(r.result, f.name, "");
+  r.onload = () => { pdfPath = ""; openText(r.result, f.name, ""); };
   r.readAsText(f, "utf-8");
 }
 $("bOpen").onclick = () => { if (dirty && !confirmLeave()) return; $("welcome").hidden = false; $("wClose").hidden = !src; };
@@ -458,12 +482,38 @@ async function siteList() {
     $("loading").classList.add("on");
     try {
       const t = await fetch("../" + sp.value).then(r => { if (!r.ok) throw 0; return r.text(); });
+      pdfPath = "";
       openText(t, sp.value.replaceAll("/", "_"), sp.value);
     } catch (e) { toast("파일을 불러오지 못했어요."); }
     $("loading").classList.remove("on"); sp.value = "";
   };
 }
 siteList();
+
+/* 학습지·개념노트 원본 목록 (tools/docs.json) */
+async function docList() {
+  if (location.protocol === "file:") return;
+  let list = null;
+  try { list = await fetch("docs.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null); } catch (e) {}
+  if (!Array.isArray(list) || !list.length) return;
+  const dp = $("docPick");
+  dp.querySelectorAll("option:not([value=''])").forEach(o => o.remove());
+  list.forEach(d => { const op = document.createElement("option"); op.value = d.path; op.textContent = d.name; op.dataset.pdf = d.pdf || ""; dp.appendChild(op); });
+  $("docWrap").hidden = false;
+  dp.onchange = async () => {
+    if (!dp.value) return;
+    if (dirty && !confirmLeave()) { dp.value = ""; return; }
+    $("loading").classList.add("on");
+    try {
+      const t = await fetch("../" + dp.value).then(r => { if (!r.ok) throw 0; return r.text(); });
+      pdfPath = dp.selectedOptions[0].dataset.pdf || "";
+      openText(t, dp.value.replaceAll("/", "_"), dp.value);
+    } catch (e) { toast("파일을 불러오지 못했어요."); }
+    $("loading").classList.remove("on"); dp.value = "";
+  };
+}
+let pdfPath = "";
+docList();
 
 /* ============ 수업 화면 그리기 ============ */
 function serialize(keepIds) {
@@ -476,7 +526,7 @@ function render(goTo) {
   $("loading").classList.add("on");
   if (blobUrl) URL.revokeObjectURL(blobUrl);
   blobUrl = URL.createObjectURL(new Blob([serialize(true)], { type: "text/html" }));
-  frame.onload = () => { setTimeout(() => { hook(); $("loading").classList.remove("on"); showSlide(Math.min(goTo || 0, srcSlides().length - 1)); }, 60); };
+  frame.onload = () => { setTimeout(() => { hook(); $("loading").classList.remove("on"); showSlide(Math.min(goTo || 0, srcSlides().length - 1)); if (docMode) drawList(); }, 60); };
   frame.src = blobUrl;
   drawList();
 }
@@ -493,12 +543,20 @@ html.__ed [contenteditable="true"]{outline:2px solid #0071e3!important;outline-o
 .__edex{position:fixed;z-index:2147483646;border:2px dashed #0071e3;border-radius:3px;pointer-events:none;display:none}
 html.__ed .step{outline:2px dashed rgba(255,149,0,.9)!important;outline-offset:2px}
 #__edhov{position:fixed;z-index:2147483645;border:1px dashed rgba(0,113,227,.7);pointer-events:none;display:none}
+/* 학습 문서(A4)일 때 */
+html.__eddoc #__edsel i{display:none}
+html.__eddoc #__edsel{cursor:default}
+html.__eddoc .doc,html.__eddoc body>.page{zoom:var(--ed-zoom,1)}
+html.__eddoc .page{overflow:visible!important}
+html.__eddoc .page.__over{outline:2px solid #ff3b30;outline-offset:3px}
 `;
 let box, hov;
 function hook() {
   W = frame.contentWindow; D = frame.contentDocument;
   if (!D) return;
   const st = D.createElement("style"); st.textContent = EDIT_CSS; D.head.appendChild(st);
+  D.documentElement.classList.toggle("__eddoc", docMode);
+  if (docMode) { fitDoc(); W.addEventListener("resize", fitDoc); }
   exPool = []; extra = [];
   box = D.createElement("div"); box.id = "__edsel"; box.innerHTML = "<b></b><i></i>"; D.body.appendChild(box);
   hov = D.createElement("div"); hov.id = "__edhov"; D.body.appendChild(hov);
@@ -512,6 +570,27 @@ function hook() {
   W.addEventListener("keydown", onKeyFrame, true);
   W.addEventListener("resize", place);
   const w = W; (function loop() { if (w === W && !w.closed) { place(); w.requestAnimationFrame(loop); } })();
+}
+/* 문서를 가운데 칸 너비에 맞춰 줄여 보여 주기 */
+function fitDoc() {
+  if (!docMode || !D) return;
+  const root = D.documentElement;
+  root.style.setProperty("--ed-zoom", "1");
+  const p = D.querySelector(".page"); if (!p) return;
+  const w = p.getBoundingClientRect().width || 794;
+  const z = Math.max(0.3, Math.min(1, (frame.clientWidth - 36) / w));
+  root.style.setProperty("--ed-zoom", z.toFixed(3));
+}
+/* 쪽이 넘쳤는지 (A4 한 장을 벗어났는지) */
+function overflowPages() {
+  if (!docMode || !D) return [];
+  const out = [];
+  D.querySelectorAll(".page").forEach((p, i) => {
+    const over = p.scrollHeight > p.clientHeight + 2;
+    p.classList.toggle("__over", over);
+    if (over) out.push(i);
+  });
+  return out;
 }
 function setMode(m, quiet) {
   mode = m;
@@ -528,6 +607,11 @@ $("mPlay").onclick = () => { if (mode !== "play") { endText(); mode = "play"; re
 
 /* 슬라이드 목록 */
 function title(sl) {
+  if (docMode) {
+    const h = sl.querySelector(".title, h1") || sl.querySelector("h2");
+    const t = h ? h.textContent.replace(/\s+/g, " ").trim() : "";
+    return t ? (t.length > 20 ? t.slice(0, 20) + "…" : t) : "본문";
+  }
   if (sl.classList.contains("s-cover")) return "표지";
   const h = sl.querySelector("h2"), k = sl.querySelector(".kicker");
   let t = "";
@@ -540,15 +624,19 @@ function title(sl) {
 }
 function drawList() {
   const ss = srcSlides();
-  $("scount").textContent = ss.length + "장";
-  $("slist").innerHTML = ss.map((s, i) => `<li data-i="${i}" class="${i === cur ? "on" : ""}"><i>${i + 1}</i><span>${esc(title(s))}</span></li>`).join("");
+  $("scount").textContent = ss.length + (docMode ? "쪽" : "장");
+  const over = overflowPages();
+  $("slist").innerHTML = ss.map((s, i) => `<li data-i="${i}" class="${i === cur ? "on" : ""}"><i>${i + 1}</i><span>${esc(title(s))}${over.includes(i) ? ' <b style="color:#ff3b30" title="내용이 한 장을 넘쳤어요">⚠</b>' : ""}</span></li>`).join("");
 }
 $("slist").onclick = e => { const li = e.target.closest("li"); if (li) { endText(); showSlide(+li.dataset.i); } };
 function showSlide(i) {
   const ss = srcSlides(); if (!ss.length) return;
   cur = Math.max(0, Math.min(i, ss.length - 1));
   select(null);
-  if (W) {
+  if (W && docMode) {
+    const live = D.querySelectorAll(".page")[cur];
+    if (live) live.scrollIntoView({ block: "start" });
+  } else if (W) {
     try { if (typeof W.go === "function") W.go(cur); else throw 0; }
     catch (e) { const live = [...D.querySelectorAll(".slide")]; live.forEach((s, k) => s.classList.toggle("active", k === cur)); }
   }
@@ -559,6 +647,10 @@ function showSlide(i) {
 /* ============ 고르기 ============ */
 function pickAt(x, y) {
   const els = D.elementsFromPoint(x, y).filter(el => el !== box && el !== hov && el.hasAttribute && el.hasAttribute("data-ed-id"));
+  if (docMode) {
+    const list = els.filter(el => !el.classList.contains("page") && !el.classList.contains("doc") && el.tagName !== "BODY" && el.tagName !== "HTML" && isVisible(el));
+    return list[0] || null;
+  }
   const slide = D.querySelectorAll(".slide")[cur];
   const inside = els.filter(el => el !== slide && !el.classList.contains("slide") && el.closest("#stage, body"));
   // 지금 슬라이드 안의 요소를 먼저, 없으면 머리말/꼬리말 같은 바깥 요소
@@ -624,9 +716,11 @@ function onDown(e) {
   else if (!resize) {
     // 고른 상자를 다시 누르면 그 안쪽 요소로 들어가 볼 수 있게
     const inner = pickAt(e.clientX, e.clientY);
-    drag = { inner: inner && inner !== sel && sel.contains(inner) ? inner : null };
+    if (docMode) { if (inner && inner !== sel && sel.contains(inner)) select(inner); }
+    else drag = { inner: inner && inner !== sel && sel.contains(inner) ? inner : null };
   }
   if (!sel) return;
+  if (docMode) { syncCurPage(); return; }   // 문서는 끌어 옮기지 않습니다 — 글은 흘러야 하니까
   const s = scaleOf(sel), [tx, ty] = parseTr(sel), cs = W.getComputedStyle(sel);
   drag = Object.assign(drag || {}, { others: extra.map(x => ({ el: x, t: parseTr(x), s: scaleOf(x) })), x: e.clientX, y: e.clientY, s, tx, ty, w: sel.offsetWidth || parseFloat(cs.width), h: sel.offsetHeight || parseFloat(cs.height), resize, moved: false, snap: false });
   W.addEventListener("pointermove", onMove, true);
@@ -657,6 +751,8 @@ function onUp(e) {
 }
 
 /* ============ 글자 고치기 ============ */
+/* 문서에서 "한 번에 고치는 단위"가 되는 태그들 */
+const DOC_TEXT = /^(P|TD|TH|LI|H1|H2|H3|H4|H5|H6|CAPTION|FIGCAPTION|DT|DD|BLOCKQUOTE)$/;
 function canEditText(el) {
   if (!el || el.closest("svg") || el.tagName === "IMG" || el.tagName === "INPUT") return false;
   if (!el.textContent.trim()) return false;
@@ -670,6 +766,13 @@ function onDbl(e) {
   e.stopImmediatePropagation(); e.preventDefault();
   const el = pickAt(e.clientX, e.clientY) || sel;
   if (!el) return;
+  if (docMode) {
+    // 문서에서는 문단·표 칸·제목 단위로 고친다 (블록을 통째로 집지 않게)
+    let t = el;
+    while (t && !DOC_TEXT.test(t.tagName) && t.parentElement && !t.classList.contains("page")) t = t.parentElement;
+    if (!t || !DOC_TEXT.test(t.tagName) || !canEditText(t)) t = el;
+    select(t); startText(e.clientX, e.clientY); syncCurPage(); return;
+  }
   // 글자가 들어 있는 가장 바깥의 고칠 수 있는 요소를 찾는다 (한 문장 단위)
   let t = el; while (t.parentElement && t.parentElement.hasAttribute("data-ed-id") && !t.parentElement.classList.contains("slide") && canEditText(t.parentElement) && t.parentElement.textContent.length < 400 && t.parentElement.children.length <= 6) t = t.parentElement;
   if (!canEditText(t)) t = el;
@@ -733,7 +836,9 @@ function drawProps() {
   const p = sel.parentElement;
   $("pParent").disabled = !p || !p.hasAttribute("data-ed-id") || p.classList.contains("slide") || p.id === "stage";
   $("gImg").hidden = sel.tagName !== "IMG" || !!extra.length;
-  $("gMulti").hidden = !extra.length;
+  $("gMulti").hidden = !extra.length || docMode;
+  $("gPos").hidden = docMode;
+  $("gStep").hidden = docMode;
   if (extra.length) { $("pWhat").innerHTML = `${extra.length + 1}개를 골랐어요<small>Shift+클릭으로 더하거나 빼기 · 바꾸는 설정이 모두에 적용돼요</small>`; $("pEditText").hidden = true; $("pNoText").hidden = true; }
   drawPropsValues(); drawStep(); drawFontSel();
 }
@@ -809,7 +914,14 @@ $("pDupEl").onclick = () => {
   const lc = D.importNode(c, true); sel.after(lc);
   select(lc); setDirty(true);
 };
-function curSlides() { return { s: srcSlides()[cur], l: D.querySelectorAll(".slide")[cur] }; }
+function curSlides() { return { s: srcSlides()[cur], l: D.querySelectorAll(docMode ? ".page" : ".slide")[cur] }; }
+/* 문서에서 고른 요소가 들어 있는 쪽으로 '지금 쪽'을 옮긴다 */
+function syncCurPage() {
+  if (!docMode || !sel) return;
+  const p = sel.closest(".page"); if (!p) return;
+  const i = [...D.querySelectorAll(".page")].indexOf(p);
+  if (i >= 0 && i !== cur) { cur = i; [...$("slist").children].forEach((li, k) => li.classList.toggle("on", k === cur)); }
+}
 function addNode(html) {
   endText(); snapshot();
   const { s, l } = curSlides(); if (!s || !l) return null;
@@ -860,13 +972,18 @@ function shrink(file) {
 }
 
 /* ============ 슬라이드 정리 ============ */
-function slideOp(fn) { endText(); snapshot(); const r = fn(); setDirty(true); render(r); }
+function slideOp(fn) { endText(); snapshot(); const r = fn(); if (docMode) renumberPages(); setDirty(true); render(r); }
+/* 쪽을 옮기거나 지운 뒤 꼬리말의 쪽 번호를 다시 매긴다 */
+function renumberPages() {
+  srcSlides().forEach((p, i) => { const n = p.querySelector(".pno"); if (n && /^\s*\d+\s*$/.test(n.textContent)) n.textContent = i + 1; });
+}
 $("sUp").onclick = () => { if (cur === 0) return; slideOp(() => { const ss = srcSlides(); ss[cur - 1].before(ss[cur]); return cur - 1; }); };
 $("sDown").onclick = () => { const ss = srcSlides(); if (cur >= ss.length - 1) return; slideOp(() => { ss[cur + 1].after(ss[cur]); return cur + 1; }); };
 $("sDup").onclick = () => slideOp(() => { const s = srcSlides()[cur]; const c = s.cloneNode(true); c.classList.remove("active"); [c, ...c.querySelectorAll("*")].forEach(x => x.setAttribute("data-ed-id", nextId++)); c.removeAttribute("id"); s.after(c); return cur + 1; });
 $("sDel").onclick = () => {
-  const ss = srcSlides(); if (ss.length < 2) { toast("슬라이드가 하나뿐이라 지울 수 없어요."); return; }
-  slideOp(() => { ss[cur].remove(); toast(`${cur + 1}번 슬라이드를 지웠어요. 되돌리려면 Ctrl+Z`); return Math.min(cur, ss.length - 2); });
+  const ss = srcSlides(); const 단위 = docMode ? "쪽" : "슬라이드";
+  if (ss.length < 2) { toast(`${단위}이 하나뿐이라 지울 수 없어요.`); return; }
+  slideOp(() => { ss[cur].remove(); toast(`${cur + 1}번 ${단위}을 지웠어요. 되돌리려면 Ctrl+Z`); return Math.min(cur, ss.length - 2); });
 };
 
 /* ============ 찾아 바꾸기 ============ */
@@ -919,6 +1036,36 @@ async function save() {
 }
 $("bSave").onclick = save;
 
+/* ============ PDF로 뽑기 (학습 문서) ============ */
+$("bPdf").onclick = () => {
+  if (!src || !docMode || !W) return;
+  endText(); select(null);
+  const over = overflowPages();
+  if (over.length && !confirm(`${over.map(i => i + 1).join(", ")}쪽이 A4 한 장을 넘쳤어요. 넘친 부분은 PDF에서 잘립니다.\n그래도 인쇄창을 열까요?`)) return;
+  const name = (pdfPath || fileName.replace(/\.html?$/i, "") + ".pdf").split("/").pop();
+  alert(`인쇄창이 열립니다.\n\n· 대상(프린터): PDF로 저장\n· 용지: A4,  여백: 기본값\n· 배율: 100% (“기본값”)\n\n파일 이름은 “${name}”으로 저장하시면 목차의 내려받기 버튼과 이름이 맞습니다.`);
+  printDoc();
+};
+/* 편집 표시가 섞이지 않게, 저장될 파일 그대로를 따로 띄워 인쇄한다 */
+async function printDoc() {
+  $("bPdf").disabled = true; $("bPdf").textContent = "준비 중…";
+  try { await refreshFonts(); } catch (e) {}
+  const old = document.getElementById("__printframe"); if (old) old.remove();
+  const f = document.createElement("iframe");
+  f.id = "__printframe";
+  f.setAttribute("aria-hidden", "true");
+  f.style.cssText = "position:fixed;left:-9999px;top:0;width:210mm;height:297mm;border:0;visibility:hidden";
+  const url = URL.createObjectURL(new Blob([serialize(false)], { type: "text/html" }));
+  f.onload = () => setTimeout(() => {
+    try { f.contentWindow.focus(); f.contentWindow.print(); }
+    catch (e) { toast("인쇄창을 열지 못했어요. 대신 [내려받기]로 파일을 받아 브라우저에서 인쇄해 주세요."); }
+    $("bPdf").disabled = false; $("bPdf").textContent = "PDF로 뽑기";
+    setTimeout(() => { f.remove(); URL.revokeObjectURL(url); }, 120000);
+  }, 700);
+  document.body.appendChild(f);
+  f.src = url;
+}
+
 /* ============ 사이트에 바로 반영 (GitHub) ============ */
 const REPO = (() => {
   const h = location.hostname.match(/^([^.]+)\.github\.io$/i), seg = location.pathname.split("/").filter(Boolean)[0];
@@ -963,6 +1110,27 @@ $("tokOk").onclick = async () => {
   const next = pendingTok; pendingTok = null; if (next) next();
 };
 $("pubOk").onclick = () => { $("pubModal").hidden = true; publish(); };
+
+/* 학생이 내려받는 PDF 교체 */
+$("bPdfUp").onclick = () => {
+  if (!pdfPath) { toast("이 문서에는 연결된 PDF가 없어요."); return; }
+  withToken(() => $("pdfIn").click());
+};
+$("pdfIn").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f || !pdfPath) return;
+  if (f.size > 20 * 1024 * 1024) { toast("PDF가 20MB를 넘어서 올리지 않았어요."); return; }
+  const b = $("bPdfUp"); b.disabled = true; b.textContent = "올리는 중…";
+  try {
+    const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
+    let sha = null;
+    const g = await api(`contents/${encPath(pdfPath)}?ref=main`);
+    if (g.status === 401) { token = ""; try { localStorage.removeItem("bdryu-gh-token"); } catch (x) {} throw new Error("토큰이 만료되었어요. 새 토큰을 만들어 주세요."); }
+    if (g.ok) sha = (await g.json()).sha;
+    await ghPut(pdfPath, b64, sha, `학습 문서 PDF 교체: ${pdfPath}`);
+    toast(`${pdfPath} 를 바꿨어요. 1~2분 뒤 사이트에 반영됩니다.`);
+  } catch (err) { toast(err.message || "올리지 못했어요."); }
+  b.disabled = false; b.textContent = "PDF 올리기";
+};
 async function publish() {
   const path = sitePath;
   $("bPub").disabled = true; $("bPub").textContent = "올리는 중…";

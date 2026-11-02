@@ -49,6 +49,20 @@ h1{font-size:clamp(36px,6vw,56px);font-weight:800;letter-spacing:-0.025em;line-h
 .soon{font-size:14px;color:var(--faint);white-space:nowrap}
 .empty{text-align:center;color:var(--muted);font-size:17px;padding:40px 0}
 @media (max-width:520px){.unit{padding:22px 20px 6px}.lesson{flex-direction:column;align-items:flex-start;gap:8px}.links{justify-content:flex-start}}
+
+/* PDF 미리보기 팝업 */
+.pv{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.pv.on{display:flex}
+.pv-box{display:flex;flex-direction:column;width:min(1000px,100%);height:min(92vh,100%);background:var(--bg);color:var(--fg);border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.pv-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.pv-title{flex:1;min-width:0;font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-bar a,.pv-bar button{font:inherit;font-size:14px;font-weight:500;color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.pv-bar a:hover,.pv-bar button:hover{background:var(--chip)}
+.pv-bar a:focus-visible,.pv-bar button:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.pv-frame{flex:1;width:100%;border:0;background:var(--tile)}
+@media (max-width:520px){.pv-bar{padding:10px 12px;gap:6px}.pv-bar .pv-tab{display:none}}
 </style>
 </head>
 <body>
@@ -67,6 +81,18 @@ h1{font-size:clamp(36px,6vw,56px);font-weight:800;letter-spacing:-0.025em;line-h
   <main class="units" id="units"></main>
 </div>
 
+<div class="pv" id="pv" role="dialog" aria-modal="true" aria-labelledby="pv-title">
+  <div class="pv-box">
+    <div class="pv-bar">
+      <span class="pv-title" id="pv-title"></span>
+      <a id="pv-dl" href="#" download>↓ 내려받기</a>
+      <a class="pv-tab" id="pv-tab" href="#" target="_blank" rel="noopener">새 탭</a>
+      <button type="button" id="pv-close" aria-label="닫기">✕ 닫기</button>
+    </div>
+    <iframe class="pv-frame" id="pv-frame" title="PDF 미리보기"></iframe>
+  </div>
+</div>
+
 <script>
 /* ================================================================
    여기만 고치면 됩니다.
@@ -77,7 +103,7 @@ h1{font-size:clamp(36px,6vw,56px);font-weight:800;letter-spacing:-0.025em;line-h
    files: { "1차시": "1-2/3-1-1.html",
             "2차시": "2-2/3-1-2.html" }         → 차시 버튼 여러 개
    files: { "열기": "2-2/2-1.html",
-            "활동지": "2-2/2-1-worksheet.pdf" } → html이 아닌 파일은 ↓ 내려받기 버튼
+            "활동지": "2-2/2-1-worksheet.pdf" } → PDF는 미리보기 팝업(팝업 안에 내려받기 버튼), 그 밖의 파일은 ↓ 내려받기 버튼
 
    파일 이름 규칙: 학기 폴더/단원-소단원(-차시).html
    예) 2학기 3단원 (1) 2차시 → 1-2/3-1-2.html
@@ -138,8 +164,10 @@ function show(term) {
         const right = f.length
           ? f.map(([k, href]) => {
               if (!isPage(href)) {           // html이 아니면 내려받기
-                const ext = href.split(".").pop();
-                return `<a class="chip dl" href="${esc(href)}" download="${esc(l.제목 + " " + k + "." + ext)}">${esc(k)} ↓</a>`;
+                const ext = href.split(".").pop(), nm = l.제목 + " " + k;
+                if (/^pdf$/i.test(ext))        // PDF는 팝업 미리보기 (내려받기는 팝업 안에서)
+                  return `<a class="chip dl" href="${esc(href)}" data-preview data-title="${esc(nm)}" data-name="${esc(nm + "." + ext)}">${esc(k)}</a>`;
+                return `<a class="chip dl" href="${esc(href)}" download="${esc(nm + "." + ext)}">${esc(k)} ↓</a>`;
               }
               return `<a class="${many ? "chip" : ""}" href="${esc(href)}"${/^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : ""}>${esc(k)}${many ? "" : " ›"}</a>`;
             }).join("")
@@ -157,6 +185,38 @@ document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click"
 let start = (new Date().getMonth() + 1 >= 3 && new Date().getMonth() + 1 <= 7) ? 1 : 2;  // 3~7월은 1학기
 try { const saved = localStorage.getItem("g1-term"); if (saved === "1" || saved === "2") start = saved; } catch (e) {}
 show(start);
+
+/* PDF 미리보기 팝업: PDF 버튼을 누르면 팝업으로 열리고, 내려받기는 팝업 안 버튼으로 합니다.
+   Ctrl/⌘/Shift 를 누른 채 클릭하면 팝업 없이 브라우저 기본 동작(새 탭)으로 열립니다. */
+const pv = document.getElementById("pv"), pvFrame = document.getElementById("pv-frame");
+let pvFrom = null;
+function pvOpen(a) {
+  const href = a.getAttribute("href");
+  document.getElementById("pv-title").textContent = a.dataset.title;
+  const dl = document.getElementById("pv-dl");
+  dl.href = href; dl.setAttribute("download", a.dataset.name);
+  document.getElementById("pv-tab").href = href;
+  pvFrame.src = href + "#view=FitH";
+  pvFrom = a;
+  pv.classList.add("on");
+  document.documentElement.style.overflow = "hidden";
+  document.getElementById("pv-close").focus();
+}
+function pvClose() {
+  pv.classList.remove("on");
+  pvFrame.src = "about:blank";
+  document.documentElement.style.overflow = "";
+  if (pvFrom) pvFrom.focus();
+}
+box.addEventListener("click", e => {
+  const a = e.target.closest("a[data-preview]");
+  if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+  e.preventDefault();
+  pvOpen(a);
+});
+pv.addEventListener("click", e => { if (e.target === pv) pvClose(); });
+document.getElementById("pv-close").addEventListener("click", pvClose);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && pv.classList.contains("on")) pvClose(); });
 </script>
 </body>
 </html>

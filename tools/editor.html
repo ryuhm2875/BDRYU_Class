@@ -31,6 +31,9 @@ button:disabled{opacity:.35;cursor:default}
 /* 위 막대 */
 .top{display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);min-width:0;overflow-x:auto;scrollbar-width:thin}
 body.docmode .brand small{display:none}   /* 학습 문서일 때는 버튼 자리를 넓게 */
+.plainwarn{margin:0 10px 10px;padding:9px 11px;border-radius:9px;background:#fff4e0;color:#8a5200;font-size:12px;line-height:1.5}
+body.plainmode .sact,body.plainmode .sact2{display:none}
+@media (prefers-color-scheme:dark){.plainwarn{background:#3a2b10;color:#ffcf7a}}
 .brand{font-weight:700;white-space:nowrap;margin-right:4px}
 .brand small{font-weight:500;color:var(--muted);margin-left:6px}
 .fname{min-width:0;flex:1;display:flex;align-items:center;gap:8px;color:var(--muted);white-space:nowrap;overflow:hidden}
@@ -71,8 +74,9 @@ body.docmode .brand small{display:none}   /* 학습 문서일 때는 버튼 자�
 .hint b{color:var(--fg);font-weight:600}
 
 /* 첫 화면(파일 열기 전) */
-.welcome{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--stagebg)}
-.wbox{width:min(560px,100%);background:var(--panel);border-radius:18px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.08);text-align:center}
+.welcome{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--stagebg);overflow:auto}
+.wbox{width:min(560px,100%);flex:none;background:var(--panel);border-radius:18px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.08);text-align:center}
+@media (max-height:720px){.wbox{padding:22px}.wbox h1{font-size:22px}.drop{margin-top:14px;padding:18px 14px}}
 .wbox h1{font-size:26px;margin:0;letter-spacing:-.02em}
 .wbox p{color:var(--muted);margin:8px 0 0;line-height:1.6}
 .drop{margin-top:22px;border:2px dashed var(--line);border-radius:14px;padding:26px 16px;transition:background .2s,border-color .2s}
@@ -174,6 +178,7 @@ input[type=file]{display:none}
 <div class="main">
   <aside class="left">
     <div class="ph"><span id="lphTitle">슬라이드</span><span id="scount"></span></div>
+    <p class="plainwarn" id="plainWarn" hidden>이 페이지는 수업 슬라이드도 학습 문서도 아니라서, <b>글자와 색만</b> 고칠 수 있게 해 두었습니다. 옮기거나 지우면 작동이 멈출 수 있어서요.<br><br>게임이 돌아가면서 <b>스스로 만들어 내는 글자</b>는 클릭해도 잡히지 않습니다. 파일에 원래 적혀 있는 글자만 고쳐집니다.</p>
     <ol class="slist" id="slist"></ol>
     <div class="sact">
       <button class="btn" id="sUp" type="button" title="앞으로 옮기기" disabled>↑</button>
@@ -196,18 +201,15 @@ input[type=file]{display:none}
         <div class="wbox">
           <button class="btn" id="wClose" type="button" hidden style="float:right">닫기</button>
           <h1>수업 화면 편집기</h1>
-          <p>글자, 크기, 위치, 그림, 슬라이드 순서를 화면에서 바로 고치고<br>버튼 하나로 사이트에 반영합니다.</p>
+          <p>수업 화면도, 학습지·개념노트도 여기서 바로 고치고<br>버튼 하나로 사이트에 반영합니다.</p>
           <div class="drop" id="drop">
-            <div>수업 HTML 파일을 여기로 끌어다 놓거나</div>
+            <div>HTML 파일을 여기로 끌어다 놓거나</div>
             <button class="btn primary" id="bOpen2" type="button">내 컴퓨터에서 고르기</button>
           </div>
           <div id="siteWrap" hidden>
-            <div class="or">또는 사이트에 올라가 있는 수업 열기</div>
-            <select class="sitepick" id="sitePick"><option value="">수업을 고르세요</option></select>
-          </div>
-          <div id="docWrap" hidden>
-            <div class="or">또는 학습지·개념노트 원본 열기</div>
-            <select class="sitepick" id="docPick"><option value="">문서를 고르세요</option></select>
+            <div class="or">또는 사이트에 올라가 있는 파일 열기</div>
+            <select class="sitepick" id="sitePick"><option value="">파일을 고르세요</option></select>
+            <p class="note" id="siteNote" style="margin:8px 0 0;text-align:center"></p>
           </div>
         </div>
       </div>
@@ -277,7 +279,7 @@ input[type=file]{display:none}
         <button class="btn full" id="pImg" type="button">다른 그림으로 바꾸기</button>
         <p class="note">큰 사진은 파일이 너무 커지지 않게 알맞게 줄여서 넣습니다.</p>
       </div>
-      <div class="grp">
+      <div class="grp" id="gDupDel">
         <div class="row"><button class="btn" id="pDupEl" type="button">복제</button><button class="btn danger" id="pDel" type="button">지우기</button></div>
       </div>
     </div>
@@ -387,7 +389,8 @@ let extra = [];          // Shift+클릭으로 더 고른 요소들
 let exPool = [];
 let editing = null;      // 글자 고치는 중인 요소
 let undoStack = [], redoStack = [], dirty = false;
-let docMode = false;     // true면 A4 학습 문서(.page), false면 수업 슬라이드(.slide)
+let docMode = false;     // A4 학습 문서(.page)
+let plainMode = false;   // 슬라이드도 문서도 아닌 보통 웹페이지 — 글자와 색만
 let W = null, D = null;  // 수업 화면의 window, document
 
 /* ============ 공용 ============ */
@@ -403,36 +406,44 @@ function drawName() {
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const srcEl = id => src.querySelector(`[data-ed-id="${id}"]`);
 const liveEl = id => D && D.querySelector(`[data-ed-id="${id}"]`);
-const srcSlides = () => [...src.querySelectorAll(docMode ? ".page" : ".slide")];
+const srcSlides = () => plainMode ? [src.body] : [...src.querySelectorAll(docMode ? ".page" : ".slide")];
+const 흐름편집 = () => docMode || plainMode;   // 끌어 옮기기 없이 글만 고치는 방식
 
 /* ============ 열기 ============ */
 function openText(text, name, path) {
   const doc = new DOMParser().parseFromString(text, "text/html");
-  const isDoc = !doc.querySelector(".slide") && !!doc.querySelector(".page");
-  if (!doc.querySelector(".slide") && !isDoc) { toast("슬라이드(.slide)도 쪽(.page)도 없는 파일이에요. 수업 화면이나 학습 문서 파일인지 확인해 주세요."); return; }
-  docMode = isDoc;
+  if (!doc.body || !doc.body.children.length) { toast("열 수 있는 내용이 없는 파일이에요."); return; }
+  const hasSlide = !!doc.querySelector(".slide"), hasPage = !hasSlide && !!doc.querySelector("section.page, div.page");
+  docMode = hasPage;
+  plainMode = !hasSlide && !hasPage;          // 슬라이드도 문서도 아닌 보통 웹페이지
   src = doc; fileName = name; sitePath = path || "";
   nextId = 1;
   src.body.querySelectorAll("*").forEach(el => el.setAttribute("data-ed-id", nextId++));
   undoStack = []; redoStack = []; cur = 0;
   $("welcome").hidden = true;
-  ["bFind", "sUp", "sDown", "sDup", "sDel"].forEach(k => $(k).disabled = false);
-  ["aText", "aImg", "aLink", "aSlide"].forEach(k => $(k).disabled = docMode);
+  $("bFind").disabled = false;
+  ["sUp", "sDown", "sDup", "sDel"].forEach(k => $(k).disabled = plainMode);
+  ["aText", "aImg", "aLink", "aSlide"].forEach(k => $(k).disabled = 흐름편집());
   $("bPdf").hidden = !docMode;
   $("bPdfUp").hidden = !docMode || !pdfPath || location.protocol === "file:";
-  $("bNew").hidden = docMode;          // 학습 문서를 보는 중에는 자리를 비워 둡니다
-  document.body.classList.toggle("docmode", docMode);
-  $("lphTitle").textContent = docMode ? "쪽" : "슬라이드";
-  $("mPlay").textContent = docMode ? "그대로 보기" : "수업처럼 보기";
-  $("scSlide").textContent = docMode ? "이 쪽" : "이 슬라이드";
+  $("bNew").hidden = 흐름편집();        // 학습 문서·일반 페이지에서는 자리를 비워 둡니다
+  document.body.classList.toggle("docmode", 흐름편집());
+  document.body.classList.toggle("plainmode", plainMode);
+  $("lphTitle").textContent = plainMode ? "페이지" : docMode ? "쪽" : "슬라이드";
+  $("mPlay").textContent = hasSlide ? "수업처럼 보기" : "그대로 보기";
+  $("scSlide").textContent = plainMode ? "이 페이지" : docMode ? "이 쪽" : "이 슬라이드";
   $("sDup").title = docMode ? "이 쪽 복제" : "이 슬라이드 복제";
   $("sDel").title = docMode ? "이 쪽 지우기" : "이 슬라이드 지우기";
-  $("hint").innerHTML = docMode
+  $("hint").innerHTML = plainMode
+    ? `<span><b>두 번 클릭</b> 글자 고치기</span><span>이 페이지는 <b>글자와 색</b>만 고칠 수 있어요</span><span>옮기기·지우기·새로 넣기는 막아 두었습니다</span><span>다 고치면 <b>사이트에 반영</b></span>`
+    : docMode
     ? `<span><b>클릭</b> 고르기</span><span><b>두 번 클릭</b> 글자 고치기</span><span><b>표 칸</b>도 두 번 클릭하면 고쳐져요</span><span><b>PageUp/Down</b> 쪽 넘기기</span><span>다 고치면 <b>PDF로 뽑기</b> → <b>사이트에 반영</b></span>`
     : `<span><b>클릭</b> 고르기</span><span><b>두 번 클릭</b> 글자 고치기</span><span><b>끌기</b> 옮기기</span><span><b>오른쪽 아래 점</b> 크기</span><span><b>방향키</b> 1칸 이동 (Shift 10칸)</span><span><b>PageUp/Down</b> 슬라이드</span>`;
+  $("plainWarn").hidden = !plainMode;
   $("ffSel").innerHTML = "";
   setDirty(false); updUndo();
   render(0);
+  if (plainMode) toast("게임·목차 같은 페이지는 글자와 색만 고칠 수 있어요.");
 }
 function readFile(f) {
   if (!f) return;
@@ -452,68 +463,86 @@ const wbox = document.querySelector(".wbox");
 function confirmLeave() { return window.confirm ? confirm("저장하지 않은 변경이 있어요. 다른 파일을 열까요?") : true; }
 addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-/* 사이트에 올라간 수업 목록 (사이트에서 열었을 때만) */
-async function siteList() {
-  if (location.protocol === "file:") return;
+/* ============ 사이트에 올라간 파일 목록 ============ */
+let pdfPath = "";          // 지금 문서와 짝이 되는 학생용 PDF 경로
+let fileMap = {};          // 경로 → 학년 목차에 적힌 수업 이름
+
+/* 학년 목차에서 수업 이름을 가져온다 (목록을 알아보기 쉽게) */
+async function lessonNames() {
   const pick = (t, s, e) => { const a = t.indexOf(s); if (a < 0) return null; const b = t.indexOf(e, a); return b < 0 ? null : new Function("return " + t.slice(a + s.length - 1, b + e.length - 1))(); };
-  const opts = [];
+  const map = {};
   for (const g of [1, 2, 3]) {
     let data = null;
     try { data = pick(await fetch(`../g${g}/index.html`, { cache: "no-store" }).then(r => r.text()), "const 수업 = {", "\n};"); } catch (e) {}
     if (!data) continue;
     for (const term of [1, 2]) for (const u of (data[term] || [])) for (const s of u.소단원) for (const [k, h] of Object.entries(s.files)) {
-      if (!/\.html?$/i.test(h) || /^https?:/i.test(h)) continue;
-      opts.push({ g, label: `${term}학기 ${u.단원 ? u.단원 + "단원 " : ""}${s.머리 || "(" + s.번호 + ")"} ${s.제목}${k === "열기" ? "" : " · " + k}`, path: `g${g}/${h}` });
+      if (/^https?:/i.test(h)) continue;
+      map[`g${g}/${h}`] = `${term}학기 ${u.단원 ? u.단원 + "단원 " : ""}${s.머리 || "(" + s.번호 + ")"} ${s.제목}${k === "열기" ? "" : " · " + k}`;
     }
   }
-  if (!opts.length) return;
+  return map;
+}
+/* 저장소에 들어 있는 파일을 전부 훑어 온다 */
+async function repoFiles() {
+  const r = await api("git/trees/main?recursive=1");
+  if (!r.ok) throw new Error("tree " + r.status);
+  const j = await r.json();
+  if (j.truncated) toast("파일이 너무 많아 일부만 불러왔어요.");
+  return (j.tree || []).filter(t => t.type === "blob").map(t => t.path);
+}
+const 묶음 = p => /^g1\//.test(p) ? "1학년" : /^g2\//.test(p) ? "2학년" : /^g3\//.test(p) ? "3학년" : /^games\//.test(p) ? "게임" : "홈 · 목차";
+const 묶음차례 = ["1학년", "2학년", "3학년", "게임", "홈 · 목차"];
+const 뿌리 = p => p.replace(/\.[^.\/]+$/, "");
+
+async function buildList() {
+  if (location.protocol === "file:") return;
   const sp = $("sitePick");
+  let paths = null;
+  try { paths = await repoFiles(); } catch (e) {}
+  try { fileMap = await lessonNames(); } catch (e) { fileMap = {}; }
+
+  let opts = [];
+  if (paths) {
+    const 딸린파일 = new Set(paths.filter(p => /\.(pdf|hwpx?)$/i.test(p)).map(뿌리));
+    opts = paths.filter(p => /\.html?$/i.test(p) && p !== "tools/editor.html").map(p => ({
+      path: p, group: 묶음(p),
+      label: (fileMap[p] || p) + (딸린파일.has(뿌리(p)) ? " · 학습지 원본" : ""),
+      pdf: paths.includes(뿌리(p) + ".pdf") ? 뿌리(p) + ".pdf" : ""
+    }));
+    $("siteNote").textContent = `저장소에 있는 파일 ${opts.length}개를 모두 불러왔어요. 새로 올린 파일도 바로 여기에 나옵니다.`;
+  } else {
+    // GitHub에 닿지 못할 때는 전처럼 목차에 적힌 것만
+    opts = Object.entries(fileMap).filter(([p]) => /\.html?$/i.test(p)).map(([p, label]) => ({ path: p, group: 묶음(p), label, pdf: "" }));
+    try {
+      const list = await fetch("docs.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null);
+      if (Array.isArray(list)) list.forEach(d => opts.push({ path: d.path, group: 묶음(d.path), label: d.name + " · 학습지 원본", pdf: d.pdf || "" }));
+    } catch (e) {}
+    $("siteNote").textContent = "GitHub에 닿지 못해서 목차에 적힌 파일만 보여요.";
+  }
+  if (!opts.length) return;
+
   sp.querySelectorAll("optgroup").forEach(o => o.remove());
-  for (const g of [1, 2, 3]) {
-    const list = opts.filter(o => o.g === g); if (!list.length) continue;
-    const og = document.createElement("optgroup"); og.label = g + "학년";
-    list.forEach(o => { const op = document.createElement("option"); op.value = o.path; op.textContent = o.label; og.appendChild(op); });
+  for (const g of 묶음차례) {
+    const list = opts.filter(o => o.group === g); if (!list.length) continue;
+    list.sort((a, b) => a.path.localeCompare(b.path, "ko"));
+    const og = document.createElement("optgroup"); og.label = g;
+    list.forEach(o => { const op = document.createElement("option"); op.value = o.path; op.textContent = o.label; op.dataset.pdf = o.pdf; og.appendChild(op); });
     sp.appendChild(og);
   }
   $("siteWrap").hidden = false;
   sp.onchange = async () => {
     if (!sp.value) return;
     if (dirty && !confirmLeave()) { sp.value = ""; return; }
+    const pdf = sp.selectedOptions[0].dataset.pdf || "";
     $("loading").classList.add("on");
     try {
-      const t = await fetch("../" + sp.value).then(r => { if (!r.ok) throw 0; return r.text(); });
-      pdfPath = "";
+      const t = await fetch("../" + sp.value, { cache: "no-store" }).then(r => { if (!r.ok) throw 0; return r.text(); });
+      pdfPath = pdf;
       openText(t, sp.value.replaceAll("/", "_"), sp.value);
     } catch (e) { toast("파일을 불러오지 못했어요."); }
     $("loading").classList.remove("on"); sp.value = "";
   };
 }
-siteList();
-
-/* 학습지·개념노트 원본 목록 (tools/docs.json) */
-async function docList() {
-  if (location.protocol === "file:") return;
-  let list = null;
-  try { list = await fetch("docs.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null); } catch (e) {}
-  if (!Array.isArray(list) || !list.length) return;
-  const dp = $("docPick");
-  dp.querySelectorAll("option:not([value=''])").forEach(o => o.remove());
-  list.forEach(d => { const op = document.createElement("option"); op.value = d.path; op.textContent = d.name; op.dataset.pdf = d.pdf || ""; dp.appendChild(op); });
-  $("docWrap").hidden = false;
-  dp.onchange = async () => {
-    if (!dp.value) return;
-    if (dirty && !confirmLeave()) { dp.value = ""; return; }
-    $("loading").classList.add("on");
-    try {
-      const t = await fetch("../" + dp.value).then(r => { if (!r.ok) throw 0; return r.text(); });
-      pdfPath = dp.selectedOptions[0].dataset.pdf || "";
-      openText(t, dp.value.replaceAll("/", "_"), dp.value);
-    } catch (e) { toast("파일을 불러오지 못했어요."); }
-    $("loading").classList.remove("on"); dp.value = "";
-  };
-}
-let pdfPath = "";
-docList();
 
 /* ============ 수업 화면 그리기 ============ */
 function serialize(keepIds) {
@@ -543,9 +572,9 @@ html.__ed [contenteditable="true"]{outline:2px solid #0071e3!important;outline-o
 .__edex{position:fixed;z-index:2147483646;border:2px dashed #0071e3;border-radius:3px;pointer-events:none;display:none}
 html.__ed .step{outline:2px dashed rgba(255,149,0,.9)!important;outline-offset:2px}
 #__edhov{position:fixed;z-index:2147483645;border:1px dashed rgba(0,113,227,.7);pointer-events:none;display:none}
-/* 학습 문서(A4)일 때 */
-html.__eddoc #__edsel i{display:none}
-html.__eddoc #__edsel{cursor:default}
+/* 끌어 옮기지 않는 방식(학습 문서·일반 페이지) */
+html.__edlite #__edsel i{display:none}
+html.__edlite #__edsel{cursor:default}
 html.__eddoc .doc,html.__eddoc body>.page{zoom:var(--ed-zoom,1)}
 html.__eddoc .page{overflow:visible!important}
 html.__eddoc .page.__over{outline:2px solid #ff3b30;outline-offset:3px}
@@ -556,6 +585,7 @@ function hook() {
   if (!D) return;
   const st = D.createElement("style"); st.textContent = EDIT_CSS; D.head.appendChild(st);
   D.documentElement.classList.toggle("__eddoc", docMode);
+  D.documentElement.classList.toggle("__edlite", 흐름편집());
   if (docMode) { fitDoc(); W.addEventListener("resize", fitDoc); }
   exPool = []; extra = [];
   box = D.createElement("div"); box.id = "__edsel"; box.innerHTML = "<b></b><i></i>"; D.body.appendChild(box);
@@ -624,6 +654,11 @@ function title(sl) {
 }
 function drawList() {
   const ss = srcSlides();
+  if (plainMode) {
+    $("scount").textContent = "";
+    $("slist").innerHTML = `<li data-i="0" class="on"><i>·</i><span>${esc(src.title || "이 페이지")}</span></li>`;
+    return;
+  }
   $("scount").textContent = ss.length + (docMode ? "쪽" : "장");
   const over = overflowPages();
   $("slist").innerHTML = ss.map((s, i) => `<li data-i="${i}" class="${i === cur ? "on" : ""}"><i>${i + 1}</i><span>${esc(title(s))}${over.includes(i) ? ' <b style="color:#ff3b30" title="내용이 한 장을 넘쳤어요">⚠</b>' : ""}</span></li>`).join("");
@@ -633,7 +668,8 @@ function showSlide(i) {
   const ss = srcSlides(); if (!ss.length) return;
   cur = Math.max(0, Math.min(i, ss.length - 1));
   select(null);
-  if (W && docMode) {
+  if (plainMode) { /* 한 장짜리 */ }
+  else if (W && docMode) {
     const live = D.querySelectorAll(".page")[cur];
     if (live) live.scrollIntoView({ block: "start" });
   } else if (W) {
@@ -647,7 +683,7 @@ function showSlide(i) {
 /* ============ 고르기 ============ */
 function pickAt(x, y) {
   const els = D.elementsFromPoint(x, y).filter(el => el !== box && el !== hov && el.hasAttribute && el.hasAttribute("data-ed-id"));
-  if (docMode) {
+  if (흐름편집()) {
     const list = els.filter(el => !el.classList.contains("page") && !el.classList.contains("doc") && el.tagName !== "BODY" && el.tagName !== "HTML" && isVisible(el));
     return list[0] || null;
   }
@@ -657,6 +693,12 @@ function pickAt(x, y) {
   const inSlide = inside.filter(el => slide && slide.contains(el) && isVisible(el));
   const list = inSlide.length ? inSlide : inside.filter(el => !el.closest(".slide") && isVisible(el) && el.tagName !== "BODY" && el.tagName !== "HTML" && el.id !== "stage");
   return list[0] || null;
+}
+let 못잡음 = 0;
+function notPickable() {
+  if (Date.now() - 못잡음 < 2500) return;
+  못잡음 = Date.now();
+  toast("이 부분은 화면이 돌아가면서 스스로 만들어 낸 것이라 고칠 수 없어요.");
 }
 function isVisible(el) { const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return false; const cs = W.getComputedStyle(el); return cs.visibility !== "hidden" && cs.display !== "none" && +cs.opacity > 0.05; }
 function onHover(e) {
@@ -712,15 +754,18 @@ function onDown(e) {
     }
     return;
   }
-  if (!onBox) { const el = pickAt(e.clientX, e.clientY); select(el); if (!el) return; }
+  if (!onBox) {
+    const el = pickAt(e.clientX, e.clientY); select(el);
+    if (!el) { if (plainMode) notPickable(); return; }
+  }
   else if (!resize) {
     // 고른 상자를 다시 누르면 그 안쪽 요소로 들어가 볼 수 있게
     const inner = pickAt(e.clientX, e.clientY);
-    if (docMode) { if (inner && inner !== sel && sel.contains(inner)) select(inner); }
+    if (흐름편집()) { if (inner && inner !== sel && sel.contains(inner)) select(inner); }
     else drag = { inner: inner && inner !== sel && sel.contains(inner) ? inner : null };
   }
   if (!sel) return;
-  if (docMode) { syncCurPage(); return; }   // 문서는 끌어 옮기지 않습니다 — 글은 흘러야 하니까
+  if (흐름편집()) { syncCurPage(); return; }   // 글이 흘러야 하니 끌어 옮기지 않습니다
   const s = scaleOf(sel), [tx, ty] = parseTr(sel), cs = W.getComputedStyle(sel);
   drag = Object.assign(drag || {}, { others: extra.map(x => ({ el: x, t: parseTr(x), s: scaleOf(x) })), x: e.clientX, y: e.clientY, s, tx, ty, w: sel.offsetWidth || parseFloat(cs.width), h: sel.offsetHeight || parseFloat(cs.height), resize, moved: false, snap: false });
   W.addEventListener("pointermove", onMove, true);
@@ -766,8 +811,8 @@ function onDbl(e) {
   e.stopImmediatePropagation(); e.preventDefault();
   const el = pickAt(e.clientX, e.clientY) || sel;
   if (!el) return;
-  if (docMode) {
-    // 문서에서는 문단·표 칸·제목 단위로 고친다 (블록을 통째로 집지 않게)
+  if (흐름편집()) {
+    // 문단·표 칸·제목 단위로 고친다 (블록을 통째로 집지 않게)
     let t = el;
     while (t && !DOC_TEXT.test(t.tagName) && t.parentElement && !t.classList.contains("page")) t = t.parentElement;
     if (!t || !DOC_TEXT.test(t.tagName) || !canEditText(t)) t = el;
@@ -836,9 +881,10 @@ function drawProps() {
   const p = sel.parentElement;
   $("pParent").disabled = !p || !p.hasAttribute("data-ed-id") || p.classList.contains("slide") || p.id === "stage";
   $("gImg").hidden = sel.tagName !== "IMG" || !!extra.length;
-  $("gMulti").hidden = !extra.length || docMode;
-  $("gPos").hidden = docMode;
-  $("gStep").hidden = docMode;
+  $("gMulti").hidden = !extra.length || 흐름편집();
+  $("gPos").hidden = 흐름편집();
+  $("gStep").hidden = 흐름편집();
+  $("gDupDel").hidden = plainMode;
   if (extra.length) { $("pWhat").innerHTML = `${extra.length + 1}개를 골랐어요<small>Shift+클릭으로 더하거나 빼기 · 바꾸는 설정이 모두에 적용돼요</small>`; $("pEditText").hidden = true; $("pNoText").hidden = true; }
   drawPropsValues(); drawStep(); drawFontSel();
 }
@@ -914,7 +960,7 @@ $("pDupEl").onclick = () => {
   const lc = D.importNode(c, true); sel.after(lc);
   select(lc); setDirty(true);
 };
-function curSlides() { return { s: srcSlides()[cur], l: D.querySelectorAll(docMode ? ".page" : ".slide")[cur] }; }
+function curSlides() { return { s: srcSlides()[cur], l: plainMode ? D.body : D.querySelectorAll(docMode ? ".page" : ".slide")[cur] }; }
 /* 문서에서 고른 요소가 들어 있는 쪽으로 '지금 쪽'을 옮긴다 */
 function syncCurPage() {
   if (!docMode || !sel) return;
@@ -1170,8 +1216,9 @@ function keys(e, fromFrame) {
   if (!sel) return false;
   if (k === "Escape") { select(null); return true; }
   if (k === "Enter" || k === "F2") { e.preventDefault(); startText(); return true; }
-  if (k === "Delete" || k === "Backspace") { e.preventDefault(); $("pDel").click(); return true; }
-  if (ctrl && k.toLowerCase() === "d") { e.preventDefault(); $("pDupEl").click(); return true; }
+  if (!plainMode && (k === "Delete" || k === "Backspace")) { e.preventDefault(); $("pDel").click(); return true; }
+  if (!plainMode && ctrl && k.toLowerCase() === "d") { e.preventDefault(); $("pDupEl").click(); return true; }
+  if (흐름편집()) return false;
   const step = e.shiftKey ? 10 : 1, mv = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[k];
   if (mv) {
     e.preventDefault();
@@ -1653,7 +1700,7 @@ async function nuUpload() {
     $("nuPrev").innerHTML = `다 올렸어요. <b>1~2분 뒤</b> 사이트 목차에 [${esc(p.label)}] 버튼이 생겨요.`;
     $("nuOk").hidden = true; $("nuCancel").textContent = "닫기";
     $("nuOpenNew").hidden = p.ext !== "html"; $("nuOpenNew").dataset.path = p.path;
-    delete siteData[p.g]; siteList();
+    delete siteData[p.g]; buildList();
   } catch (e) {
     $("nuErr").textContent = e.conflict ? "그사이 목차가 바뀌었어요. 잠시 뒤 다시 해 주세요." : (e.message || "올리지 못했어요.");
     $("nuOk").disabled = false; $("nuBar").hidden = true;
@@ -1661,8 +1708,9 @@ async function nuUpload() {
 }
 $("nuOpenNew").onclick = async () => {
   const path = $("nuOpenNew").dataset.path; $("newModal").hidden = true;
-  try { const g = await ghGet(path); openText(new TextDecoder().decode(g.bytes), path.replaceAll("/", "_"), path); } catch (e) { toast("파일을 열지 못했어요."); }
+  try { const g = await ghGet(path); pdfPath = ""; openText(new TextDecoder().decode(g.bytes), path.replaceAll("/", "_"), path); } catch (e) { toast("파일을 열지 못했어요."); }
 };
+buildList();   /* REPO·token·api 가 모두 준비된 뒤에 목록을 만든다 */
 
 function onKeyFrame(e) {
   if (mode !== "edit") return;

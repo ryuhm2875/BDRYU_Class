@@ -84,6 +84,11 @@ body.plainmode .sact,body.plainmode .sact2{display:none}
 .drop .btn{margin-top:10px}
 .or{margin:18px 0 10px;color:var(--faint);font-size:12px}
 .sitepick{width:100%;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--panel);padding:0 10px}
+.kinds{display:flex;gap:6px;margin-bottom:9px}
+.kinds .tog{flex:1;height:34px;justify-content:center;font-size:13px;padding:0 6px}
+.kinds .tog i{font-style:normal;color:var(--muted);font-size:12px;margin-left:3px;font-variant-numeric:tabular-nums}
+.kinds .tog.on i{color:inherit;opacity:.75}
+@media (max-width:460px){.kinds{flex-wrap:wrap}}
 .loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.05);font-weight:600;color:var(--muted)}
 .loading.on{display:flex}
 
@@ -156,7 +161,7 @@ input[type=file]{display:none}
 <body>
 <header class="top">
   <a class="btn" id="bHome" href="../index.html" title="첫 화면으로 (저장하지 않은 변경이 있으면 한 번 물어봅니다)" style="text-decoration:none;color:inherit">⌂ 홈</a>
-  <span class="brand">수업 화면 편집기<small>류봉두의 즐거운 국어 수업</small></span>
+  <span class="brand"><span id="brandName">수업 화면 편집기</span><small>류봉두의 즐거운 국어 수업</small></span>
   <button class="btn" id="bOpen" type="button">열기</button>
   <button class="btn" id="bNew" type="button" title="새 수업 자료를 사이트에 올리고 목차에 버튼 붙이기">새 수업 올리기</button>
   <span class="fname" id="fname"><span>파일을 열어 주세요</span></span>
@@ -200,7 +205,7 @@ input[type=file]{display:none}
       <div class="welcome" id="welcome">
         <div class="wbox">
           <button class="btn" id="wClose" type="button" hidden style="float:right">닫기</button>
-          <h1>수업 화면 편집기</h1>
+          <h1 id="wTitle">수업 화면 편집기</h1>
           <p>수업 화면도, 학습지·개념노트도 여기서 바로 고치고<br>버튼 하나로 사이트에 반영합니다.</p>
           <div class="drop" id="drop">
             <div>HTML 파일을 여기로 끌어다 놓거나</div>
@@ -208,6 +213,11 @@ input[type=file]{display:none}
           </div>
           <div id="siteWrap" hidden>
             <div class="or">또는 사이트에 올라가 있는 파일 열기</div>
+            <div class="kinds" id="kindTabs" hidden>
+              <button class="tog on" type="button" data-kind="수업">수업 화면 <i></i></button>
+              <button class="tog" type="button" data-kind="학습지">학습지·개념노트 <i></i></button>
+              <button class="tog" type="button" data-kind="그밖">그 밖 <i></i></button>
+            </div>
             <select class="sitepick" id="sitePick"><option value="">파일을 고르세요</option></select>
             <p class="note" id="siteNote" style="margin:8px 0 0;text-align:center"></p>
           </div>
@@ -429,6 +439,9 @@ function openText(text, name, path) {
   $("bNew").hidden = 흐름편집();        // 학습 문서·일반 페이지에서는 자리를 비워 둡니다
   document.body.classList.toggle("docmode", 흐름편집());
   document.body.classList.toggle("plainmode", plainMode);
+  const 이파일종류 = docMode ? "학습지" : plainMode ? "그밖" : "수업";
+  종류기억(sitePath, 이파일종류);        // 다음부터는 이 파일을 제 자리 탭에서 찾을 수 있게
+  $("brandName").textContent = 종류이름[이파일종류];
   $("lphTitle").textContent = plainMode ? "페이지" : docMode ? "쪽" : "슬라이드";
   $("mPlay").textContent = hasSlide ? "수업처럼 보기" : "그대로 보기";
   $("scSlide").textContent = plainMode ? "이 페이지" : docMode ? "이 쪽" : "이 슬라이드";
@@ -494,6 +507,38 @@ const 묶음 = p => /^g1\//.test(p) ? "1학년" : /^g2\//.test(p) ? "2학년" : 
 const 묶음차례 = ["1학년", "2학년", "3학년", "게임", "홈 · 목차"];
 const 뿌리 = p => p.replace(/\.[^.\/]+$/, "");
 
+/* ---------- 수업 화면 / 학습지 / 그 밖 가려내기 ---------- */
+const 종류이름 = { 수업: "수업 화면 편집기", 학습지: "학습지 편집기", 그밖: "페이지 편집기" };
+let 지금종류 = "수업";
+const 기억읽기 = () => { try { return JSON.parse(localStorage.getItem("bdryu-kind") || "{}"); } catch (e) { return {}; } };
+function 종류기억(path, kind) {
+  if (!path || !kind) return;
+  const m = 기억읽기(); if (m[path] === kind) return;
+  m[path] = kind; try { localStorage.setItem("bdryu-kind", JSON.stringify(m)); } catch (e) {}
+}
+/* 열어 보기 전에는 이름과 짝 PDF로 짐작하고, 한 번 열면 그때 바로잡는다 */
+function 종류짐작(path, hasPdf) {
+  const m = 기억읽기(); if (m[path]) return m[path];
+  const base = path.split("/").pop();
+  if (/^games\//.test(path) || base === "index.html") return "그밖";
+  if (hasPdf || /-(note|worksheet|activity|handout|plan)\.html?$/i.test(base)) return "학습지";
+  return "수업";
+}
+function 종류보이기(k) {
+  지금종류 = k;
+  document.querySelectorAll("#kindTabs .tog").forEach(b => b.classList.toggle("on", b.dataset.kind === k));
+  $("sitePick").querySelectorAll("optgroup").forEach(og => {
+    let n = 0;
+    og.querySelectorAll("option").forEach(op => { const on = op.dataset.kind === k; op.hidden = !on; if (on) n++; });
+    og.hidden = !n;
+  });
+  const 남음 = [...$("sitePick").querySelectorAll("option")].filter(o => o.value && !o.hidden).length;
+  $("sitePick").firstElementChild.textContent = 남음 ? "파일을 고르세요" : "이 묶음에는 아직 파일이 없어요";
+  $("wTitle").textContent = 종류이름[k] || 종류이름.수업;
+  if (!src) $("brandName").textContent = 종류이름[k] || 종류이름.수업;
+  try { localStorage.setItem("bdryu-tab", k); } catch (e) {}
+}
+
 async function buildList() {
   if (location.protocol === "file:") return;
   const sp = $("sitePick");
@@ -507,15 +552,16 @@ async function buildList() {
     opts = paths.filter(p => /\.html?$/i.test(p) && p !== "tools/editor.html").map(p => ({
       path: p, group: 묶음(p),
       label: (fileMap[p] || p) + (딸린파일.has(뿌리(p)) ? " · 학습지 원본" : ""),
-      pdf: paths.includes(뿌리(p) + ".pdf") ? 뿌리(p) + ".pdf" : ""
+      pdf: paths.includes(뿌리(p) + ".pdf") ? 뿌리(p) + ".pdf" : "",
+      kind: 종류짐작(p, paths.includes(뿌리(p) + ".pdf"))
     }));
     $("siteNote").textContent = `저장소에 있는 파일 ${opts.length}개를 모두 불러왔어요. 새로 올린 파일도 바로 여기에 나옵니다.`;
   } else {
     // GitHub에 닿지 못할 때는 전처럼 목차에 적힌 것만
-    opts = Object.entries(fileMap).filter(([p]) => /\.html?$/i.test(p)).map(([p, label]) => ({ path: p, group: 묶음(p), label, pdf: "" }));
+    opts = Object.entries(fileMap).filter(([p]) => /\.html?$/i.test(p)).map(([p, label]) => ({ path: p, group: 묶음(p), label, pdf: "", kind: 종류짐작(p, false) }));
     try {
       const list = await fetch("docs.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null);
-      if (Array.isArray(list)) list.forEach(d => opts.push({ path: d.path, group: 묶음(d.path), label: d.name + " · 학습지 원본", pdf: d.pdf || "" }));
+      if (Array.isArray(list)) list.forEach(d => opts.push({ path: d.path, group: 묶음(d.path), label: d.name + " · 학습지 원본", pdf: d.pdf || "", kind: "학습지" }));
     } catch (e) {}
     $("siteNote").textContent = "GitHub에 닿지 못해서 목차에 적힌 파일만 보여요.";
   }
@@ -526,10 +572,20 @@ async function buildList() {
     const list = opts.filter(o => o.group === g); if (!list.length) continue;
     list.sort((a, b) => a.path.localeCompare(b.path, "ko"));
     const og = document.createElement("optgroup"); og.label = g;
-    list.forEach(o => { const op = document.createElement("option"); op.value = o.path; op.textContent = o.label; op.dataset.pdf = o.pdf; og.appendChild(op); });
+    list.forEach(o => { const op = document.createElement("option"); op.value = o.path; op.textContent = o.label; op.dataset.pdf = o.pdf; op.dataset.kind = o.kind; og.appendChild(op); });
     sp.appendChild(og);
   }
   $("siteWrap").hidden = false;
+  /* 종류 탭 */
+  $("kindTabs").hidden = false;
+  document.querySelectorAll("#kindTabs .tog").forEach(b => {
+    b.querySelector("i").textContent = opts.filter(o => o.kind === b.dataset.kind).length || "";
+    b.onclick = () => 종류보이기(b.dataset.kind);
+  });
+  const q = new URLSearchParams(location.search);
+  let 처음 = q.get("종류") || q.get("kind") || "";
+  if (!종류이름[처음]) { try { 처음 = localStorage.getItem("bdryu-tab") || ""; } catch (e) {} }
+  종류보이기(종류이름[처음] ? 처음 : "수업");
   sp.onchange = async () => {
     if (!sp.value) return;
     if (dirty && !confirmLeave()) { sp.value = ""; return; }

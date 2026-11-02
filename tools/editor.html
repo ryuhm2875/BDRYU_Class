@@ -88,6 +88,8 @@ body.plainmode .sact,body.plainmode .sact2{display:none}
 .kinds .tog{flex:1;height:34px;justify-content:center;font-size:13px;padding:0 6px}
 .kinds .tog i{font-style:normal;color:var(--muted);font-size:12px;margin-left:3px;font-variant-numeric:tabular-nums}
 .kinds .tog.on i{color:inherit;opacity:.75}
+.lnk{border:0;background:none;color:var(--blue);font:inherit;font-size:12px;padding:0;text-decoration:underline;cursor:pointer}
+.lnk:disabled{color:var(--muted);text-decoration:none;cursor:default}
 @media (max-width:460px){.kinds{flex-wrap:wrap}}
 .loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.05);font-weight:600;color:var(--muted)}
 .loading.on{display:flex}
@@ -219,7 +221,7 @@ input[type=file]{display:none}
               <button class="tog" type="button" data-kind="그밖">그 밖 <i></i></button>
             </div>
             <select class="sitepick" id="sitePick"><option value="">파일을 고르세요</option></select>
-            <p class="note" id="siteNote" style="margin:8px 0 0;text-align:center"></p>
+            <p class="note" id="siteNote" style="margin:8px 0 0;text-align:center"><span id="siteNoteT"></span> <button class="lnk" id="bRefresh" type="button">다시 불러오기</button></p>
           </div>
         </div>
       </div>
@@ -464,7 +466,12 @@ function readFile(f) {
   r.onload = () => { pdfPath = ""; openText(r.result, f.name, ""); };
   r.readAsText(f, "utf-8");
 }
-$("bOpen").onclick = () => { if (dirty && !confirmLeave()) return; $("welcome").hidden = false; $("wClose").hidden = !src; };
+$("bOpen").onclick = () => {
+  if (dirty && !confirmLeave()) return;
+  $("welcome").hidden = false; $("wClose").hidden = !src;
+  if (Date.now() - 목록만든적 > 10000) buildList();   // 그사이 올라온 파일이 있으면 바로 보이게
+};
+$("bRefresh").onclick = () => buildList();
 $("wClose").onclick = () => { $("welcome").hidden = true; };
 $("bOpen2").onclick = () => $("fileIn").click();
 $("fileIn").onchange = e => { readFile(e.target.files[0]); e.target.value = ""; };
@@ -497,7 +504,7 @@ async function lessonNames() {
 }
 /* 저장소에 들어 있는 파일을 전부 훑어 온다 */
 async function repoFiles() {
-  const r = await api("git/trees/main?recursive=1");
+  const r = await api("git/trees/main?recursive=1&t=" + Date.now());
   if (!r.ok) throw new Error("tree " + r.status);
   const j = await r.json();
   if (j.truncated) toast("파일이 너무 많아 일부만 불러왔어요.");
@@ -539,8 +546,15 @@ function 종류보이기(k) {
   try { localStorage.setItem("bdryu-tab", k); } catch (e) {}
 }
 
+let 목록만든적 = 0, 목록중 = false;
+const 시각 = () => { const d = new Date(); return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`; };
 async function buildList() {
-  if (location.protocol === "file:") return;
+  if (location.protocol === "file:" || 목록중) return;
+  목록중 = true;
+  $("bRefresh").disabled = true; $("bRefresh").textContent = "불러오는 중…";
+  try { await buildList2(); } finally { 목록중 = false; $("bRefresh").disabled = false; $("bRefresh").textContent = "다시 불러오기"; }
+}
+async function buildList2() {
   const sp = $("sitePick");
   let paths = null;
   try { paths = await repoFiles(); } catch (e) {}
@@ -555,7 +569,7 @@ async function buildList() {
       pdf: paths.includes(뿌리(p) + ".pdf") ? 뿌리(p) + ".pdf" : "",
       kind: 종류짐작(p, paths.includes(뿌리(p) + ".pdf"))
     }));
-    $("siteNote").textContent = `저장소에 있는 파일 ${opts.length}개를 모두 불러왔어요. 새로 올린 파일도 바로 여기에 나옵니다.`;
+    $("siteNoteT").textContent = `저장소에 있는 파일 ${opts.length}개 · ${시각()} 기준`;
   } else {
     // GitHub에 닿지 못할 때는 전처럼 목차에 적힌 것만
     opts = Object.entries(fileMap).filter(([p]) => /\.html?$/i.test(p)).map(([p, label]) => ({ path: p, group: 묶음(p), label, pdf: "", kind: 종류짐작(p, false) }));
@@ -563,7 +577,7 @@ async function buildList() {
       const list = await fetch("docs.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null);
       if (Array.isArray(list)) list.forEach(d => opts.push({ path: d.path, group: 묶음(d.path), label: d.name + " · 학습지 원본", pdf: d.pdf || "", kind: "학습지" }));
     } catch (e) {}
-    $("siteNote").textContent = "GitHub에 닿지 못해서 목차에 적힌 파일만 보여요.";
+    $("siteNoteT").textContent = "GitHub에 닿지 못해서 목차에 적힌 파일만 보여요.";
   }
   if (!opts.length) return;
 
@@ -583,16 +597,25 @@ async function buildList() {
     b.onclick = () => 종류보이기(b.dataset.kind);
   });
   const q = new URLSearchParams(location.search);
-  let 처음 = q.get("종류") || q.get("kind") || "";
+  let 처음 = 목록만든적 ? 지금종류 : (q.get("종류") || q.get("kind") || "");
   if (!종류이름[처음]) { try { 처음 = localStorage.getItem("bdryu-tab") || ""; } catch (e) {} }
   종류보이기(종류이름[처음] ? 처음 : "수업");
+  목록만든적 = Date.now();
   sp.onchange = async () => {
     if (!sp.value) return;
     if (dirty && !confirmLeave()) { sp.value = ""; return; }
     const pdf = sp.selectedOptions[0].dataset.pdf || "";
     $("loading").classList.add("on");
     try {
-      const t = await fetch("../" + sp.value, { cache: "no-store" }).then(r => { if (!r.ok) throw 0; return r.text(); });
+      let t = null;
+      try { t = await fetch("../" + sp.value, { cache: "no-store" }).then(r => { if (!r.ok) throw 0; return r.text(); }); }
+      catch (e) {
+        // 방금 올린 파일은 사이트에 뜨기까지 1~2분 걸려요. 그동안은 GitHub에서 바로 읽어 옵니다.
+        const g = await ghGet(sp.value);
+        if (!g) throw 0;
+        t = new TextDecoder().decode(g.bytes);
+        toast("아직 사이트에 올라오는 중이라 GitHub에서 바로 가져왔어요.");
+      }
       pdfPath = pdf;
       openText(t, sp.value.replaceAll("/", "_"), sp.value);
     } catch (e) { toast("파일을 불러오지 못했어요."); }

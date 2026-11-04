@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../gate.js"></script>
 <title>수업 화면 편집기 · 류봉두의 즐거운 국어 수업</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -174,6 +175,7 @@ input[type=file]{display:none}
   <span class="sep"></span>
   <button class="btn" id="bFind" type="button" disabled>찾아 바꾸기</button>
   <button class="btn" id="bHist" type="button" disabled title="사이트에 반영했던 기록과 예전 버전">기록</button>
+  <button class="btn" id="bPw" type="button" title="사이트에 들어올 때 묻는 비밀번호 바꾸기">비밀번호</button>
   <button class="btn icon" id="bUndo" type="button" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
   <button class="btn icon" id="bRedo" type="button" title="다시 하기 (Ctrl+Y)" disabled>↷</button>
   <button class="btn" id="bSave" type="button" disabled title="고친 파일을 내 컴퓨터로 내려받기 (Ctrl+S)">내려받기</button>
@@ -321,6 +323,17 @@ input[type=file]{display:none}
     <div class="err" id="tokErr"></div>
     <label class="chk"><input type="checkbox" id="tokKeep"> 이 컴퓨터에 기억하기 (내 컴퓨터일 때만 켜세요. 학교 공용 컴퓨터는 끄세요)</label>
     <div class="acts"><button class="btn" id="tokCancel" type="button">취소</button><button class="btn primary" id="tokOk" type="button">이 토큰으로 반영하기</button></div>
+  </div>
+</div>
+<div class="modal" id="pwModal" hidden>
+  <div class="mbox" role="dialog" aria-labelledby="pwT">
+    <h3 id="pwT">사이트 비밀번호 바꾸기</h3>
+    <p>홈·학년 목차·게임 주머니·이 편집기에 들어올 때 묻는 비밀번호입니다. 바꾸면 <b>모든 기기에서 다시 물어봅니다.</b></p>
+    <input type="password" id="pwNew" placeholder="새 비밀번호 (4자 이상)" autocomplete="new-password">
+    <input type="password" id="pwNew2" placeholder="한 번 더" autocomplete="new-password">
+    <div class="err" id="pwErr"></div>
+    <p class="note" style="margin:10px 0 0">이 비밀번호는 지나다 들어오는 사람을 막는 <b>커튼</b>입니다. 수업 자료 주소를 이미 아는 사람은 그 주소로 바로 들어갈 수 있으니, 정말 숨겨야 할 것은 사이트에 두지 마세요.</p>
+    <div class="acts"><button class="btn" id="pwCancel" type="button">취소</button><button class="btn primary" id="pwOk" type="button">바꾸기</button></div>
   </div>
 </div>
 <div class="modal" id="pubModal" hidden>
@@ -1235,6 +1248,33 @@ $("tokOk").onclick = async () => {
   const next = pendingTok; pendingTok = null; if (next) next();
 };
 $("pubOk").onclick = () => { $("pubModal").hidden = true; publish(); };
+
+/* ---------- 사이트 비밀번호 ---------- */
+$("bPw").onclick = () => {
+  if (!window.__gate) { toast("이 화면에서는 비밀번호를 바꿀 수 없어요. 사이트에서 열어 주세요."); return; }
+  withToken(() => { $("pwNew").value = ""; $("pwNew2").value = ""; $("pwErr").textContent = ""; $("pwModal").hidden = false; $("pwNew").focus(); });
+};
+$("pwCancel").onclick = () => $("pwModal").hidden = true;
+$("pwOk").onclick = async () => {
+  const a = $("pwNew").value, b = $("pwNew2").value;
+  if (a.length < 4) { $("pwErr").textContent = "4자 이상으로 정해 주세요."; return; }
+  if (a !== b) { $("pwErr").textContent = "두 번 적은 것이 서로 달라요."; return; }
+  $("pwOk").disabled = true; $("pwErr").textContent = "바꾸는 중…";
+  try {
+    const hash = await window.__gate.섞기(a);
+    const g = await ghGet("gate.js");
+    if (!g) throw new Error("gate.js 를 찾지 못했어요.");
+    const txt = new TextDecoder().decode(g.bytes);
+    const m = txt.match(/hash:\s*"([0-9a-f]*)"/);
+    if (!m) throw new Error("gate.js 모양이 달라져서 바꾸지 못했어요.");
+    const 새 = txt.slice(0, m.index) + 'hash: "' + hash + '"' + txt.slice(m.index + m[0].length);
+    await ghPut("gate.js", b64(새), g.sha, "사이트 비밀번호 변경");
+    try { localStorage.setItem("bdryu-gate-ok", hash); } catch (e) {}
+    $("pwModal").hidden = true;
+    toast("비밀번호를 바꿨어요. 1~2분 뒤부터 새 비밀번호로 들어옵니다.");
+  } catch (e) { $("pwErr").textContent = e.message || "바꾸지 못했어요."; }
+  $("pwOk").disabled = false;
+};
 
 /* 학생이 내려받는 PDF 교체 */
 $("bPdfUp").onclick = () => {

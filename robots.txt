@@ -1,0 +1,3 @@
+# 검색 결과에 올리지 않습니다
+User-agent: *
+Disallow: /

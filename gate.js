@@ -13,7 +13,7 @@
   var 설정 = {
     salt: "bdryu-class-2026",
     iter: 200000,
-    hash: "a2f8800148020d62603a366771caae9ed6538733f03d02dd3b64701f43ff4a1f",
+    hash: "16630aa7526d07b0da606f378b9266916651ed181ce9532af99bea9e58682cad",
     title: "류봉두의 즐거운 국어 수업",
     sub: "고흥대서중학교"
   };

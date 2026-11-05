@@ -865,7 +865,7 @@ button.wdice:active{transform:translate(4px,4px);box-shadow:4px 4px 0 var(--bm-k
 .cq{display:flex;align-items:center;gap:14px;margin:12px 0 8px}
 .cq span{font-size:22px;font-weight:900}
 .cq .ringS{width:76px;height:76px;margin:0}.cq .ringS svg{width:76px;height:76px}.cq .ringS .n{font-size:30px}
-.kpad{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:400px}
+.kpad{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;width:400px}
 .kpad button{height:44px;border-radius:10px;background:#fff;border:2.5px solid var(--bm-k);font-size:22px;font-weight:900;box-shadow:2px 2px 0 var(--bm-k)}
 .ph1.cnt{border-color:var(--bm-k);background:#fff}
 .verdict{margin-top:12px;font-size:28px;font-weight:900;padding:6px 18px;border-radius:14px;border:3px solid var(--bm-k);background:#E3F6EA;color:#1B5E20}
@@ -912,7 +912,7 @@ button.wdice:active{transform:translate(4px,4px);box-shadow:4px 4px 0 var(--bm-k
 .bigroll b{font-size:34px;font-weight:900;color:var(--bm-red)}
 .bigroll small{font-size:18px;font-weight:800;color:var(--gray)}
 .bigroll:active{transform:translate(4px,4px);box-shadow:4px 4px 0 var(--bm-k)}
-.kpad.big{width:100%;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpad.big{width:100%;height:auto;grid-template-columns:repeat(4,1fr);gap:10px}
 .kpad.big button{height:84px;font-size:40px;border-radius:16px;box-shadow:4px 4px 0 var(--bm-k)}
 .kpad button.on,.adjp button.on,.kqp button.on,.spc button.on{background:var(--y)}
 .adjp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -1112,6 +1112,11 @@ body.pad .sline{margin-bottom:6px}
 .keycard .kq small{font-size:12px;color:var(--gray)}
 .kqc + .ringS{position:relative!important;right:auto;top:auto}
 .ctr .kqc + .ringS.qt{position:absolute!important;right:-4px;top:-4px;margin:0}
+/* 긴 낱말 */
+.wordbig{white-space:nowrap}
+.tour .phs.many{max-width:460px;gap:3px}
+.tour .phs.many .ph1{width:27px;height:34px;font-size:17px}
+.tour .phs.many .ph1.sep{width:4px}
 </style>
 </head>
 <body>
@@ -2477,9 +2482,10 @@ const cellName = i => { const k=TRACK[i]; return k==='KEY'?'황금열쇠':CORNER
 const WORDS = {
   goheung: '고흥 유자 유자차 팔영산 나로도 우주센터 우주선 거금도 대서중 남열해변 마늘 바다 장어 미역 전어 멸치 굴비 도서관 운동장 교무실 선생님 친구 칠판 방학 국어',
   life: '탕수육 짜장면 짬뽕 김치 만두 카레 피자 치킨 라면 쫄면 오므라이스 불고기 휴대폰 노트북 농구 배구 야구 노래방 컴퓨터 연필 공책 찐빵 아이스크림 콜라 사이다 호떡 꽈배기 토마토',
+  long: '나로우주센터 우주정거장 우주탐사선 고흥군청 고흥유자차 고흥버스터미널 나로도해변 교장선생님 교감선생님 보건선생님 영어선생님 사서선생님 전자칠판 방과후수업 아이스크림케이크 초코아이스크림 유자아이스크림 크림스파게티 토마토스파게티 스파게티소스 크림파스타 불고기피자 고구마피자 감자튀김 감자샐러드 짜장면곱빼기 고구마케이크 바나나케이크 딸기케이크 오렌지주스 토마토주스 텔레비전 컴퓨터게임 스마트폰게임 블루투스스피커 노트북충전기 휴대폰충전기 에스컬레이터 롤러코스터 트램펄린 스케이트보드 크리스마스트리 크리스마스카드 하모니카연주 리코더연주 배드민턴 배드민턴선수 마라톤대회',
   lesson: '순천 춘천 온양 언양 고양이 소라게 지우개 잉어 거울 장기 아기 담양 단양 강 말 발 감 곰 풀 불 개'
 };
-const WGROUP = [['goheung','고흥·우리 학교'],['life','급식·생활'],['lesson','수업에 나온 말']];
+const WGROUP = [['goheung','고흥·우리 학교'],['life','급식·생활'],['lesson','수업에 나온 말'],['long','🚀 긴 낱말']];
 
 /* ---------- 한글 풀기 ---------- */
 const CHO=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -2865,7 +2871,7 @@ const roomPath = code => `rooms/bulu-${code}`;
    선생님(칠판) — 게임 규칙의 주인
    ===================================================================== */
 const LS_T='bm-teacher-v2';
-const DEFAULT_CFG = {rounds:5, cash:800, toll:80, bidSec:45, countSec:5, quizSec:15, words:['goheung','life','lesson'], custom:'', net:'on', sound:true, bgm:true};
+const DEFAULT_CFG = {rounds:5, cash:800, toll:80, bidSec:45, countSec:5, quizSec:15, words:['goheung','life','lesson','long'], custom:'', net:'on', sound:true, bgm:true};
 const BUILD_COST=120, LAND_FIX=120, ALL_BONUS=20, TOLLMUL=[1,2.5,4,6], MAX_LV=3, SALARY=100, FARM=50, OFFER_SEC=10, KQ_SEC=12, ADJ_SEC=6, STEP_MS=330;
 let S=null, UI={modal:null};
 let unsubIn=null;
@@ -3304,8 +3310,9 @@ function viewAuction(){
     `<div class="infob"><h4>알아 두기</h4>못 산 땅은 여행 중 그 칸에 멈추면 ${LAND_FIX}원에 살 수 있어요.<br>남는 돈은 통행료와 건물(${BUILD_COST}원)에 써요.</div>`;
   return frame('auction', boardHTML({sale:ks}, center), right, btns, overlay);
 }
-function phonHTML(word){ return `<div class="phs">${phon(word).map(x=> x.sep?'<span class="ph1 sep"></span>':`<span class="ph1 ${x.sil?'sil':'cnt'}">${x.p}</span>`).join('')}</div>`; }
-function keypadHTML(act){ return `<div class="kpad">${[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>`<button data-act="${act}" data-n="${n}">${n}</button>`).join('')}</div>`; }
+const wfs = (w,base,fit) => { const n=[...String(w||'')].length; return n>fit ? ` style="font-size:${Math.floor(base*fit/n)}px"` : ''; };
+function phonHTML(word){ const ps=phon(word); return `<div class="phs${ps.length>14?' many':''}">${ps.map(x=> x.sep?'<span class="ph1 sep"></span>':`<span class="ph1 ${x.sil?'sil':'cnt'}">${x.p}</span>`).join('')}</div>`; }
+function keypadHTML(act){ return `<div class="kpad">${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].map(n=>`<button data-act="${act}" data-n="${n}">${n}</button>`).join('')}</div>`; }
 function viewTour(){
   const tr=S.tr, me=curT();
   const who=`<span style="color:${me.col}">${me.an} ${esc(me.name)}</span>`;
@@ -3318,17 +3325,17 @@ function viewTour(){
     center=`${head}<h3>${who}</h3><div class="wdice rolling"><b id="spinW">…</b></div>`;
   } else if (st==='count'){
     const kp = S.cfg.net!=='on' || UI.kp;
-    center=`${head}<div class="wordbig">${esc(tr.word)}</div><div class="cq"><span>음운은 몇 개? 몇 칸 갈까?</span>${ringS('tm','')}</div>${kp?keypadHTML('guess'):`<div class="note3">모든 모둠이 태블릿에서 세요! 다른 모둠도 맞히면 +${ALL_BONUS}원</div><div class="gchips">${S.teams.map(t=>`<span class="${tr.guesses[t.id]!=null?'on':''} ${t.id===me.id?'me':''}" style="--oc:${t.col}">${t.an}</span>`).join('')}</div>`}`;
+    center=`${head}<div class="wordbig"${wfs(tr.word,64,5)}>${esc(tr.word)}</div><div class="cq"><span>음운은 몇 개? 몇 칸 갈까?</span>${ringS('tm','')}</div>${kp?keypadHTML('guess'):`<div class="note3">모든 모둠이 태블릿에서 세요! 다른 모둠도 맞히면 +${ALL_BONUS}원</div><div class="gchips">${S.teams.map(t=>`<span class="${tr.guesses[t.id]!=null?'on':''} ${t.id===me.id?'me':''}" style="--oc:${t.col}">${t.an}</span>`).join('')}</div>`}`;
     btns = S.cfg.net==='on' && !UI.kp ? `<button class="pill" data-act="kpShow">✋ 대신 입력</button>` : '';
   } else if (st==='reveal'){
     const g = tr.guess==null?'시간 초과':tr.guess+'개';
-    center=`${head}<div class="wordbig sm">${esc(tr.word)}</div>${phonHTML(tr.word)}
+    center=`${head}<div class="wordbig sm"${wfs(tr.word,42,7)}>${esc(tr.word)}</div>${phonHTML(tr.word)}
       <div class="verdict ${tr.ok?'ok':'no'}">${tr.ok?'⭕ 정답!':'❌ 아쉬워요'} <small>${me.an} 답: ${g} · 정답 ${tr.count}개</small></div>${tr.winners.length?`<div class="wins">같이 맞힌 모둠 +${ALL_BONUS}원 ${tr.winners.map(id=>T(id).an).join(' ')}</div>`:''}
       ${tr.ok?`<div class="adj"><span>🎁 ±1칸 조정권</span>${[-1,0,1].map(d=>`<button data-act="adj" data-d="${d}">${d<0?'−1칸':d>0?'+1칸':'그대로'}<small>${tr.count+d}칸</small></button>`).join('')}</div>`:`<div class="note3">정답만큼 ${tr.count}칸 이동해요</div>`}`;
   } else if (st==='move'){
     const n=tr.mv.n, mi=Math.max(0,Math.min(n,tr.mi));
     hl.at=(tr.mv.from+mi)%NCELL;
-    center=`${head}<div class="wordbig sm">${esc(tr.word)}</div><div class="movec"><b>${mi}</b><span>/ ${n}칸</span></div>`;
+    center=`${head}<div class="wordbig sm"${wfs(tr.word,42,7)}>${esc(tr.word)}</div><div class="movec"><b>${mi}</b><span>/ ${n}칸</span></div>`;
   } else if (st==='quiz'){
     const [oid,[k]]=Object.entries(tr.quiz.own)[0]; const o=T(oid); hl.at=tr.pos; mode='quiz';
     center=`${head}<h3>${who} → <span style="color:${o.col}">${o.an} ${esc(o.name)}</span>의 땅!</h3>
@@ -3560,6 +3567,7 @@ function bootBoard(){
   S=newState();
   if (saved && saved.phase && !['intro','setup','result'].includes(saved.phase)) { S.cfg=Object.assign({},DEFAULT_CFG,saved.cfg); S._resumable=true; }
   else if (saved && saved.cfg) S.cfg=Object.assign({},DEFAULT_CFG,saved.cfg);
+  if (!S.cfg.longAdded){ S.cfg.longAdded=1; if(!S.cfg.words.includes('long')) S.cfg.words=S.cfg.words.concat('long'); }
   SND.on=S.cfg.sound;
   DB.onConn(()=>{ if(S && S.phase!=='intro') renderBoard(); });
   BGM.on=S.cfg.bgm!==false;
@@ -3651,7 +3659,7 @@ function padBody(p,t){
       }
     }
     if (st==='count'){ const done=arr(tr.gin).includes(t.id);
-      return `<div class="pbig"><div class="tag">${mine?'우리 차례! 음운은 몇 개?':`같이 세기! 맞히면 +${ALL_BONUS}원`}</div><div class="w">${esc(tr.word)}</div><div class="tmr" id="ptm"></div></div>${done?'<div class="notice">답을 보냈어요! 칠판을 보세요.</div>':`<div class="kpad big">${[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>`<button data-gs="${n}">${n}</button>`).join('')}</div>`}`; }
+      return `<div class="pbig"><div class="tag">${mine?'우리 차례! 음운은 몇 개?':`같이 세기! 맞히면 +${ALL_BONUS}원`}</div><div class="w">${esc(tr.word)}</div><div class="tmr" id="ptm"></div></div>${done?'<div class="notice">답을 보냈어요! 칠판을 보세요.</div>':`<div class="kpad big">${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].map(n=>`<button data-gs="${n}">${n}</button>`).join('')}</div>`}`; }
     if (st==='kqa'){ const kq=tr.kq||{}; const done=arr(kq.ain).includes(t.id);
       if (done) return `<div class="pbig"><div class="tag">🔑 전원 퀴즈</div><div class="w" style="font-size:32px">답을 보냈어요!</div><div class="h">칠판에서 정답을 확인해요</div></div>`;
       return `<div class="kqp"><div class="kqh">🔑 전원 퀴즈! 모든 모둠이 풀어요 <span class="ptm" id="ptm"></span></div><div class="kqq">${esc(kq.q)}</div>${arr(kq.opts).map((o,i)=>`<button data-kq="${i}"><i>${'①②③④'[i]}</i>${esc(o)}</button>`).join('')}<p>맞히면 +${ALLQ_WIN}원</p></div>`; }
@@ -3664,7 +3672,7 @@ function padBody(p,t){
     }
     if (st==='roll') return `<button class="bigroll" id="rollGo"><span>🎲</span><b>단어 주사위 굴리기</b><small>우리 차례!</small></button><div class="card"><h3>땅 지도</h3>${pmapHTML(t)}</div>`;
     if (st==='spin') return `<div class="pbig"><div class="w" style="font-size:40px">🎲 굴러가는 중…</div><div class="h">칠판을 보세요!</div></div>`;
-    if (false) return `<div class="pbig"><div class="tag">음운은 몇 개?</div><div class="w">${esc(tr.word)}</div><div class="tmr" id="ptm"></div></div><div class="kpad big">${[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>`<button data-gs="${n}">${n}</button>`).join('')}</div>`;
+    if (false) return `<div class="pbig"><div class="tag">음운은 몇 개?</div><div class="w">${esc(tr.word)}</div><div class="tmr" id="ptm"></div></div><div class="kpad big">${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].map(n=>`<button data-gs="${n}">${n}</button>`).join('')}</div>`;
     if (st==='reveal'){
       if (tr.ok) return `<div class="pbig"><div class="tag">⭕ 정답! 음운 ${tr.count}개</div><div class="w" style="font-size:34px">±1칸 조정권!</div><div class="h">어디에 멈출지 골라요</div><div class="tmr" id="ptm"></div></div><div class="adjp">${[-1,0,1].map(d=>`<button data-adj="${d}">${d<0?'−1칸':d>0?'+1칸':'그대로'}<small>${tr.count+d}칸 이동</small></button>`).join('')}</div>`;
       return `<div class="pbig" style="background:var(--rl)"><div class="tag">❌ 아쉬워요</div><div class="w" style="font-size:34px">정답은 ${tr.count}개</div><div class="h">${tr.count}칸 이동해요</div></div>`;

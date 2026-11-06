@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611061331";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611061331";
-import { matchReason, RULES } from "./engine.js?v=202611061331";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611061331";
-import { Sound, fxOf } from "./sound.js?v=202611061331";
+import { Net, P } from "./net.js?v=202611061333";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611061333";
+import { matchReason, RULES } from "./engine.js?v=202611061333";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611061333";
+import { Sound, fxOf } from "./sound.js?v=202611061333";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -99,7 +99,7 @@ export function Player(code, name, ctx) {
     for (const e of V.ev || []) if (e.n > lastN) {
       const t = evText(e, nm); if (t) toast(t);
       const f = fxOf(e); if (f && lastN && (e.pid === me || e.by === me || ["uno", "catch", "combo", "win", "skip", "rev"].includes(e.t))) fx = f;
-      if (navigator.vibrate && (e.pid === me) && ["d2", "w4", "catch", "skip"].includes(e.t)) navigator.vibrate(120);
+      if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive && (e.pid === me) && ["d2", "w4", "catch", "skip"].includes(e.t)) navigator.vibrate(120);
     }
     lastN = Math.max(lastN, ...(V.ev || []).map(e => e.n), 0);
     const turnNow = V.turn === me && V.phase === "play" ? V.seq : null;

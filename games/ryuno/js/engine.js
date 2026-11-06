@@ -14,8 +14,8 @@
    · 음운 변동 콤보(비음화·유음화) → 다음 사람 1장
    · 차례마다 20초. 지나면 자동으로 1장 뽑고 넘어감
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611061331";
-import { shuffle, cryptoInt } from "./rng.js?v=202611061331";
+import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611061333";
+import { shuffle, cryptoInt } from "./rng.js?v=202611061333";
 
 export const RULES = {
   hand: 7,

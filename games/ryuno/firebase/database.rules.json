@@ -1,0 +1,48 @@
+{
+  "rules": {
+    "rooms": {
+      ".read": true,
+      ".write": true
+    },
+    "ryuno": {
+      "rooms": {
+        "$code": {
+          ".validate": "$code.matches(/^[A-HJKMNP-Z2-9]{6}$/)",
+          ".read": "auth != null && data.child('meta/host').val() === auth.uid",
+          ".write": "auth != null && (data.child('meta/host').val() === auth.uid || ((!data.child('meta').exists() || data.child('meta/at').val() < now - 21600000) && newData.child('meta/host').val() === auth.uid))",
+          "meta": {
+            ".read": "auth != null",
+            ".validate": "newData.hasChildren(['host', 'at']) && newData.child('at').isNumber() && newData.child('at').val() <= now"
+          },
+          "pub": {
+            ".read": "auth != null"
+          },
+          "seats": {
+            ".read": "auth != null",
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && root.child('ryuno/rooms/' + $code + '/meta').exists()",
+              ".validate": "newData.hasChild('name')",
+              "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 12" },
+              "on": { ".validate": "newData.isBoolean()" },
+              "at": { ".validate": "newData.isNumber() && newData.val() <= now" },
+              "$other": { ".validate": "root.child('ryuno/rooms/' + $code + '/meta/host').val() === auth.uid" }
+            }
+          },
+          "hands": {
+            "$uid": {
+              ".read": "auth != null && auth.uid === $uid"
+            }
+          },
+          "inbox": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && root.child('ryuno/rooms/' + $code + '/meta').exists()",
+              "$msg": {
+                ".validate": "newData.hasChildren(['t', 'at']) && newData.child('t').isString() && newData.child('t').val().length <= 20"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

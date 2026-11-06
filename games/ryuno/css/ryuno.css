@@ -1,0 +1,72 @@
+@font-face{font-family:'NSK';font-weight:500;font-display:swap;src:url(../fonts/nsk-500.woff2) format('woff2')}
+@font-face{font-family:'NSK';font-weight:700;font-display:swap;src:url(../fonts/nsk-700.woff2) format('woff2')}
+@font-face{font-family:'NSK';font-weight:900;font-display:swap;src:url(../fonts/nsk-900.woff2) format('woff2')}
+
+:root{
+  --ink:#1C1B19;--paper:#FAFAF7;--y:#FEE500;--dark:#141414;--d2:#1f1f1f;--d3:#2c2c2c;--gray:#8E8E8E;
+  --ok:#1E9E57;--bad:#ED4956;
+  --c-red:#E5322D;--c-blue:#1F6FD1;--c-yel:#F2B705;--c-grn:#22A447;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--dark);color:#fff}
+body{font-family:'NSK',"Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-weight:500;-webkit-font-smoothing:antialiased;
+  word-break:keep-all;overflow-wrap:break-word;line-height:1.5}
+button,input{font-family:inherit;color:inherit}
+button{border:0;background:none;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.35;cursor:default}
+
+.wrap{max-width:960px;margin:0 auto;padding:24px 20px 60px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.logo{font-weight:900;font-size:28px;letter-spacing:-1px;color:var(--y)}
+.logo small{font-size:14px;color:var(--gray);font-weight:700;letter-spacing:0;margin-left:8px}
+.conn{margin-left:auto;font-size:14px;color:var(--gray);display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ok);display:inline-block}
+.dot.off{background:var(--bad)}
+
+h1{font-size:44px;font-weight:900;letter-spacing:-2px;line-height:1.15;margin-bottom:12px}
+h2{font-size:22px;font-weight:900;margin:28px 0 12px}
+.lead{color:#cfcfcf;font-size:18px;margin-bottom:24px}
+.muted{color:var(--gray);font-size:14px}
+
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:13px 24px;border-radius:30px;font-size:17px;font-weight:900;background:var(--d3);color:#fff}
+.pill.y{background:var(--y);color:var(--ink)}
+.pill.r{background:var(--bad)}
+.pill.sm{padding:8px 16px;font-size:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.box{background:var(--d2);border-radius:16px;padding:20px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:720px){.grid2{grid-template-columns:minmax(0,1fr)}h1{font-size:34px}}
+
+.inp{width:100%;padding:14px 16px;border-radius:12px;border:2px solid var(--d3);background:#0d0d0d;font-size:20px;font-weight:700}
+.inp:focus{outline:none;border-color:var(--y)}
+.inp.code{text-transform:uppercase;letter-spacing:8px;text-align:center;font-size:28px;font-weight:900}
+
+.codebig{font-size:64px;font-weight:900;letter-spacing:10px;color:var(--y);line-height:1}
+.qr{width:180px;height:180px;background:#fff;border-radius:12px;padding:6px;flex:none}
+.qr svg{width:100%;height:100%;display:block}
+
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;gap:10px;background:#0d0d0d;border-radius:10px;padding:10px 14px;font-size:16px}
+.item .r{margin-left:auto;color:var(--gray);font-size:14px}
+.log{max-height:240px;overflow:auto;font-size:14px;color:#cfcfcf;display:flex;flex-direction:column;gap:4px}
+
+.res{margin-top:10px;padding:12px 14px;border-radius:10px;font-size:15px;font-weight:700}
+.res.ok{background:rgba(30,158,87,.18);color:#7fe0a8}
+.res.bad{background:rgba(237,73,86,.18);color:#ff9aa3}
+
+/* 카드 (1단계 시험용 — 8단계에서 다듬음) */
+.hand{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.card{width:72px;height:108px;border-radius:10px;border:4px solid #fff;position:relative;flex:none;color:#fff}
+.card .m{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.card .m span{width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900}
+.card .k{position:absolute;top:2px;left:6px;font-size:13px;font-weight:900}
+.card.red{background:var(--c-red)}.card.red span{color:var(--c-red)}
+.card.blue{background:var(--c-blue)}.card.blue span{color:var(--c-blue)}
+.card.yel{background:var(--c-yel);color:#3a2a00}.card.yel span{color:#C28F00}
+.card.grn{background:var(--c-grn)}.card.grn span{color:var(--c-grn)}
+
+.err{max-width:560px;margin:12vh auto;padding:0 20px}
+.err h1{font-size:30px}
+.err ol{margin:12px 0 0 20px;color:#cfcfcf}
+.err li{margin:6px 0}

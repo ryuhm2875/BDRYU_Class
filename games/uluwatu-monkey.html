@@ -1,0 +1,1220 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<script src="../gate.js"></script>
+<title>울루와투의 원숭이 · 류봉두의 즐거운 국어 수업</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<style>
+:root{
+  --bg:#ffffff; --fg:#1d1d1f; --muted:#6e6e73; --tile:#f5f5f7; --line:#d2d2d7; --link:#0066cc;
+  --accent:#3a7d44; --accent-light:#e9f4ec;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#000; --fg:#f5f5f7; --muted:#a1a1a6; --tile:#1d1d1f; --line:#38383c; --link:#2997ff;
+  --accent:#5aaa68; --accent-light:#0d2210;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box; margin:0; padding:0;}
+
+/* ── 전체 레이아웃 ── */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 헤더 ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+  gap: 12px;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.back {
+  font-size: 15px;
+  color: var(--link);
+  text-decoration: none;
+  flex: none;
+}
+.back:hover { text-decoration: underline; }
+.title-wrap {
+  min-width: 0;
+}
+.title-main {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.title-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.counter {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  flex: none;
+}
+
+/* ── 슬라이드 영역 ── */
+.stage {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  position: relative;
+}
+.slide {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(28px,5vw,72px) clamp(20px,8vw,120px);
+  text-align: center;
+  animation: fadein .22s ease;
+}
+.slide.active { display: flex; }
+@keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* 표지 슬라이드 */
+.slide-cover .cover-emoji {
+  font-size: clamp(64px, 12vw, 110px);
+  line-height: 1;
+  margin-bottom: clamp(20px, 4vw, 36px);
+}
+.slide-cover .cover-title {
+  font-size: clamp(36px, 7vw, 72px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+.slide-cover .cover-author {
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--muted);
+}
+
+/* 일반 슬라이드 */
+.scene-label {
+  font-size: clamp(12px, 1.6vw, 15px);
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-light);
+  border-radius: 999px;
+  padding: 3px 14px;
+  margin-bottom: clamp(16px, 3vw, 28px);
+  letter-spacing: 0.03em;
+}
+.slide-body {
+  max-width: 820px;
+  width: 100%;
+}
+.slide-body p {
+  font-size: clamp(18px, 2.6vw, 28px);
+  line-height: 1.75;
+  color: var(--fg);
+  word-break: keep-all;
+  margin-bottom: 0.9em;
+}
+.slide-body p:last-child { margin-bottom: 0; }
+
+/* 대화 강조 */
+.slide-body .dialogue {
+  font-size: clamp(20px, 3vw, 32px);
+  font-weight: 700;
+  color: var(--fg);
+  line-height: 1.6;
+}
+.slide-body .who {
+  font-size: clamp(14px, 1.8vw, 18px);
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* 장면 전환 슬라이드 */
+.slide-scene-break {
+  background: var(--tile);
+}
+.slide-scene-break .scene-emoji {
+  font-size: clamp(48px, 9vw, 80px);
+  line-height: 1;
+  margin-bottom: 20px;
+}
+.slide-scene-break .scene-title {
+  font-size: clamp(24px, 4vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.slide-scene-break .scene-desc {
+  font-size: clamp(15px, 2vw, 20px);
+  color: var(--muted);
+}
+
+/* 엔딩 슬라이드 */
+.slide-end .end-emoji {
+  font-size: clamp(56px, 10vw, 96px);
+  line-height: 1;
+  margin-bottom: 24px;
+}
+.slide-end .end-title {
+  font-size: clamp(28px, 5vw, 56px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin-bottom: 12px;
+}
+.slide-end .end-sub {
+  font-size: clamp(15px, 2vw, 20px);
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ── 내비게이션 ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  flex: none;
+}
+.nav-btn {
+  background: var(--tile);
+  border: none;
+  border-radius: 50%;
+  width: 48px; height: 48px;
+  font-size: 22px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background .15s, transform .1s;
+  color: var(--fg);
+}
+.nav-btn:hover { background: var(--line); transform: scale(1.07); }
+.nav-btn:active { transform: scale(.96); }
+.nav-btn:disabled { opacity: .28; cursor: not-allowed; transform: none; }
+.progress {
+  flex: 1;
+  max-width: 400px;
+  height: 4px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+.fullscreen-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 6px;
+  border-radius: 8px;
+}
+.fullscreen-btn:hover { color: var(--fg); background: var(--tile); }
+
+@media (max-width: 600px) {
+  .title-sub { display: none; }
+  .nav-btn { width: 42px; height: 42px; font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <a class="back" href="index.html">‹ 게임 주머니</a>
+    <div class="title-wrap">
+      <div class="title-main">울루와투의 원숭이</div>
+      <div class="title-sub">류봉두 지음</div>
+    </div>
+  </div>
+  <div class="counter" id="counter">1 / 1</div>
+</div>
+
+<div class="stage" id="stage">
+
+  <!-- 0. 표지 -->
+  <div class="slide slide-cover active" data-index="0">
+    <div class="cover-emoji">🐒</div>
+    <div class="cover-title">울루와투의 원숭이</div>
+    <div class="cover-author">류봉두 지음</div>
+  </div>
+
+  <!-- 1 -->
+  <div class="slide" data-index="1">
+    <span class="scene-label">배경 소개</span>
+    <div class="slide-body">
+      <p>인도네시아 발리에는 울루와투라는 곳이 있어요.</p>
+      <p>울창한 나무 숲과 푸른 바다, 절벽에서 떨어지는 아름다운 폭포가 있는 곳이지요.</p>
+      <p>아파트나 공장은 찾아볼 수 없고, 자연 속에서 푹 쉬어 갈 수 있는 멋진 리조트들만 있어요.</p>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="slide" data-index="2">
+    <span class="scene-label">배경 소개</span>
+    <div class="slide-body">
+      <p>그래서 해마다 많은 사람들이 이곳을 찾아와요.</p>
+      <p>가족과 특별한 추억을 만들러 오는 사람도 있고, 먼 나라에서 긴 휴가를 보내러 오는 사람도 있지요.</p>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="slide" data-index="3">
+    <span class="scene-label">배경 소개</span>
+    <div class="slide-body">
+      <p>그중에서도 '더 발리'라는 리조트는 가장 아름답고 유명한 곳이에요.</p>
+      <p>커다란 로비와 넓은 방들, 그리고 방마다 딸린 수영장까지! 신선한 과일과 맛있는 요리가 날마다 준비되고, 직원들은 늘 친절하게 손님들을 맞아요.</p>
+      <p>사람들은 이곳에서 며칠씩 머물며 수영도 하고, 맛있는 것도 먹고, 느긋하게 쉬었어요.</p>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="slide" data-index="4">
+    <span class="scene-label">인물 소개</span>
+    <div class="slide-body">
+      <p>하지만 울루와투에 리조트 손님과 직원들만 있는 건 아니에요.</p>
+      <p>이곳은 원숭이들의 천국이기도 하거든요. 날아다니듯 나무 사이를 뛰어다니고, 사람들 어깨를 툭 치며 장난을 치고, 몰래 음식을 훔쳐 가는 원숭이들 말이에요.</p>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="slide" data-index="5">
+    <span class="scene-label">인물 소개</span>
+    <div class="slide-body">
+      <p>그중에서도 형 동동이와 동생 딩딩이는 소문난 장난꾸러기예요.</p>
+      <p>둘은 '더 발리' 리조트 근처 나무 위에 살며 날마다 신나는 모험을 즐겼지요.</p>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="slide slide-scene-break" data-index="6">
+    <div class="scene-emoji">🌅</div>
+    <div class="scene-title">어느 날 아침</div>
+    <div class="scene-desc">동동이와 딩딩이의 하루가 시작됩니다</div>
+  </div>
+
+  <!-- 7 -->
+  <div class="slide" data-index="7">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <p>어느 날 아침, 해가 동쪽 하늘로 천천히 떠오르자 리조트가 눈부신 햇살 아래 모습을 드러냈어요.</p>
+      <p>동동이와 딩딩이는 벌써 일어나 새벽 공기를 마시며 리조트를 어슬렁거리고 있었지요.</p>
+    </div>
+  </div>
+
+  <!-- 8 -->
+  <div class="slide" data-index="8">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <span class="who">동동이가 눈을 반짝이며</span>
+      <p class="dialogue">"딩딩아, 저기 봐! 망고가 남아 있어!"</p>
+      <p>딩딩이는 주위를 한번 살피더니 망설임 없이 달려가 망고를 집어 들었어요.</p>
+    </div>
+  </div>
+
+  <!-- 9 -->
+  <div class="slide" data-index="9">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"우와! 완전 달아!"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"그치? 사람들이 먹는 과일이 훨씬 맛있다니까!"</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"응. 나무에서 따 먹는 것보다 훨씬 잘 익었어."</p>
+    </div>
+  </div>
+
+  <!-- 10 -->
+  <div class="slide" data-index="10">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <p>동동이는 어깨를 으쓱했어요.</p>
+      <p class="dialogue">"그리고 맨날 과일만 먹을 게 아니라 음료도 마셔 보고, 요리도 맛봐야 해. 그러려면 사람들 근처로 내려오는 게 제일 좋아."</p>
+    </div>
+  </div>
+
+  <!-- 11 -->
+  <div class="slide" data-index="11">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <p>그렇지만 딩딩이는 조금 겁이 났어요.</p>
+      <p class="dialogue">"근데 형… 사람들은 무서워. 덩치도 크고 이상한 소리도 내잖아."</p>
+      <p>동동이는 동생의 머리를 쓰다듬었어요.</p>
+      <p class="dialogue">"걱정 마! 몰래 다니면 들킬 일도 없고, 들키더라도 우리가 이빨을 드러내면 사람들은 금방 겁먹고 도망가."</p>
+    </div>
+  </div>
+
+  <!-- 12 -->
+  <div class="slide" data-index="12">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <p>형의 말을 듣고 딩딩이는 조금씩 용기가 생겼어요.</p>
+      <p>망고를 다 먹은 둘은 수영장 쪽으로 슬쩍 다가갔어요. 잔잔한 물 위로 햇살이 반짝이고 있었지요.</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"딩딩아, 수영 한번 할까?"</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"좋아!"</p>
+    </div>
+  </div>
+
+  <!-- 13 -->
+  <div class="slide" data-index="13">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <p>둘은 동시에 풍덩! 물속으로 뛰어들었어요. 물이 사방으로 튀고, 형제는 물고기처럼 헤엄치기 시작했죠.</p>
+      <p>그때 갑자기,</p>
+      <p class="dialogue">"이놈들, 또 왔구나!"</p>
+    </div>
+  </div>
+
+  <!-- 14 -->
+  <div class="slide" data-index="14">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <p>익숙한 목소리가 들려왔어요. 리조트를 관리하는 버틀러 아저씨였어요. 아저씨는 두툼한 눈썹을 찌푸리며 빗자루를 번쩍 들어 올렸어요.</p>
+      <p class="dialogue">"여기서 또 장난을 치다니! 당장 나가!"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"딩딩아, 도망가자!"</p>
+    </div>
+  </div>
+
+  <!-- 15 -->
+  <div class="slide" data-index="15">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <p>동동이는 딩딩이의 손을 잡고 잽싸게 뛰었어요. 젖은 털에서 물이 뚝뚝 떨어지는 것도 신경 쓰지 않았지요.</p>
+      <p>아저씨가 빗자루를 휘두르며 뒤쫓아 왔지만, 두 원숭이는 순식간에 풀숲으로 사라졌어요.</p>
+      <p class="dialogue">"너희들, 다신 내 눈에 띄지 마라!"</p>
+      <p>풀숲에 숨은 동동이와 딩딩이는 서로를 쳐다보며 키득키득 웃었어요.</p>
+    </div>
+  </div>
+
+  <!-- 16 -->
+  <div class="slide" data-index="16">
+    <span class="scene-label">발단</span>
+    <div class="slide-body">
+      <span class="who">동동이</span>
+      <p class="dialogue">"봤지? 우리가 훨씬 빨라!"</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"헤헤. 형, 다음에는 텔레비전도 보고 싶어!"</p>
+    </div>
+  </div>
+
+  <!-- 17 -->
+  <div class="slide slide-scene-break" data-index="17">
+    <div class="scene-emoji">🍕</div>
+    <div class="scene-title">점심때</div>
+    <div class="scene-desc">더 대담해진 형제의 모험</div>
+  </div>
+
+  <!-- 18 -->
+  <div class="slide" data-index="18">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <p>어느새 점심때가 되었어요. 배가 고파진 동동이와 딩딩이는 다시 리조트로 몰래 들어갔어요. 이번엔 사람들이 묵는 숙소 쪽이었지요.</p>
+      <p>그곳에는 여행 온 젊은 부부가 머물고 있었어요. 부부는 마당에 있는 수영장에서 수영을 즐기고 있었어요. 곧 야외 테이블에 맛있는 피자와 시원한 주스가 배달되었지요.</p>
+    </div>
+  </div>
+
+  <!-- 19 -->
+  <div class="slide" data-index="19">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <span class="who">동동이</span>
+      <p class="dialogue">"딩딩아, 저거 봐! 피자야! 먹어 본 적 있어?"</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"아니. 피자가 뭐야?"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"엄청 맛있는 거야. 기회가 되면 한 조각 먹게 해 줄게."</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"좋아!"</p>
+    </div>
+  </div>
+
+  <!-- 20 -->
+  <div class="slide" data-index="20">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <p>부부는 테이블에 앉아 이야기를 나누었어요. 남편이 피자 한 조각을 집으려는 순간, 아내가 말했어요.</p>
+      <span class="who">아내</span>
+      <p class="dialogue">"잠깐만! 사진부터 찍을래. 휴대폰 가져올게."</p>
+      <span class="who">남편</span>
+      <p class="dialogue">"알겠어. 그럼 나도 손 씻고 올게."</p>
+    </div>
+  </div>
+
+  <!-- 21 -->
+  <div class="slide" data-index="21">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <p>숙소와 마당은 옆으로 미는 문으로 이어져 있었어요. 부부가 문을 드르륵 밀고 들어가는 것을 본 동동이는 속으로 생각했지요.</p>
+      <p class="dialogue">'아하, 저렇게 문을 여는 거구나.'</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"형, 지금이야! 어서 가자!"</p>
+    </div>
+  </div>
+
+  <!-- 22 -->
+  <div class="slide" data-index="22">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <p>둘은 나무에서 재빨리 내려와 테이블로 뛰어갔어요. 동동이가 피자 한 조각을 집었고, 딩딩이도 한 조각을 손에 쥐었지요.</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"형! 이거 정말 맛있어! 태어나서 이런 맛은 처음이야!"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"그렇지? 내가 뭐랬어!"</p>
+    </div>
+  </div>
+
+  <!-- 23 -->
+  <div class="slide" data-index="23">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <p>딩딩이가 한 입 더 먹으려던 그때,</p>
+      <p class="dialogue">"꺅!"</p>
+      <p>부부가 돌아온 거예요! 깜짝 놀란 동동이와 딩딩이는 피자를 든 채 나무 위로 도망쳤어요.</p>
+    </div>
+  </div>
+
+  <!-- 24 -->
+  <div class="slide" data-index="24">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <span class="who">아내</span>
+      <p class="dialogue">"어떡해… 원숭이들이 피자를 가져가 버렸어! 아직 한 입도 못 먹었는데…."</p>
+      <span class="who">남편</span>
+      <p class="dialogue">"울루와투에 원숭이가 많다더니, 숙소까지 들어올 줄은 몰랐네. 괜찮아, 남은 거라도 먹자."</p>
+    </div>
+  </div>
+
+  <!-- 25 -->
+  <div class="slide" data-index="25">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <p>나무 위에서 피자를 먹던 동동이는 어이없다는 듯 중얼거렸어요.</p>
+      <p class="dialogue">"참 치사한 사람들이야. 양도 많은데 왜 우리랑 같이 안 먹는 거지?"</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"맞아. 맛있는 걸 자기들끼리만 먹으려고 하다니!"</p>
+    </div>
+  </div>
+
+  <!-- 26 -->
+  <div class="slide" data-index="26">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <p>그때 나무 아래에서 부부의 이야기가 다시 들려왔어요.</p>
+      <span class="who">남편</span>
+      <p class="dialogue">"그래도 내일 모레 몽키 포레스트에 가면 원숭이를 실컷 보겠다."</p>
+      <span class="who">아내</span>
+      <p class="dialogue">"몽키 포레스트? 아, 원숭이들의 천국이라는 그 숲!"</p>
+      <span class="who">남편</span>
+      <p class="dialogue">"응. 거긴 원숭이가 주인이래. 사람들이 원숭이 마을에 초대받아 가는 느낌이라나?"</p>
+    </div>
+  </div>
+
+  <!-- 27 -->
+  <div class="slide" data-index="27">
+    <span class="scene-label">전개</span>
+    <div class="slide-body">
+      <p>동동이는 원숭이들의 천국이라는 말에 귀가 솔깃했지만, 지금도 충분히 천국 같았어요. 그래서 한 귀로 듣고 한 귀로 흘려버리고 말았지요.</p>
+    </div>
+  </div>
+
+  <!-- 28 -->
+  <div class="slide slide-scene-break" data-index="28">
+    <div class="scene-emoji">📺</div>
+    <div class="scene-title">다음 날</div>
+    <div class="scene-desc">더욱 대담해진 형제 — 그물총</div>
+  </div>
+
+  <!-- 29 -->
+  <div class="slide" data-index="29">
+    <span class="scene-label">전개 · 위기</span>
+    <div class="slide-body">
+      <p>다음 날, 동동이와 딩딩이는 더 대담해졌어요. 숙소 곳곳을 돌아다니며 음식을 훔쳐 먹고, 갑자기 튀어나와 사람들을 깜짝 놀라게 했지요.</p>
+      <p>아침에는 수영장 옆 선베드에 누워 있던 할아버지의 선글라스를 가져갔어요.</p>
+    </div>
+  </div>
+
+  <!-- 30 -->
+  <div class="slide" data-index="30">
+    <span class="scene-label">전개 · 위기</span>
+    <div class="slide-body">
+      <p>점심에는 식당 창가에 놓인 빵 바구니를 통째로 들고 달아났어요.</p>
+      <p>저녁에는 사람들이 모여 사진을 찍는 절벽 난간 위를 달리다가, 한 아저씨의 모자를 휙 낚아채 갔지요. 모자는 바람을 타고 절벽 아래로 훨훨 날아가 버렸어요.</p>
+    </div>
+  </div>
+
+  <!-- 31 -->
+  <div class="slide" data-index="31">
+    <span class="scene-label">전개 · 위기</span>
+    <div class="slide-body">
+      <p>사람들의 반응은 여러 가지였어요. 대부분은 깜짝 놀라 원숭이들을 피했고, 몇몇은 귀엽다며 사진을 찍었어요. 하지만 모처럼의 휴가를 방해받아 화가 난 사람들도 있었지요.</p>
+      <p>그런 사람들은 버틀러 아저씨를 찾아갔어요.</p>
+      <p class="dialogue">"원숭이들이 음식을 몽땅 가져갔다니까요!"<br>"오랜만에 온 휴가를 완전히 망쳐 놨어요!"</p>
+    </div>
+  </div>
+
+  <!-- 32 -->
+  <div class="slide" data-index="32">
+    <span class="scene-label">전개 · 위기</span>
+    <div class="slide-body">
+      <span class="who">동동이</span>
+      <p class="dialogue">"딩딩아, 나 어제 사람들 방문 여는 법 알아냈어. 오늘 그 문을 열어 줄게. 너, 텔레비전 보고 싶다고 했잖아."</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"와, 진짜? 형, 빨리 가자!"</p>
+    </div>
+  </div>
+
+  <!-- 33 -->
+  <div class="slide" data-index="33">
+    <span class="scene-label">위기</span>
+    <div class="slide-body">
+      <p>둘이 찾아간 곳은 여행 온 자매가 머무는 방이었어요. 방 안이 조용한 것을 확인한 동동이가 문을 옆으로 밀었어요.</p>
+      <p>방 안에 아무도 없다는 걸 알자마자 두 형제는 신나게 뛰어다니기 시작했어요. 동동이는 침대 위에서 통통 뛰었고, 딩딩이는 옷장과 화장대를 열어 이것저것 꺼냈어요.</p>
+    </div>
+  </div>
+
+  <!-- 34 -->
+  <div class="slide" data-index="34">
+    <span class="scene-label">위기</span>
+    <div class="slide-body">
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"형! 이거 봐! 사람들이 머리에 쓰는 거야!"</p>
+      <p>딩딩이는 챙 넓은 모자를 쓰고 거울 앞에서 폼을 잡더니, 향수를 칙칙 마구 뿌려 댔어요. 깔끔하던 방은 금세 엉망이 되어 버렸지요.</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"딩딩아, 이제 텔레비전 보자!"</p>
+    </div>
+  </div>
+
+  <!-- 35 -->
+  <div class="slide" data-index="35">
+    <span class="scene-label">위기</span>
+    <div class="slide-body">
+      <p>동동이가 탁자 위에 놓여 있는 리모컨 버튼을 누르자 화면에는 맛있는 음식을 소개하는 프로그램이 나오고 있었어요.</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"와, 이게 텔레비전이구나! 진짜 재밌다!"</p>
+      <p>두 형제는 태어나서 가장 즐거운 시간을 보내고 있었어요. 방 주인들이 돌아온 줄도 모르고 말이에요.</p>
+    </div>
+  </div>
+
+  <!-- 36 -->
+  <div class="slide" data-index="36">
+    <span class="scene-label">위기</span>
+    <div class="slide-body">
+      <p>쇼핑을 마치고 돌아온 두 자매는 방을 보고 입이 떡 벌어졌어요. 물건들이 여기저기 널브러져 있고, 털이 둥둥 날아다니고 있었거든요.</p>
+      <p class="dialogue">"이거 도둑이 든 거 아니야?"</p>
+      <p>조심조심 방 안을 살피던 자매는 텔레비전 앞에 앉은 원숭이들을 발견했어요.</p>
+      <p class="dialogue">"헐, 원숭이잖아!"</p>
+    </div>
+  </div>
+
+  <!-- 37 -->
+  <div class="slide" data-index="37">
+    <span class="scene-label">위기</span>
+    <div class="slide-body">
+      <p>버틀러 아저씨는 조용히 방 안으로 들어갔어요. 아저씨의 손에는 그물총이 들려 있었어요.</p>
+      <p class="dialogue">'이번에는 꼭 잡고 말 테다.'</p>
+      <p class="dialogue">"너희들, 여기서 뭐 하는 거야!"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"헉! 딩딩아, 도망가자!"</p>
+    </div>
+  </div>
+
+  <!-- 38 -->
+  <div class="slide" data-index="38">
+    <span class="scene-label">위기</span>
+    <div class="slide-body">
+      <p>동동이는 재빨리 문을 열고 마당으로 뛰쳐나갔어요. 그런데 딩딩이가 따라 나오지 않았어요.</p>
+      <p>너무 놀란 딩딩이는 문이 어디 있는지 찾지 못했어요. 겁에 질려 방 안을 이리저리 뛰어다니다 커튼을 찢고, 주스를 쏟고, 이불 위에 오줌까지 찔끔 싸고 말았지요.</p>
+    </div>
+  </div>
+
+  <!-- 39 -->
+  <div class="slide" data-index="39">
+    <span class="scene-label">위기</span>
+    <div class="slide-body">
+      <p>펑! 그물이 활짝 퍼지며 딩딩이를 덮쳤어요. 딩딩이는 빠져나오려고 버둥거렸지만, 그럴수록 그물은 더 단단히 엉켰어요.</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"딩딩아! 조금만 버텨! 내가 도와줄게!"</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"형… 나 움직일 수가 없어."</p>
+    </div>
+  </div>
+
+  <!-- 40 -->
+  <div class="slide" data-index="40">
+    <span class="scene-label">위기</span>
+    <div class="slide-body">
+      <p>버틀러 아저씨는 그물에 갇힌 딩딩이를 한 손으로 번쩍 들고 방을 나갔어요. 동동이는 문틈으로 그 모습을 지켜볼 수밖에 없었어요.</p>
+      <p>나무 위로 올라간 동동이는 흐느끼며 울었어요.</p>
+      <p class="dialogue">"흑… 내가 괜히 동생을 데려가서… 미안해, 딩딩아…."</p>
+    </div>
+  </div>
+
+  <!-- 41 -->
+  <div class="slide slide-scene-break" data-index="41">
+    <div class="scene-emoji">🌲</div>
+    <div class="scene-title">몽키 포레스트를 향해</div>
+    <div class="scene-desc">동동이의 여정이 시작됩니다</div>
+  </div>
+
+  <!-- 42 -->
+  <div class="slide" data-index="42">
+    <span class="scene-label">전환</span>
+    <div class="slide-body">
+      <p>한참을 울던 동동이는 눈물을 닦고 고개를 들었어요.</p>
+      <p class="dialogue">"여긴 너무 위험해. 그래, 몽키 포레스트로 가야겠어. 거긴 원숭이들의 천국이라고 했어."</p>
+      <p>그러나 동동이는 몽키 포레스트가 어디 있는지 몰랐어요. 태어나서 한 번도 리조트 밖으로 나가 본 적이 없었거든요.</p>
+    </div>
+  </div>
+
+  <!-- 43 -->
+  <div class="slide" data-index="43">
+    <span class="scene-label">전환</span>
+    <div class="slide-body">
+      <p>그때, 피자를 먹던 부부가 떠올랐어요. 몽키 포레스트에 간다고 했던 말도요.</p>
+      <p class="dialogue">'그래! 그 부부를 따라가면 돼!'</p>
+      <p>동동이는 직원과 부부가 인사를 나누는 틈에, 열린 트렁크로 뛰어들어 가방 사이에 몸을 숨겼어요. 가슴이 쿵쾅쿵쾅 뛰었어요.</p>
+    </div>
+  </div>
+
+  <!-- 44 -->
+  <div class="slide" data-index="44">
+    <span class="scene-label">전환</span>
+    <div class="slide-body">
+      <p>어둡고 좁은 트렁크 안에서 차가 덜컹거릴 때마다 속이 울렁거렸지만, 동동이는 이를 꽉 물고 참았어요.</p>
+      <p>얼마나 지났을까요? 차가 멈추고 트렁크 문이 열렸어요. 동동이는 쏟아지는 빛을 향해 뛰쳐나갔어요.</p>
+    </div>
+  </div>
+
+  <!-- 45 -->
+  <div class="slide" data-index="45">
+    <span class="scene-label">전환</span>
+    <div class="slide-body">
+      <p>동동이는 여기저기 살펴봤지만, 다른 원숭이는 한 마리도 보이지 않았어요.</p>
+      <p>큰길에는 자동차가 줄지어 다니고 길가에는 사람들이 북적였어요. 음식을 파는 가게들도 끝도 없이 늘어서 있었지요.</p>
+    </div>
+  </div>
+
+  <!-- 46 -->
+  <div class="slide" data-index="46">
+    <span class="scene-label">전환 · 만남</span>
+    <div class="slide-body">
+      <p>가게 주인이 호통을 치자 동동이는 얼른 뒷걸음질 쳤어요. 예전 같았으면 이빨을 드러내며 더 달려들었을 거예요. 하지만 이제는 그물에 갇힌 딩딩이의 모습이 자꾸 떠올랐어요.</p>
+      <p>결국 아무것도 먹지 못한 채 밤이 깊었고, 동동이는 어두운 골목에 웅크리고 앉아 울었어요.</p>
+      <p class="dialogue">'너무 외로워. 딩딩이는 괜찮을까? 배도 너무 고파.'</p>
+    </div>
+  </div>
+
+  <!-- 47 -->
+  <div class="slide" data-index="47">
+    <span class="scene-label">만남 · 깜비</span>
+    <div class="slide-body">
+      <p>그때, 누군가 살금살금 다가왔어요.</p>
+      <p class="dialogue">"얘, 왜 우니?"</p>
+      <p>깜짝 놀란 동동이는 재빨리 옆에 있는 나무 위로 올라갔어요. 까만 개 한 마리가 올려다보고 있었어요.</p>
+      <p class="dialogue">"나는 거기 못 올라가. 괴롭히지 않을 테니 내려와. 내 이름은 깜비야."</p>
+    </div>
+  </div>
+
+  <!-- 48 -->
+  <div class="slide" data-index="48">
+    <span class="scene-label">만남 · 깜비</span>
+    <div class="slide-body">
+      <p>깜비가 꼬리를 살랑살랑 흔들었어요. 동동이는 조심조심 나무에서 내려왔어요.</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"안녕, 나는 동동이야. 울루와투에서 왔어."</p>
+      <span class="who">깜비</span>
+      <p class="dialogue">"울루와투? 들어 본 적 있어. 바다가 아주 예쁜 곳이라던데. 나는 바다를 한 번도 본 적이 없어. 여기는 우붓이야."</p>
+    </div>
+  </div>
+
+  <!-- 49 -->
+  <div class="slide" data-index="49">
+    <span class="scene-label">만남 · 깜비</span>
+    <div class="slide-body">
+      <p>동동이는 딩딩이를 떠올리며 고개를 숙였어요. 그리고 그간의 이야기를 모두 털어놓았어요.</p>
+      <span class="who">깜비</span>
+      <p class="dialogue">"저런, 동생 일은 정말 속상하겠다. 몽키 포레스트라면 내가 알아. 내일 데려다줄게."</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"정말? 고마워!"</p>
+    </div>
+  </div>
+
+  <!-- 50 -->
+  <div class="slide" data-index="50">
+    <span class="scene-label">만남 · 깜비</span>
+    <div class="slide-body">
+      <p>깜비네 집에서 음식을 나눠 먹으며, 둘은 서로의 고향 이야기를 나누었어요.</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"바다? 음… 엄청 커. 끝이 안 보여. 파랗고, 가만히 있질 않고 계속 움직여. 쏴아, 쏴아 소리도 나."</p>
+      <span class="who">깜비</span>
+      <p class="dialogue">"소리도 나?"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"응. 밤에 나무 위에서 자면 그 소리가 자장가 같아."</p>
+    </div>
+  </div>
+
+  <!-- 51 -->
+  <div class="slide" data-index="51">
+    <span class="scene-label">만남 · 깜비</span>
+    <div class="slide-body">
+      <span class="who">깜비</span>
+      <p class="dialogue">"나는 태어나서 한 번도 우붓 밖으로 나가 본 적이 없어. 터미널에서 사람들이 바다 얘기를 할 때마다 궁금했는데."</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"그럼 나중에 울루와투에 놀러 와. 내가 바다 보여 줄게. 절벽 위에서 보면 진짜 멋있어."</p>
+      <span class="who">깜비</span>
+      <p class="dialogue">"정말? 약속이다!"</p>
+    </div>
+  </div>
+
+  <!-- 52 -->
+  <div class="slide slide-scene-break" data-index="52">
+    <div class="scene-emoji">🌿</div>
+    <div class="scene-title">몽키 포레스트</div>
+    <div class="scene-desc">원숭이들의 천국에 도착하다</div>
+  </div>
+
+  <!-- 53 -->
+  <div class="slide" data-index="53">
+    <span class="scene-label">절정</span>
+    <div class="slide-body">
+      <p>날이 밝자 동동이와 깜비는 서둘러 길을 나섰어요.</p>
+      <p>북적이는 시장을 지나자 가파른 언덕길이 나왔어요. 언덕 위로는 푸른 숲이 울창하게 이어져 있었지요.</p>
+      <span class="who">깜비</span>
+      <p class="dialogue">"자, 여기가 몽키 포레스트 입구야. 나는 원숭이가 아니라서 여기까지만 갈게."</p>
+    </div>
+  </div>
+
+  <!-- 54 -->
+  <div class="slide" data-index="54">
+    <span class="scene-label">절정</span>
+    <div class="slide-body">
+      <p>동동이는 혼자 남았어요. 낯선 숲 앞에 서니 가슴이 두근두근 뛰었어요.</p>
+      <p class="dialogue">'드디어 왔어….'</p>
+      <p>동동이는 숨을 크게 들이쉬고 숲으로 걸어 들어갔어요.</p>
+    </div>
+  </div>
+
+  <!-- 55 -->
+  <div class="slide" data-index="55">
+    <span class="scene-label">절정</span>
+    <div class="slide-body">
+      <p>숲길을 걷던 동동이 앞에 원숭이 한 마리가 덩굴을 타고 휙 내려왔어요.</p>
+      <span class="who">낯선 원숭이</span>
+      <p class="dialogue">"넌 누구야? 처음 보는 얼굴인데?"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"나는 동동이야. 울루와투에서 왔어. 여기가 원숭이들의 천국이라고 해서 찾아왔어."</p>
+      <span class="who">낯선 원숭이</span>
+      <p class="dialogue">"그래? 여기가 몽키 포레스트 맞아. 난 키키야. 따라와 봐."</p>
+    </div>
+  </div>
+
+  <!-- 56 -->
+  <div class="slide" data-index="56">
+    <span class="scene-label">절정</span>
+    <div class="slide-body">
+      <p>장로님은 조용히 듣더니 물었어요.</p>
+      <span class="who">장로님</span>
+      <p class="dialogue">"그래, 여기가 네가 생각하던 천국 같니?"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"처음엔 그랬어요. 나무도 크고, 과일도 많고, 원숭이도 많고요. 그런데… 저 사람들 좀 보세요. 우리를 쫓아내러 오는 거 아니에요?"</p>
+      <span class="who">키키</span>
+      <p class="dialogue">"도망이라니! 너 정말 웃긴다."</p>
+    </div>
+  </div>
+
+  <!-- 57 -->
+  <div class="slide" data-index="57">
+    <span class="scene-label">절정</span>
+    <div class="slide-body">
+      <p>이윽고 사람들이 도착했어요. 그런데 다른 원숭이들은 태연했어요. 나무를 타며 술래잡기를 하는 원숭이도 있고, 나뭇가지에 누워 쿨쿨 낮잠을 자는 원숭이도 있었어요.</p>
+      <p>키키는 나무에서 휙 뛰어내려 사람들 앞에 사뿐히 내려앉았어요. 사람들은 깜짝 놀라더니 이내 웃으며 박수를 쳤어요.</p>
+    </div>
+  </div>
+
+  <!-- 58 -->
+  <div class="slide" data-index="58">
+    <span class="scene-label">절정</span>
+    <div class="slide-body">
+      <p>그때 한 사람이 키키에게 손을 쑥 내밀었어요.</p>
+      <span class="who">동동이 (외치며)</span>
+      <p class="dialogue">"키키야! 조심해!"</p>
+      <p>하지만 키키는 피하지 않았어요. 오히려 손바닥을 쫙 펴서 '짝!' 하이파이브를 했지요.</p>
+      <p class="dialogue">"와, 원숭이가 하이파이브를 해 줬어!"</p>
+    </div>
+  </div>
+
+  <!-- 59 -->
+  <div class="slide" data-index="59">
+    <span class="scene-label">절정 · 깨달음</span>
+    <div class="slide-body">
+      <p>동동이는 눈이 휘둥그레졌어요. 사람들이 무서울 거라는 생각이 완전히 빗나갔거든요.</p>
+      <p>그런데 슬슬 예전 버릇이 올라왔어요. 마침 나무 아래를 지나가는 아주머니의 가방 틈으로 과자 봉지가 삐죽 보였거든요.</p>
+      <p class="dialogue">'저 정도쯤이야.'</p>
+    </div>
+  </div>
+
+  <!-- 60 -->
+  <div class="slide" data-index="60">
+    <span class="scene-label">절정 · 깨달음</span>
+    <div class="slide-body">
+      <p>동동이의 손이 가방 속으로 쑥 들어갔어요. 그런데 그 순간, 누군가 동동이의 손목을 꽉 붙잡았어요. 키키였어요.</p>
+      <span class="who">키키</span>
+      <p class="dialogue">"동동아, 뭐 하는 거야?"</p>
+      <p>주위가 조용해졌어요. 나무 위에서 놀던 원숭이들도, 낮잠을 자던 원숭이들도 모두 동동이를 쳐다보고 있었어요.</p>
+    </div>
+  </div>
+
+  <!-- 61 -->
+  <div class="slide" data-index="61">
+    <span class="scene-label">절정 · 깨달음</span>
+    <div class="slide-body">
+      <p>동동이는 얼른 과자 봉지를 가방에 도로 넣었어요. 얼굴이 화끈거렸어요.</p>
+      <span class="who">키키</span>
+      <p class="dialogue">"여기선 사람들 물건은 건드리지 않아. 그게 우리 약속이야."</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"…몰랐어."</p>
+      <span class="who">키키</span>
+      <p class="dialogue">"알아. 그러니까 지금 알려 주는 거야."</p>
+    </div>
+  </div>
+
+  <!-- 62 -->
+  <div class="slide" data-index="62">
+    <span class="scene-label">절정 · 깨달음</span>
+    <div class="slide-body">
+      <p>동동이는 고개를 들 수가 없었어요. 리조트에서 망고를 훔치고, 피자를 빼앗고, 남의 방을 엉망으로 만들던 일이 하나씩 떠올랐어요.</p>
+      <p>그때 사람들 얼굴이 어땠더라. 동동이는 한 번도 제대로 본 적이 없었어요. 늘 도망치기 바빴으니까요.</p>
+    </div>
+  </div>
+
+  <!-- 63 -->
+  <div class="slide" data-index="63">
+    <span class="scene-label">절정 · 깨달음</span>
+    <div class="slide-body">
+      <p>한쪽에서는 초록색 조끼를 입은 사람들이 원숭이들을 꼼꼼히 살피고 있었어요.</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"저 사람들은 뭐 하는 거야?"</p>
+      <span class="who">키키</span>
+      <p class="dialogue">"우리가 아프거나 다친 데 없나 봐 주는 사람들이야. 먹이도 챙겨 주고, 숲도 가꿔 줘."</p>
+      <p>동동이는 나눠 준 망고 한 조각을 받아 들었어요. 훔친 망고보다 훨씬 달았어요.</p>
+    </div>
+  </div>
+
+  <!-- 64 -->
+  <div class="slide" data-index="64">
+    <span class="scene-label">절정 · 깨달음</span>
+    <div class="slide-body">
+      <p>동동이는 한참 동안 말없이 망고만 바라보았어요.</p>
+      <p class="dialogue">'우리가 먼저 사람들을 괴롭혔구나. 버틀러 아저씨가 화를 낸 것도… 그럴 만했어.'</p>
+    </div>
+  </div>
+
+  <!-- 65 -->
+  <div class="slide" data-index="65">
+    <span class="scene-label">절정 · 귀환 결심</span>
+    <div class="slide-body">
+      <p>장로님은 동동이의 머리를 가만히 쓰다듬었어요.</p>
+      <span class="who">장로님</span>
+      <p class="dialogue">"처음부터 이랬던 건 아니란다. 우리도, 사람들도 조금씩 애를 썼지."</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"저, 울루와투로 돌아갈래요. 거기가 제 집이니까요. 딩딩이도 찾아야 하고, 버틀러 아저씨한테 사과도 하고 싶어요."</p>
+    </div>
+  </div>
+
+  <!-- 66 -->
+  <div class="slide slide-scene-break" data-index="66">
+    <div class="scene-emoji">🚐</div>
+    <div class="scene-title">집으로 돌아가는 길</div>
+    <div class="scene-desc">루비를 만나다</div>
+  </div>
+
+  <!-- 67 -->
+  <div class="slide" data-index="67">
+    <span class="scene-label">귀환</span>
+    <div class="slide-body">
+      <p>깜비는 동동이를 터미널까지 태워다 주었어요.</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"네가 없었으면 아무것도 못 했을 거야. 정말 고마워, 깜비야."</p>
+      <span class="who">깜비</span>
+      <p class="dialogue">"켁켁! 숨 막혀! 다음에 내가 울루와투 놀러 가면 재워 줘야 한다!"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"물론이지! 꼭 와!"</p>
+    </div>
+  </div>
+
+  <!-- 68 -->
+  <div class="slide" data-index="68">
+    <span class="scene-label">귀환</span>
+    <div class="slide-body">
+      <p>바람에 실려 익숙한 향기가 코끝을 스쳤어요. 달콤하고, 조금은 시원한 냄새.</p>
+      <p>동동이는 고개를 번쩍 들었어요. 저 끝에 서 있는 승합차 옆에서, 귀 뒤에 하얀 꽃 한 송이를 꽂은 아저씨가 보였어요.</p>
+      <p class="dialogue">'플루메리아! 더 발리 아저씨들이 꽂는 꽃이야!'</p>
+    </div>
+  </div>
+
+  <!-- 69 -->
+  <div class="slide" data-index="69">
+    <span class="scene-label">귀환 · 루비</span>
+    <div class="slide-body">
+      <p>마침 여덟 살쯤 되어 보이는 여자아이 루비와 엄마, 아빠가 그 차로 걸어갔어요. 동동이는 그 틈을 놓치지 않았어요.</p>
+      <p>동동이가 트렁크 안으로 쏙 들어간 순간, 트렁크 앞에 서 있던 루비와 눈이 딱 마주쳤어요.</p>
+      <p>동동이는 얼른 손가락을 입에 대고, 두 손을 모아 싹싹 빌었어요.</p>
+    </div>
+  </div>
+
+  <!-- 70 -->
+  <div class="slide" data-index="70">
+    <span class="scene-label">귀환 · 루비</span>
+    <div class="slide-body">
+      <p>루비는 놀란 얼굴로 주위를 두리번거리더니, 메고 있던 가방 지퍼를 살짝 열며 손짓했어요.</p>
+      <span class="who">루비</span>
+      <p class="dialogue">"어서, 여기로 들어와!"</p>
+      <p>루비는 가방을 꼭 끌어안고 차에 탔어요. 차가 출발하자 루비는 엄마 아빠 몰래 가방 속으로 물과 망고 하나를 넣어 주었어요.</p>
+      <span class="who">루비</span>
+      <p class="dialogue">"배고프지? 이거 먹어. 너, 몰래 어디 가는 거지? 걱정 마. 비밀 지켜 줄게."</p>
+    </div>
+  </div>
+
+  <!-- 71 -->
+  <div class="slide" data-index="71">
+    <span class="scene-label">귀환</span>
+    <div class="slide-body">
+      <p>예전에는 사람들이 무섭기만 했는데, 루비의 목소리를 들으니 마음이 따뜻해졌어요.</p>
+      <p>가방 속에서 동동이는 생각했어요.</p>
+      <p class="dialogue">'버틀러 아저씨를 만나면 어떡하지… 그래도 이번엔 도망치지 말아야지. 딩딩이를 찾으려면.'</p>
+    </div>
+  </div>
+
+  <!-- 72 -->
+  <div class="slide slide-scene-break" data-index="72">
+    <div class="scene-emoji">🌺</div>
+    <div class="scene-title">더 발리 리조트</div>
+    <div class="scene-desc">사과, 그리고 재회</div>
+  </div>
+
+  <!-- 73 -->
+  <div class="slide" data-index="73">
+    <span class="scene-label">결말</span>
+    <div class="slide-body">
+      <p>멀리서 버틀러 아저씨가 걸어오는 게 보였어요. 동동이는 저도 모르게 몸을 움츠렸어요. 도망칠까… 잠깐 생각했지요.</p>
+      <p>그런데 발이 떨어지지 않았어요. 여기서 또 도망치면 딩딩이를 영영 못 만날 것 같았거든요.</p>
+    </div>
+  </div>
+
+  <!-- 74 -->
+  <div class="slide" data-index="74">
+    <span class="scene-label">결말</span>
+    <div class="slide-body">
+      <p>동동이는 루비가 준 망고를 꼭 쥐고 아저씨 앞으로 한 걸음 나섰어요. 그리고 망고를 내밀며 고개를 푹 숙였어요.</p>
+      <p>버틀러 아저씨는 한참 동안 동동이를 내려다보았어요. 그러더니 천천히 쪼그려 앉아 망고를 받았지요.</p>
+      <span class="who">버틀러 아저씨</span>
+      <p class="dialogue">"오랜만이네, 너도 미안했나보구나."</p>
+    </div>
+  </div>
+
+  <!-- 75 -->
+  <div class="slide" data-index="75">
+    <span class="scene-label">결말</span>
+    <div class="slide-body">
+      <span class="who">버틀러 아저씨</span>
+      <p class="dialogue">"나도 너희가 미워서 그런 건 아니었단다. 손님들이 속상해하니 어쩔 수 없었지. 그런데 딩딩이와 함께 시간을 보내다 보니, 너희도 그저 배고프고 심심했던 거더구나. 동생 찾으러 왔지? 나랑 같이 가자."</p>
+    </div>
+  </div>
+
+  <!-- 76 -->
+  <div class="slide" data-index="76">
+    <span class="scene-label">결말 · 재회</span>
+    <div class="slide-body">
+      <p>아저씨를 따라 리조트 뒤쪽 정원으로 가자, 그곳에서 놀고 있는 딩딩이가 보였어요!</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"딩딩아!"</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"형!"</p>
+      <p>두 형제는 서로를 꼭 끌어안았어요. 얼굴을 비비고, 웃고, 또 웃었지요.</p>
+    </div>
+  </div>
+
+  <!-- 77 -->
+  <div class="slide" data-index="77">
+    <span class="scene-label">결말</span>
+    <div class="slide-body">
+      <p>정원 한쪽에는 작은 물웅덩이와 그네처럼 매달린 밧줄, 과일이 담긴 바구니가 놓여 있었어요.</p>
+      <span class="who">버틀러 아저씨</span>
+      <p class="dialogue">"손님들 방에 들어가는 대신, 여기서 마음껏 놀라고 만든 곳이란다."</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"형, 깜비라는 강아지도 언젠가 여기 와?"</p>
+      <span class="who">동동이</span>
+      <p class="dialogue">"응. 약속했어. 오면 제일 먼저 여기 데려올 거야."</p>
+    </div>
+  </div>
+
+  <!-- 78 -->
+  <div class="slide" data-index="78">
+    <span class="scene-label">결말</span>
+    <div class="slide-body">
+      <span class="who">동동이</span>
+      <p class="dialogue">"형은 어디 갔었어?"</p>
+      <p>동동이가 말했어요. 몽키 포레스트에서 보고 느낀 것들을.</p>
+      <p class="dialogue">"거기선 원숭이들이 사람들 물건을 건드리지 않고, 사람들도 원숭이들을 괴롭히지 않더라. 서로 약속을 지키니까 다들 즐겁게 지내."</p>
+      <span class="who">딩딩이</span>
+      <p class="dialogue">"그럼 우리도 약속하면 되겠네!"</p>
+    </div>
+  </div>
+
+  <!-- 79 -->
+  <div class="slide" data-index="79">
+    <span class="scene-label">결말</span>
+    <div class="slide-body">
+      <p>그날 이후, 동동이와 딩딩이는 더 이상 사람들 방에 몰래 들어가지 않았어요. 음식을 훔치지도, 사람들을 놀라게 하지도 않았지요.</p>
+      <p>대신 정원에서 신나게 놀고, 지나가는 손님들에게 반갑게 인사를 했답니다.</p>
+    </div>
+  </div>
+
+  <!-- 80 -->
+  <div class="slide" data-index="80">
+    <span class="scene-label">결말 · 작별</span>
+    <div class="slide-body">
+      <p>며칠 뒤, 루비네 가족이 리조트를 떠나는 날이었어요.</p>
+      <p>동동이는 루비에게 작은 망고 하나를 내밀었어요. 그러고는 손바닥을 쫙 편 채 가만히 기다리고 있었어요.</p>
+      <span class="who">루비</span>
+      <p class="dialogue">"응? 아하!"</p>
+      <p>루비는 웃으며 동동이의 손바닥에 자기 손바닥을 짝! 하고 마주쳤어요.</p>
+      <p class="dialogue">"하이파이브! 이제 우린 친구야! 꼭 다시 만나자!"</p>
+    </div>
+  </div>
+
+  <!-- 81 마지막 장면 -->
+  <div class="slide" data-index="81">
+    <span class="scene-label">결말</span>
+    <div class="slide-body">
+      <p>그날 저녁, 동동이와 딩딩이는 절벽 위 나무에 나란히 앉아 바다를 보았어요.</p>
+      <p>해가 바다 속으로 천천히 들어가고 있었지요. 쏴아, 쏴아. 파도 소리가 들려왔어요.</p>
+      <p>딩딩이는 형 어깨에 머리를 기댔어요. 동동이는 깜비가 이 바다를 처음 보는 얼굴을 떠올려 보았어요. 아마 입을 떡 벌리고, 꼬리를 정신없이 흔들겠지.</p>
+      <p>동동이는 저도 모르게 웃음이 났어요.</p>
+    </div>
+  </div>
+
+  <!-- 82 에필로그 -->
+  <div class="slide" data-index="82">
+    <span class="scene-label">에필로그</span>
+    <div class="slide-body">
+      <p>인도네시아 발리에는 울루와투라는 곳이 있어요.</p>
+      <p>울창한 숲과 푸른 바다, 절벽에서 떨어지는 폭포가 있는 곳이지요.</p>
+      <p>그리고 그곳 어느 리조트 정원에는, 사람을 만나면 손바닥을 쫙 펴고 기다리는 원숭이 형제가 살고 있답니다.</p>
+    </div>
+  </div>
+
+  <!-- 83 끝 -->
+  <div class="slide slide-end" data-index="83">
+    <div class="end-emoji">🐒🤝🧒</div>
+    <div class="end-title">끝</div>
+    <div class="end-sub">류봉두 지음<br>고흥대서중학교 국어 수업</div>
+  </div>
+
+</div><!-- /stage -->
+
+<nav class="nav">
+  <button class="nav-btn" id="btn-prev" aria-label="이전 슬라이드" disabled>‹</button>
+  <div class="progress" role="progressbar" aria-label="진행도">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+  <button class="nav-btn" id="btn-next" aria-label="다음 슬라이드">›</button>
+  <button class="fullscreen-btn" id="btn-fs" title="전체화면">⤢</button>
+</nav>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let cur = 0;
+
+  const counter = document.getElementById('counter');
+  const fill = document.getElementById('progress-fill');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+
+  function go(n){
+    if(n < 0 || n >= total) return;
+    slides[cur].classList.remove('active');
+    cur = n;
+    slides[cur].classList.add('active');
+    counter.textContent = (cur+1) + ' / ' + total;
+    fill.style.width = ((cur/(total-1))*100) + '%';
+    btnPrev.disabled = cur === 0;
+    btnNext.disabled = cur === total-1;
+    slides[cur].scrollIntoView({block:'nearest'});
+  }
+
+  btnPrev.addEventListener('click', () => go(cur-1));
+  btnNext.addEventListener('click', () => go(cur+1));
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(cur+1); }
+    if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); go(cur-1); }
+    if(e.key === 'Home') { e.preventDefault(); go(0); }
+    if(e.key === 'End') { e.preventDefault(); go(total-1); }
+  });
+
+  /* 터치 스와이프 */
+  let tx = 0;
+  document.getElementById('stage').addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
+  document.getElementById('stage').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if(Math.abs(dx) > 40) go(dx < 0 ? cur+1 : cur-1);
+  }, {passive:true});
+
+  /* 전체화면 */
+  document.getElementById('btn-fs').addEventListener('click', () => {
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen().catch(()=>{});
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

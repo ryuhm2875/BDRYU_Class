@@ -1,7 +1,7 @@
 /* ──────────────────────────────────────────────────────────────
    RYUNO · 칠판과 학생 화면이 함께 쓰는 그림·글
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611061330";
+import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611061331";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const 이가 = w => /[가-힣]$/.test(w) && (w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? "이" : "가";

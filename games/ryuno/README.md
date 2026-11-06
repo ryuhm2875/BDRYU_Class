@@ -17,10 +17,13 @@ games/ryuno/
 ├─ js/engine.js                규칙 엔진 (칠판만 실행)
 ├─ js/board.js                 칠판: 대기실 · 게임판 · 결과
 ├─ js/player.js                학생 화면
-├─ js/ui.js                    카드 그림 · 알림 글
+├─ js/ui.js                    카드 그림 · 알림 글 · 자음 체계표 · 규칙
+├─ js/qbank.js                 문제 은행 · 문제 관리 화면
+├─ js/sound.js                 배경음 · 효과음 (WebAudio)
 ├─ js/app.js                   처음 화면 · 참가
 ├─ data/questions.json         +4 방어 문제
 ├─ tests/engine.test.mjs       엔진 자동 시험 (node 로 실행)
+├─ tools/bump-version.py       고친 뒤 실행: 파일 주소에 새 버전 번호
 ├─ fonts/                      기존 게임과 같은 글꼴(NSK)
 └─ firebase/database.rules.json  잠금 모드용 보안 규칙 (지금은 쓰지 않음)
 ```
@@ -64,7 +67,7 @@ games/ryuno/
 
 ## 게임 규칙 (고정)
 
-- 카드 110장: 자음 72장(색마다 18장), 색마다 건너뛰기·방향 반대·+2 각 2장, 단모음 와일드 10장, +4 4장
+- 카드 110장: 자음 72장(색마다 18장: 빨강 9종×2, 파랑 3종×6, 노랑 3종×6, 초록 ㄴㅁㅇ×4·ㄹ×6), 색마다 건너뛰기·방향 반대·+2 각 2장, 단모음 와일드 10장, +4 4장
 - 색 = 조음 방법: 빨강 파열음 · 파랑 마찰음 · 노랑 파찰음 · 초록 울림소리
 - 바닥 카드와 **색 · 조음 위치 · 소리 세기 · 글자 · 특수 기호** 중 하나만 같으면 낼 수 있음
 - 낼 카드가 없으면 1장 뽑기. 뽑은 카드를 낼 수 있으면 바로 내거나 넘기기
@@ -84,3 +87,38 @@ games/ryuno/
 - 엔진: `node games/ryuno/tests/engine.test.mjs`
   규칙 52가지 확인, 무작위 자동 대전 3000판, 섞기 11만 번 고르기 검사
 - 화면: `?local=1` 을 붙여 한 브라우저에서 칠판 탭 1개 + 학생 탭 여러 개
+
+## 데이터베이스 구조 (Realtime Database)
+
+```
+rooms/ryuno-방번호/
+├─ meta    { host: 칠판 기기 번호, at: 마지막 신호 시각, v }
+├─ pub     칠판이 쓰고 모두가 읽는 공개 정보
+│          { phase: lobby|play|end, round, cfg:{size, level},
+│            tables:{ 테이블번호: { p:[사람], n:{사람:장수}, turn, dir, top, color, deck,
+│                                   phase, seq, dl, drawn, uno, ready, quiz(정답 빠짐), winner, ev:[최근 사건] } },
+│            paused, pop(깜짝 문제, 끝나기 전엔 정답 빠짐), stars:{사람:별} }
+├─ seats/기기번호   { name, on(접속 중), at }       ← 학생이 씀
+├─ hands/기기번호   { tid, round, cards:[카드 번호], drawn }   ← 칠판이 씀, 화면에는 자기 것만
+└─ inbox/기기번호/요청   { t: play|draw|pass|uno|catch|answer|pop, seq, card, color, choice, at }
+                                                  ← 학생이 쓰고 칠판이 읽고 지움
+```
+
+- 카드 더미 순서는 칠판 기기 안에만 있고 DB에 올라가지 않습니다.
+- 판정은 칠판만 합니다. 학생 기기는 '요청'만 보내고, 칠판이 도착 순서대로 처리합니다.
+  `seq`(판 번호)가 다른 요청은 버리므로 두 번 누름·늦은 요청이 판을 바꾸지 못합니다.
+- 칠판 상태는 칠판 기기의 브라우저(localStorage)에도 저장되어, 새로 고침해도 이어집니다.
+
+## 배포
+
+GitHub Pages 그대로입니다. 저장소에 올리면 1~2분 뒤 반영됩니다.
+
+1. 파일을 고친 뒤 `python3 games/ryuno/tools/bump-version.py` 실행
+   (학생 기기에 남은 옛 파일 대신 새 파일을 받게 하는 번호)
+2. 커밋하고 `main` 에 올리기
+
+## 문제 · 카드 내용 고치기
+
+- 방어 문제: 칠판의 [문제 관리]에서 더하기·고치기·끄기 (칠판 기기에 저장, [내보내기]로 옮기기)
+  기본 문제를 바꾸려면 `data/questions.json` 을 고칩니다. `a` 는 정답 번호(0부터)
+- 카드 분류·설명·콤보: `js/cards.js` 의 `CONS`(자음), `VOWELS`(단모음), `COMBOS`(음운 변동)

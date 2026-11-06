@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611061325";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611061325";
-import { matchReason, RULES } from "./engine.js?v=202611061325";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611061325";
-import { Sound, fxOf } from "./sound.js?v=202611061325";
+import { Net, P } from "./net.js?v=202611061330";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611061330";
+import { matchReason, RULES } from "./engine.js?v=202611061330";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611061330";
+import { Sound, fxOf } from "./sound.js?v=202611061330";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -65,8 +65,9 @@ export function Player(code, name, ctx) {
     if (!pub || !pub.tables || !hand || hand.round !== pub.round) return null;
     return pub.tables[hand.tid] || null;
   };
+  /* 차례 행동(내기·뽑기·넘기기)만 답이 올 때까지 잠깐 잠금. 류노·잡았다·문제 답은 잠그지 않음 */
   const send = msg => {
-    pending = Date.now();
+    if (["play", "draw", "pass"].includes(msg.t)) pending = Date.now();
     return Net.push(P.mail(code, me), Object.assign({ at: Net.TS }, msg)).catch(() => { pending = 0; });
   };
   const busy = () => Date.now() - pending < 2500;
@@ -247,7 +248,7 @@ export function Player(code, name, ctx) {
     if (e.target.closest("[data-rules]")) return g("rules").click();
     if (e.target.closest("[data-close]")) { const m = g("modal"); m.className = "modal"; m.dataset.kind = ""; return draw(); }
     const pb = e.target.closest("[data-pop]");
-    if (pb) { if (popPick != null) return; popPick = +pb.dataset.pop; send({ t: "pop", choice: popPick }); pending = 0; return overlays(); }
+    if (pb) { if (popPick != null) return; popPick = +pb.dataset.pop; send({ t: "pop", choice: popPick }); return overlays(); }
     const b = e.target.closest("[data-a],[data-ans],[data-color]");
     if (b && b.id !== "deck") {
       if (b.dataset.color != null) {

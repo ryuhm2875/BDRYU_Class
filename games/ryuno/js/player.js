@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js";
-import { matchReason, RULES } from "./engine.js";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js";
-import { Sound, fxOf } from "./sound.js";
+import { Net, P } from "./net.js?v=202611061325";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611061325";
+import { matchReason, RULES } from "./engine.js?v=202611061325";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611061325";
+import { Sound, fxOf } from "./sound.js?v=202611061325";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {

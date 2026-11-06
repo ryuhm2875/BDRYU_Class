@@ -5,7 +5,7 @@
      가짜 DB도 보안 규칙과 같은 권한 검사를 흉내 냅니다.
    - 게임 코드는 이 파일의 Net 만 쓰고, 어느 모드인지 신경 쓰지 않습니다.
    ────────────────────────────────────────────────────────────── */
-import { FIREBASE_CONFIG, FIREBASE_SDK, SECURE, roomPath, STALE_MS } from "./firebase-config.js";
+import { FIREBASE_CONFIG, FIREBASE_SDK, SECURE, roomPath, STALE_MS } from "./firebase-config.js?v=202611061325";
 export { SECURE };
 
 const QS = new URLSearchParams(location.search);

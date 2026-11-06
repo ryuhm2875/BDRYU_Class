@@ -8,7 +8,7 @@
 import { Net, P, CODE_RE } from "./net.js";
 import { Board } from "./board.js";
 import { Player } from "./player.js";
-import { esc } from "./ui.js";
+import { esc, rulesHTML } from "./ui.js";
 
 const QS = new URLSearchParams(location.search);
 const $app = document.getElementById("app");
@@ -61,13 +61,19 @@ function Home() {
     <div class="grid2">
       <div class="box"><h2 style="margin-top:0">칠판 · 모둠 태블릿</h2>
         <p class="muted" style="margin-bottom:16px">방 번호와 QR을 띄우고 게임판을 보여 줍니다. 이 기기가 심판을 맡아요.</p>
-        <button class="pill y" id="mk">방 만들기</button></div>
+        <div class="row"><button class="pill y" id="mk">방 만들기</button><button class="pill" id="rl">📖 규칙 보기</button></div></div>
       <div class="box"><h2 style="margin-top:0">참가 (학생)</h2>
         <input class="inp code" id="jc" maxlength="6" placeholder="방 번호" autocomplete="off" autocapitalize="characters">
         <div class="row" style="margin-top:12px"><button class="pill" id="jb">들어가기</button></div>
         <div id="jm"></div></div>
     </div></div>`;
   watchConn();
+  document.getElementById("rl").onclick = () => {
+    const m = document.createElement("div"); m.className = "modal on";
+    m.innerHTML = `<div class="mbox rulesbox">${rulesHTML()}<button class="pill y">알겠어요</button></div>`;
+    m.onclick = e => { if (e.target === m || e.target.tagName === "BUTTON") m.remove(); };
+    document.body.appendChild(m);
+  };
   document.getElementById("mk").onclick = () => { location.href = `${location.pathname}?board=1${keepParams()}`; };
   const go = () => {
     const c = document.getElementById("jc").value.trim().toUpperCase();
@@ -114,8 +120,13 @@ async function enter(code, name) {
     await Net.update(seatPath, { name, on: true, at: Net.TS });
     await Net.onDisconnectSet(`${seatPath}/on`, false);   // 끊기면 서버가 '나감'으로 표시
   };
+  let out = false, had = false;
   try { await sit(); } catch (e) { return joinMsg("방에 들어가지 못했어요. 방이 닫혔을 수 있어요."); }
-  Net.onConn(ok => { if (ok) sit().catch(() => {}); });   // 다시 연결되면 자리 되찾기
-  Net.on(P.meta(code), m => { if (!m) joinMsg("선생님이 방을 닫았어요."); });
+  Net.onConn(ok => { if (ok && !out) sit().catch(() => {}); });   // 다시 연결되면 자리 되찾기
+  Net.on(P.meta(code), m => { if (!m && !out) { out = true; joinMsg("선생님이 방을 닫았어요."); } });
+  Net.on(seatPath, v => {                                            // 선생님이 내보내면 자리가 사라짐
+    if (v) had = true;
+    else if (had && !out) { out = true; joinMsg(`선생님이 방에서 내보냈어요.<br>다시 참가하려면 <a class="y" href="${ctx.joinURL(code)}">여기</a>를 누르세요.`); }
+  });
   Player(code, name, ctx);
 }

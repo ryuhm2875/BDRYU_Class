@@ -3,37 +3,39 @@
    - 이 기기만 규칙 엔진을 돌립니다. 학생 요청은 신호함(inbox)으로 받아
      도착 순서대로 하나씩 처리하므로, 동시에 눌러도 판이 꼬이지 않습니다.
    - 전자칠판: 테이블 여러 개를 한꺼번에 / 모둠 태블릿: 테이블 하나
+   - [선생님] 판: 멈춤 · 깜짝 문제 · 난이도 · 학생 관리 · 별 순위 · 소리
    ────────────────────────────────────────────────────────────── */
 import { Net, P, newCode } from "./net.js";
 import { STALE_MS } from "./firebase-config.js";
 import * as E from "./engine.js";
-import { DECK, COLOR_INFO } from "./cards.js";
+import { COLOR_INFO } from "./cards.js";
 import { shuffle } from "./rng.js";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft } from "./ui.js";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML } from "./ui.js";
+import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js";
+import { Sound, fxOf } from "./sound.js";
 
 const LS = "ryuno-host-v1";
 const LEVELS = {
-  easy:   { name: "쉬움",   desc: "1~2단계 · 자음과 모음, 조음 방법", lv: [1, 2] },
-  normal: { name: "보통",   desc: "1~3단계 · 세기, 단모음, 이중 모음까지", lv: [1, 2, 3] },
-  hard:   { name: "어려움", desc: "2~5단계 · 음운 변동까지", lv: [2, 3, 4, 5] }
+  easy:   { name: "쉬움",   desc: "1~2단계 · 자음과 모음, 조음 위치와 방법", lv: [1, 2] },
+  normal: { name: "보통",   desc: "1~3단계 · 소리의 세기, 단모음, 이중 모음까지", lv: [1, 2, 3] },
+  hard:   { name: "어려움", desc: "3~5단계 · 음운 변동까지", lv: [3, 4, 5] }
 };
+const POP_MS = 15000, POP_SHOW_MS = 7000, STAR = { win: 3, defend: 1, pop: 1 };
 const ls = {
   get: (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 
-let H = null, code = null, seats = {}, BANK = [], ctx = null;
-let $stage, toast, lastEv = {}, flash = {};
+let H = null, code = null, seats = {}, ctx = null;
+let $stage, $tp = null, toast, lastEv = {}, flash = {}, tpOpen = false, popLevel = 2;
 
 /* ================================================================ 시작 */
 export async function Board(context) {
   ctx = context;
   const $app = document.getElementById("app");
   $app.innerHTML = `<div class="wrap"><div class="logo">RYUNO</div><p class="muted">방을 여는 중…</p></div>`;
+  await initBank();
 
-  BANK = await fetch("data/questions.json").then(r => r.json()).then(j => j.questions || []).catch(() => []);
-
-  /* 지난번 방이 아직 내 것이면 이어서, 아니면 새 방 */
   const saved = ls.get(LS, null);
   if (saved && saved.code) {
     const m = await Net.get(P.meta(saved.code)).catch(() => null);
@@ -49,6 +51,7 @@ export async function Board(context) {
     if (!code) { $app.innerHTML = `<div class="err"><h1>방을 열지 못했어요</h1><p class="lead">새로 고침해 주세요.</p></div>`; return; }
     H = { code, phase: "lobby", cfg: { size: 4, level: "normal" }, round: 0, tables: {}, recentQ: [] };
   }
+  H = Object.assign({ stars: {}, history: [], awarded: {}, paused: null, pop: null, recentQ: [] }, H);
   save();
 
   const beat = () => Net.update(P.meta(code), { at: Net.TS }).catch(() => {});
@@ -59,6 +62,8 @@ export async function Board(context) {
   $stage = document.getElementById("stage");
   const fit = () => { const s = Math.min(innerWidth / 1280, innerHeight / 720); $stage.style.transform = `scale(${s})`; };
   addEventListener("resize", fit); fit();
+  Sound.unlockOnTouch(true);
+  addEventListener("keydown", e => { if (e.key === " " && H.phase === "play" && e.target === document.body) { e.preventDefault(); togglePause(); } });
 
   Net.on(P.seats(code), v => { seats = v || {}; render(); });
   listenInbox();
@@ -74,9 +79,10 @@ function publish() {
   pubT = setTimeout(() => {
     const tables = {};
     for (const [id, T] of Object.entries(H.tables)) tables[id] = E.publicView(T);
-    Net.set(P.pub(code), { phase: H.phase, round: H.round, cfg: H.cfg, tables }).catch(() => {});
+    const pop = H.pop ? { id: H.pop.id, q: H.pop.q, opts: H.pop.opts, dl: H.pop.dl, cnt: Object.keys(H.pop.ans).length, done: H.pop.done,
+      a: H.pop.done ? H.pop.a : null, ex: H.pop.done ? H.pop.ex : null, right: H.pop.done ? H.pop.right : null } : null;
+    Net.set(P.pub(code), { phase: H.phase, round: H.round, cfg: H.cfg, tables, paused: !!H.paused, pop, stars: H.stars }).catch(() => {});
 
-    /* 손패: 바뀐 사람 것만 다시 씀 */
     const upd = {}, inGame = new Set();
     for (const T of Object.values(H.tables)) for (const p of T.players) {
       inGame.add(p);
@@ -107,86 +113,171 @@ function listenInbox() {
     if (changed) afterChange();
   });
 }
-function tableOf(pid) {
-  for (const T of Object.values(H.tables)) if (T.players.includes(pid)) return T;
-  return null;
-}
+const tableOf = pid => Object.values(H.tables).find(T => T.players.includes(pid)) || null;
 function handle(u, m) {
-  if (H.phase !== "play" || !m || typeof m.t !== "string") return false;
+  if (!m || typeof m.t !== "string") return false;
+  if (m.t === "pop") {
+    const p = H.pop;
+    if (!p || p.done || Net.now() > p.dl + 500 || p.ans[u] != null || !seats[u]) return false;
+    p.ans[u] = +m.choice; return true;
+  }
+  if (H.phase !== "play" || H.paused) return false;
   const T = tableOf(u); if (!T) return false;
-  const r = E.act(T, u, m, Net.now(), quizPicker);
-  return r.ok;
-}
-
-/* +4 방어 문제 고르기: 난이도에 맞는 것 중 최근에 안 나온 것, 보기 순서는 섞음 */
-function quizPicker() {
-  const lv = LEVELS[H.cfg.level].lv;
-  let pool = BANK.filter(q => lv.includes(q.lv));
-  if (!pool.length) return null;
-  const fresh = pool.filter(q => !H.recentQ.includes(q.id));
-  if (fresh.length) pool = fresh; else H.recentQ = [];
-  const q = pool[Math.floor(Math.random() * pool.length)];
-  H.recentQ.push(q.id); if (H.recentQ.length > 30) H.recentQ.shift();
-  const order = shuffle(q.opts.map((_, i) => i));
-  return { id: q.id, q: q.q, opts: order.map(i => q.opts[i]), a: order.indexOf(q.a), ex: q.ex || "" };
+  return E.act(T, u, m, Net.now(), () => pickQuestion(LEVELS[H.cfg.level].lv, H.recentQ)).ok;
 }
 
 function afterChange() {
-  if (H.phase === "play" && Object.values(H.tables).every(T => T.phase === "end")) H.phase = "end";
+  /* 별 주기: 승리 3개, 방어 성공 1개 */
+  for (const T of Object.values(H.tables)) {
+    const seen = H.awarded[T.id] || 0;
+    for (const e of T.ev) if (e.n > seen) {
+      if (e.t === "win" && !e.left && e.pid) star(e.pid, STAR.win);
+      if (e.t === "quizres" && e.ok) star(e.pid, STAR.defend);
+    }
+    H.awarded[T.id] = T.evn;
+  }
+  if (H.phase === "play" && Object.values(H.tables).every(T => T.phase === "end")) {
+    H.phase = "end";
+    H.history.push({ round: H.round, tables: Object.values(H.tables).map(T => ({ id: T.id, winner: T.winner, ranks: E.ranking(T).map(p => [p, T.hands[p].length]) })) });
+    if (H.history.length > 30) H.history.shift();
+  }
+  Sound.setScene(H.phase === "end" ? "win" : H.phase === "play" ? "play" : "lobby");
   publish(); render();
 }
+const star = (pid, n) => { H.stars[pid] = (H.stars[pid] || 0) + n; };
 
-/* 0.25초마다: 시간 초과 처리와 남은 시간 표시 */
+/* 0.25초마다: 시간 초과 · 깜짝 문제 마감 · 남은 시간 표시 */
+let lastTickSec = 0;
 function loop() {
-  if (H.phase === "play") {
-    let ch = false;
-    for (const T of Object.values(H.tables)) if (T.phase !== "end" && E.tick(T, Net.now())) ch = true;
-    if (ch) afterChange();
-  }
   const now = Net.now();
+  if (H.pop && !H.pop.done) {
+    const on = Object.entries(seats).filter(([, s]) => s && s.on).map(([u]) => u);
+    if (now > H.pop.dl || (on.length && on.every(u => H.pop.ans[u] != null))) finishPop();
+  } else if (H.pop && H.pop.done && now > H.pop.shownUntil) {
+    const resume = H.pop.autoPaused; H.pop = null;
+    if (resume && H.paused) togglePause(); else afterChange();
+  }
+  if (H.phase === "play" && !H.paused) {
+    let ch = false;
+    for (const T of Object.values(H.tables)) if (T.phase !== "end" && E.tick(T, now)) ch = true;
+    if (ch) afterChange();
+    /* 테이블 하나일 때 마지막 5초 똑딱 */
+    const ts = Object.values(H.tables);
+    if (ts.length === 1 && ts[0].phase !== "end") {
+      const dl = ts[0].phase === "quiz" ? ts[0].quiz.deadline : ts[0].deadline, s = secLeft(dl, now);
+      if (s <= 5 && s > 0 && s !== lastTickSec) Sound.fx("tick");
+      lastTickSec = s;
+    }
+  }
   $stage.querySelectorAll("[data-dl]").forEach(el => {
     const dl = +el.dataset.dl, tot = +el.dataset.tot || 20000;
-    if (el.classList.contains("bar")) el.firstElementChild.style.width = Math.max(0, Math.min(100, (dl - now) / tot * 100)) + "%";
-    else el.textContent = secLeft(dl, now);
+    const left = H.paused && !el.closest(".ov") ? dl - H.paused : dl - now;
+    if (el.classList.contains("bar")) el.firstElementChild.style.width = Math.max(0, Math.min(100, left / tot * 100)) + "%";
+    else el.textContent = Math.max(0, Math.ceil(left / 1000));
   });
 }
 
-/* ================================================================ 판 시작 */
+/* ================================================================ 선생님이 하는 일 */
 const online = () => Object.entries(seats).filter(([, s]) => s && s.on).map(([u]) => u);
 function startRound() {
   const ids = shuffle(online());
-  if (ids.length < 2) return;
-  const k = Math.ceil(ids.length / H.cfg.size);
+  if (ids.length < 2) return alert("두 명 이상 들어와야 시작할 수 있어요.");
+  const k = E.tableCount(ids.length, H.cfg.size);
   const groups = Array.from({ length: k }, () => []);
   ids.forEach((u, j) => groups[j % k].push(u));
-  H.tables = {};
+  H.tables = {}; H.awarded = {}; H.paused = null;
   const now = Net.now();
   groups.forEach((g, i) => { const id = String(i + 1); H.tables[id] = E.newTable(id, g, now); });
   H.round++; H.phase = "play"; lastEv = {};
+  Sound.start();
   afterChange();
 }
-function toLobby() { H.phase = "lobby"; H.tables = {}; afterChange(); }
+function toLobby() { H.phase = "lobby"; H.tables = {}; H.paused = null; afterChange(); }
+function togglePause() {
+  if (H.phase !== "play") return;
+  const now = Net.now();
+  if (H.paused) { const ms = now - H.paused; Object.values(H.tables).forEach(T => E.shiftTime(T, ms)); H.paused = null; }
+  else H.paused = now;
+  afterChange();
+}
+function startPop(lv) {
+  const q = pickQuestion([lv], H.recentQ);
+  if (!q) return alert("켜진 문제가 없어요. [문제 관리]에서 문제를 켜 주세요.");
+  const auto = H.phase === "play" && !H.paused;
+  if (auto) togglePause();
+  H.pop = Object.assign(q, { dl: Net.now() + POP_MS, ans: {}, done: false, autoPaused: auto });
+  closePanel();
+  Sound.fx("pop");
+  afterChange();
+}
+function finishPop() {
+  const p = H.pop; p.done = true;
+  p.right = Object.entries(p.ans).filter(([, c]) => c === p.a).map(([u]) => u);
+  p.right.forEach(u => star(u, STAR.pop));
+  p.shownUntil = Net.now() + POP_SHOW_MS;
+  Sound.fx("good");
+  afterChange();
+}
+function kick(pid) {
+  const s = seats[pid]; if (!s) return;
+  if (!confirm(`${s.name} 학생을 내보낼까요? (다시 들어오면 새로 참가합니다)`)) return;
+  const T = tableOf(pid);
+  if (T) E.removePlayer(T, pid, Net.now());
+  Net.remove(P.seat(code, pid)).catch(() => {});
+  delete seats[pid];
+  afterChange();
+}
+function rename(pid) {
+  const s = seats[pid]; if (!s) return;
+  const n = (prompt("새 이름 (12자까지)", s.name) || "").trim().slice(0, 12);
+  if (n) Net.update(P.seat(code, pid), { name: n }).catch(() => {});
+}
+function gift(pid) {
+  const T = tableOf(pid); if (!T || T.phase === "end") return;
+  E.forceGive(T, pid, 1); afterChange();
+}
+async function closeRoom() {
+  if (!confirm("방을 닫을까요? 들어온 학생들은 모두 나가게 됩니다.")) return;
+  await Net.remove(P.room(code)).catch(() => {});
+  ls.set(LS, null); location.href = ctx.homeURL();
+}
 
 const nm = p => (seats[p] && seats[p].name) || "?";
 
 /* ================================================================ 그리기 */
 function render() {
   if (!$stage) return;
-  if (H.phase === "lobby") return renderLobby();
-  if (H.phase === "end") return renderEnd();
-  const ts = Object.values(H.tables);
-  if (ts.length === 1) renderOne(ts[0]); else renderMany(ts);
+  if (H.phase === "lobby") renderLobby();
+  else if (H.phase === "end") renderEnd();
+  else { const ts = Object.values(H.tables); if (ts.length === 1) renderOne(ts[0]); else renderMany(ts); }
+  renderOverlay();
+  if (tpOpen) renderPanel();
 }
 
 function head(extra = "") {
   return `<div class="bhd"><span class="logo">RYUNO</span><span class="bcode">방 <b>${code}</b></span>${extra}
     <span class="conn"><span class="dot ${Net.ok ? "" : "off"}"></span>${Net.kind === "local" ? "시험 모드" : Net.ok ? "연결됨" : "연결 끊김"}</span></div>`;
 }
+function bbar(extra = "") {
+  return `<div class="bbar">${extra}<button class="pill sm" data-b="sound">${Sound.bgmOn ? "🔊" : "🔈"}</button><button class="pill sm tbtn" data-b="panel">⚙ 선생님</button></div>`;
+}
+function wire() {
+  $stage.querySelectorAll("[data-b]").forEach(b => b.onclick = () => {
+    const k = b.dataset.b;
+    if (k === "panel") { tpOpen = !tpOpen; return tpOpen ? renderPanel() : closePanel(); }
+    if (k === "sound") { Sound.toggleBgm(); return render(); }
+    if (k === "pause") return togglePause();
+    if (k === "start" || k === "next") return startRound();
+    if (k === "lobby") return toLobby();
+    if (k === "qm") return openManager(document.body, () => {});
+  });
+}
 
 /* ---------- 대기실 ---------- */
 function renderLobby() {
   const ids = Object.keys(seats), on = online();
-  const k = on.length >= 2 ? Math.ceil(on.length / H.cfg.size) : 0;
+  const k = E.tableCount(on.length, H.cfg.size);
+  const split = k ? Array.from({ length: k }, (_, i) => Math.floor(on.length / k) + (i < on.length % k ? 1 : 0)).join("·") : "";
   $stage.className = "stage lobby";
   $stage.innerHTML = `${head()}
     <div class="lb-left">
@@ -196,30 +287,24 @@ function renderLobby() {
     </div>
     <div class="lb-right">
       <h2>들어온 사람 <b class="y">${on.length}</b>명</h2>
-      <div class="chips">${ids.length ? ids.map(u => `<span class="chip ${seats[u].on ? "" : "off"}">${esc(seats[u].name)}</span>`).join("") : `<span class="muted">QR을 찍거나 방 번호를 넣어 들어오세요.</span>`}</div>
+      <div class="chips">${ids.length ? ids.map(u => `<span class="chip ${seats[u].on ? "" : "off"}">${esc(seats[u].name)}${H.stars[u] ? ` <i>⭐${H.stars[u]}</i>` : ""}</span>`).join("") : `<span class="muted">QR을 찍거나 방 번호를 넣어 들어오세요.</span>`}</div>
       <div class="opt"><span>한 테이블 인원</span><div class="seg">${[3, 4, 5, 6].map(n => `<button data-size="${n}" class="${H.cfg.size === n ? "on" : ""}">${n}명</button>`).join("")}</div></div>
-      <div class="opt"><span>방어 문제</span><div class="seg">${Object.entries(LEVELS).map(([k2, v]) => `<button data-lv="${k2}" class="${H.cfg.level === k2 ? "on" : ""}">${v.name}</button>`).join("")}</div></div>
+      <div class="opt"><span>방어 문제</span><div class="seg">${Object.entries(LEVELS).map(([k2, v]) => `<button data-lv="${k2}" class="${H.cfg.level === k2 ? "on" : ""}">${v.name}</button>`).join("")}</div>
+        <button class="pill sm" data-b="qm">문제 관리</button></div>
       <div class="muted small">${LEVELS[H.cfg.level].desc}</div>
-      <div class="go">${k ? `<span class="muted">→ 테이블 ${k}개로 나눠 시작</span>` : `<span class="muted">두 명 이상 들어오면 시작할 수 있어요.</span>`}
-        <button class="pill y xl" id="start" ${k ? "" : "disabled"}>게임 시작</button></div>
-    </div>
-    <div class="bbar"><button class="pill sm" id="close">방 닫기</button></div>`;
+      <div class="lb-chart">${chartHTML()}</div>
+      <div class="go">${k ? `<span class="muted">→ 테이블 ${k}개 (${split}명)</span>` : `<span class="muted">두 명 이상 들어오면 시작할 수 있어요.</span>`}
+        <button class="pill y xl" data-b="start" ${k ? "" : "disabled"}>게임 시작</button></div>
+    </div>${bbar()}`;
   $stage.querySelectorAll("[data-size]").forEach(b => b.onclick = () => { H.cfg.size = +b.dataset.size; afterChange(); });
   $stage.querySelectorAll("[data-lv]").forEach(b => b.onclick = () => { H.cfg.level = b.dataset.lv; afterChange(); });
-  document.getElementById("start").onclick = startRound;
-  document.getElementById("close").onclick = closeRoom;
-}
-
-async function closeRoom() {
-  if (!confirm("방을 닫을까요? 들어온 학생들은 모두 나가게 됩니다.")) return;
-  await Net.remove(P.room(code)).catch(() => {});
-  ls.set(LS, null); location.href = ctx.homeURL();
+  wire();
 }
 
 /* ---------- 테이블 하나: 큰 판 ---------- */
 function renderOne(T) {
   const V = E.publicView(T);
-  if ($stage.className !== "stage one") {
+  if (!$stage.classList.contains("one") || !document.getElementById("disc")) {
     $stage.className = "stage one";
     $stage.innerHTML = `${head(`<span class="bround">${H.round}판</span><span class="wait" id="wait"></span>`)}
       <div class="dir" id="dir"></div>
@@ -227,27 +312,43 @@ function renderOne(T) {
       <div class="cname" id="cname"></div>
       <div class="seats" id="seats"></div>
       <div class="quizbox" id="quiz"></div>
-      <div class="toastwrap" id="toast"></div>
-      <div class="bbar"><button class="pill sm" id="again">새로 섞어 다시</button><button class="pill sm" id="lobby">대기실로</button></div>`;
+      <div class="toastwrap" id="toast"></div>${bbar(`<button class="pill sm" data-b="pause" id="pz"></button>`)}`;
     toast = toaster(document.getElementById("toast"));
-    document.getElementById("again").onclick = () => confirm("지금 판을 끝내고 새로 섞어 시작할까요?") && startRound();
-    document.getElementById("lobby").onclick = () => confirm("대기실로 돌아갈까요?") && toLobby();
+    wire();
   }
   const g = id => document.getElementById(id);
   const waiting = online().filter(u => !T.players.includes(u)).length;
+  g("pz").textContent = H.paused ? "▶ 다시 시작" : "⏸ 멈춤";
   g("wait").textContent = waiting ? `다음 판 대기 ${waiting}명` : "";
   g("dir").className = "dir " + (V.dir > 0 ? "cw" : "ccw");
   g("dir").innerHTML = V.dir > 0 ? "↻" : "↺";
   g("deck").innerHTML = `${backHTML()}<b>${V.deck}</b>`;
+  g("seats").innerHTML = V.p.map(p => seatHTML(T, V, p)).join("");
+
+  /* 바닥 카드: 낸 사람 자리에서 날아오게 */
   const disc = g("disc"), topKey = String(V.top) + ":" + T.disc.length;
-  if (disc.dataset.k !== topKey) { disc.dataset.k = topKey; disc.innerHTML = cardHTML(V.top, { cls: "land" }); }
+  if (disc.dataset.k !== topKey) {
+    disc.dataset.k = topKey;
+    const last = [...T.ev].reverse().find(e => e.t === "play" && e.card === V.top);
+    let from = "";
+    if (last) {
+      const seatEl = g("seats").children[V.p.indexOf(last.pid)];
+      if (seatEl) {
+        const dx = seatEl.offsetLeft + seatEl.offsetWidth / 2 - (disc.offsetLeft + disc.offsetWidth / 2);
+        const dy = g("seats").offsetTop + seatEl.offsetTop - (disc.offsetTop + disc.offsetHeight / 2);
+        from = `style="--fx:${Math.round(dx)}px;--fy:${Math.round(dy)}px"`;
+      }
+    }
+    disc.innerHTML = cardHTML(V.top, { cls: "fly", attr: from });
+  }
   disc.style.setProperty("--glow", COLOR_INFO[V.color].hex);
   g("cname").innerHTML = `<span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${colorName(V.color)}`;
-  g("seats").innerHTML = V.p.map(p => seatHTML(T, V, p)).join("");
-  g("quiz").innerHTML = V.quiz ? `<div class="qhd">${esc(nm(V.quiz.target))} 방어 문제 <b data-dl="${V.quiz.dl}">${secLeft(V.quiz.dl, Net.now())}</b></div>
+  g("quiz").innerHTML = V.quiz ? `<div class="qhd">${esc(nm(V.quiz.target))} 방어 문제 <b data-dl="${V.quiz.dl}" data-tot="${E.RULES.quizMs}">${secLeft(V.quiz.dl, Net.now())}</b></div>
       <div class="qq">${esc(V.quiz.q)}</div><ol>${V.quiz.opts.map(o => `<li>${esc(o)}</li>`).join("")}</ol>` : "";
   g("quiz").classList.toggle("on", !!V.quiz);
-  newEvents(T, e => toast(evText(e, nm)));
+  let best = null;
+  newEvents(T, e => { toast(evText(e, nm)); const f = fxOf(e); if (f && (!best || f !== "card")) best = f; });
+  if (best) Sound.fx(best);
 }
 function seatHTML(T, V, p) {
   const s = seats[p] || {}, me = V.turn === p, n = V.n[p];
@@ -255,6 +356,7 @@ function seatHTML(T, V, p) {
   if (V.uno && V.uno.pid === p) tags.push(V.uno.safe ? `<i class="tag uno">류노!</i>` : `<i class="tag warn">1장!</i>`);
   if (V.quiz && V.quiz.target === p) tags.push(`<i class="tag q">방어 중</i>`);
   if (V.winner === p) tags.push(`<i class="tag win">승리</i>`);
+  if (H.stars[p]) tags.push(`<i class="tag st">⭐${H.stars[p]}</i>`);
   if (!s.on) tags.push(`<i class="tag off">나감</i>`);
   const fan = Array.from({ length: Math.min(n, 12) }, () => `<i></i>`).join("");
   const bar = me && V.phase === "play" ? `<div class="bar" data-dl="${V.dl}" data-tot="${V.drawn ? E.RULES.afterDrawMs : E.RULES.turnMs}"><i></i></div>` : "";
@@ -271,21 +373,22 @@ function newEvents(T, fn) {
 function renderMany(ts) {
   $stage.className = "stage many";
   const waiting = online().filter(u => !tableOf(u)).length;
+  let best = null;
   $stage.innerHTML = `${head(`<span class="bround">${H.round}판 · 테이블 ${ts.length}개</span>${waiting ? `<span class="wait">다음 판 대기 ${waiting}명</span>` : ""}`)}
-    <div class="grid g${ts.length <= 4 ? 2 : 3}">${ts.map(panelHTML).join("")}</div>
-    <div class="bbar"><button class="pill sm" id="again">새로 섞어 다시</button><button class="pill sm" id="lobby">대기실로</button></div>`;
-  document.getElementById("again").onclick = () => confirm("모든 테이블을 끝내고 새로 섞어 시작할까요?") && startRound();
-  document.getElementById("lobby").onclick = () => confirm("대기실로 돌아갈까요?") && toLobby();
+    <div class="grid g${ts.length <= 4 ? 2 : 3}">${ts.map(T => panelHTML(T, f => { if (!best || f === "uno" || f === "catch" || f === "win") best = f; })).join("")}</div>
+    ${bbar(`<button class="pill sm" data-b="pause">${H.paused ? "▶ 다시 시작" : "⏸ 멈춤"}</button>`)}`;
+  wire();
+  if (best && best !== "card" && best !== "draw") Sound.fx(best);
 }
-function panelHTML(T) {
+function panelHTML(T, onFx) {
   const V = E.publicView(T);
   let line = "";
-  newEvents(T, e => { const t = evText(e, nm); if (t) { line = t.big ? `${t.big} ${t.small || ""}` : t.small; flash[T.id] = Date.now(); } });
+  newEvents(T, e => { const t = evText(e, nm); if (t) { line = t.big ? `${t.big} ${t.small || ""}` : t.small; flash[T.id] = Date.now(); } const f = fxOf(e); if (f) onFx(f); });
   if (line) flash[T.id + "l"] = line;
   const fl = Date.now() - (flash[T.id] || 0) < 1200 ? "flash" : "";
   return `<div class="panel ${V.phase === "end" ? "done" : ""} ${fl}">
-    <div class="ph"><b>${T.id}번 테이블</b>${V.phase === "play" ? `<span class="dirs">${V.dir > 0 ? "↻" : "↺"}</span>` : ""}
-      ${V.turn && V.phase === "play" ? `<div class="bar" data-dl="${V.dl}" data-tot="${V.drawn ? E.RULES.afterDrawMs : E.RULES.turnMs}"><i></i></div>` : ""}</div>
+    <div class="ph"><b>${T.id}번 테이블</b>${V.phase === "play" ? `<span class="dirs">${V.dir > 0 ? "↻" : "↺"}</span>` : ""}${V.quiz ? `<span class="tag q">방어 문제</span>` : ""}
+      ${V.turn && V.phase !== "end" ? `<div class="bar" data-dl="${V.quiz ? V.quiz.dl : V.dl}" data-tot="${V.quiz ? E.RULES.quizMs : V.drawn ? E.RULES.afterDrawMs : E.RULES.turnMs}"><i></i></div>` : ""}</div>
     <div class="pb"><div class="pcol"><div class="ptc" style="--glow:${COLOR_INFO[V.color].hex}">${cardHTML(V.top)}</div>
       <div class="pcn"><span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${COLOR_INFO[V.color].manner}</div></div>
       <ul>${V.p.map(p => {
@@ -299,12 +402,92 @@ function panelHTML(T) {
 function renderEnd() {
   $stage.className = "stage end";
   const ts = Object.values(H.tables);
+  const top = Object.entries(H.stars).filter(([u]) => seats[u]).sort((a, b) => b[1] - a[1]).slice(0, 5);
   $stage.innerHTML = `${head(`<span class="bround">${H.round}판 결과</span>`)}
     <h1 class="etitle">${ts.length === 1 ? `🏆 ${esc(nm(ts[0].winner))} 승리!` : "테이블별 우승"}</h1>
-    <div class="results g${Math.min(ts.length, 3)}">${ts.map(T => `<div class="res-t">
+    <div class="results g${Math.min(ts.length, 3)} ${top.length ? "withstars" : ""}">${ts.map(T => `<div class="res-t">
       ${ts.length > 1 ? `<div class="rt">${T.id}번 테이블</div>` : ""}
       <ol>${E.ranking(T).map((p, i) => `<li class="${i === 0 ? "w" : ""}"><span>${i === 0 ? "🏆" : i + 1}</span>${esc(nm(p))}<b>${T.hands[p].length}장</b></li>`).join("")}</ol></div>`).join("")}</div>
-    <div class="ego"><button class="pill y xl" id="next">다음 판</button><button class="pill" id="lobby">대기실로</button></div>`;
-  document.getElementById("next").onclick = startRound;
-  document.getElementById("lobby").onclick = toLobby;
+    ${top.length ? `<div class="stars"><b>⭐ 별 순위</b>${top.map(([u, n], i) => `<span>${i + 1}. ${esc(nm(u))} <i>${n}</i></span>`).join("")}</div>` : ""}
+    <div class="ego"><button class="pill y xl" data-b="next">다음 판</button><button class="pill" data-b="lobby">대기실로</button></div>${bbar()}`;
+  wire();
+}
+
+/* ---------- 겹쳐 뜨는 것: 멈춤 · 깜짝 문제 ---------- */
+function renderOverlay() {
+  let ov = document.getElementById("ov");
+  if (!ov) { ov = document.createElement("div"); ov.id = "ov"; }
+  $stage.appendChild(ov);
+  const p = H.pop;
+  if (p) {
+    const total = online().length;
+    ov.className = "ov pop on";
+    ov.innerHTML = `<div class="popbox"><div class="pophd">⚡ 선생님 깜짝 문제 ${p.done ? "" : `<b data-dl="${p.dl}" data-tot="${POP_MS}">${secLeft(p.dl, Net.now())}</b>`}</div>
+      <div class="popq">${esc(p.q)}</div>
+      <div class="popo">${p.opts.map((o, i) => `<div class="${p.done ? (i === p.a ? "right" : "dim") : ""}"><i>${i + 1}</i>${esc(o)}</div>`).join("")}</div>
+      ${p.done ? `<div class="popr"><b>정답 ${p.right.length}명</b> ⭐+1 ${p.right.slice(0, 12).map(u => esc(nm(u))).join(", ")}${p.right.length > 12 ? " …" : ""}${p.ex ? `<div class="muted">${esc(p.ex)}</div>` : ""}</div>`
+        : `<div class="popr">답한 사람 <b>${Object.keys(p.ans).length}</b> / ${total}명 · 각자 기기에서 고르세요</div>`}</div>`;
+  } else if (H.paused && H.phase === "play") {
+    ov.className = "ov pause on";
+    ov.innerHTML = `<div class="pausebox">⏸ 잠깐 멈춤<span>선생님이 다시 시작하면 이어서 해요</span></div>`;
+  } else { ov.className = "ov"; ov.innerHTML = ""; }
+}
+
+/* ---------- 선생님 판 ---------- */
+function closePanel() { tpOpen = false; if ($tp) { $tp.remove(); $tp = null; } }
+function renderPanel() {
+  if (!$tp || !$tp.isConnected) { $tp = document.createElement("div"); $tp.className = "tp"; }
+  $stage.appendChild($tp);
+  const play = H.phase === "play";
+  const people = Object.keys(seats).sort((a, b) => {
+    const ta = tableOf(a), tb = tableOf(b);
+    return (ta ? +ta.id : 99) - (tb ? +tb.id : 99) || nm(a).localeCompare(nm(b), "ko");
+  });
+  const top = Object.entries(H.stars).filter(([u]) => seats[u]).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  $tp.innerHTML = `<div class="tp-hd"><b>⚙ 선생님</b><button class="pill sm" data-t="close">닫기</button></div>
+    <div class="tp-sec"><div class="tp-row">
+      ${play ? `<button class="pill ${H.paused ? "y" : ""}" data-t="pause">${H.paused ? "▶ 다시 시작" : "⏸ 잠깐 멈춤"}</button>` : ""}
+      ${H.phase !== "lobby" ? `<button class="pill" data-t="again">🎲 새로 섞어 다시</button><button class="pill" data-t="lobby">대기실로</button>` : `<button class="pill y" data-t="again">게임 시작</button>`}
+    </div></div>
+    <div class="tp-sec"><h4>⚡ 깜짝 문제 <span class="muted">모두가 각자 기기로 풀고, 맞히면 ⭐+1</span></h4>
+      <div class="tp-row"><div class="seg sm">${[1, 2, 3, 4, 5].map(l => `<button data-pl="${l}" class="${popLevel === l ? "on" : ""}">${l}단계</button>`).join("")}</div>
+      <button class="pill y" data-t="pop" ${H.pop ? "disabled" : ""}>문제 내기</button></div>
+      <div class="muted small">${LV_NAME[popLevel]}</div></div>
+    <div class="tp-sec"><h4>🛡️ +4 방어 문제 난이도</h4>
+      <div class="tp-row"><div class="seg sm">${Object.entries(LEVELS).map(([k, v]) => `<button data-tl="${k}" class="${H.cfg.level === k ? "on" : ""}">${v.name}</button>`).join("")}</div>
+      <button class="pill sm" data-t="qm">문제 관리</button></div></div>
+    <div class="tp-sec"><h4>🎵 소리</h4><div class="tp-row">
+      <button class="pill sm" data-t="bgm">배경음 ${Sound.bgmOn ? "켜짐" : "꺼짐"}</button>
+      <button class="pill sm" data-t="sfx">효과음 ${Sound.sfxOn ? "켜짐" : "꺼짐"}</button>
+      <label class="pill sm">내 음악 파일<input type="file" accept="audio/*" data-t="file" hidden></label>
+      ${Sound.custom ? `<button class="pill sm" data-t="nofile">기본 음악으로</button>` : ""}</div></div>
+    <div class="tp-sec grow"><h4>👥 학생 ${people.length}명</h4><div class="tp-list">${people.map(u => {
+      const T = tableOf(u), s = seats[u];
+      return `<div class="tp-p ${s.on ? "" : "gone"}"><span class="nm">${esc(s.name)}</span>
+        <span class="info">${T ? `${T.id}번 · ${T.hands[u].length}장` : "대기"}${H.stars[u] ? ` · ⭐${H.stars[u]}` : ""}</span>
+        <button data-rn="${u}">이름</button>${T && T.phase !== "end" ? `<button data-gf="${u}">+1장</button>` : ""}<button class="r" data-kk="${u}">내보내기</button></div>`;
+    }).join("") || `<span class="muted">아직 아무도 없어요.</span>`}</div></div>
+    ${top.length ? `<div class="tp-sec"><h4>⭐ 별 순위 <span class="muted">승리 3 · 방어 성공 1 · 깜짝 문제 1</span></h4><div class="tp-stars">${top.map(([u, n], i) => `<span>${i + 1}. ${esc(nm(u))} <b>${n}</b></span>`).join("")}</div></div>` : ""}
+    ${H.history.length ? `<div class="tp-sec"><h4>📋 지난 판</h4><div class="tp-hist">${H.history.slice(-6).reverse().map(h => `<div>${h.round}판 · ${h.tables.map(t => `${h.tables.length > 1 ? t.id + "번 " : ""}🏆${esc(nm(t.winner))}`).join(" · ")}</div>`).join("")}</div></div>` : ""}
+    <div class="tp-sec"><div class="tp-row"><button class="pill sm r" data-t="close-room">방 닫기</button><span class="muted small">스페이스바: 멈춤/다시 시작</span></div></div>`;
+  $tp.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const d = b.dataset;
+    if (d.t === "close") return closePanel();
+    if (d.t === "pause") return togglePause();
+    if (d.t === "again") return (H.phase === "lobby" || confirm("지금 판을 끝내고 새로 섞어 시작할까요?")) && startRound();
+    if (d.t === "lobby") return confirm("대기실로 돌아갈까요?") && toLobby();
+    if (d.pl) { popLevel = +d.pl; return renderPanel(); }
+    if (d.t === "pop") return startPop(popLevel);
+    if (d.tl) { H.cfg.level = d.tl; return afterChange(); }
+    if (d.t === "qm") return openManager(document.body, () => {});
+    if (d.t === "bgm") { Sound.toggleBgm(); return render(); }
+    if (d.t === "sfx") { Sound.toggleSfx(); return renderPanel(); }
+    if (d.t === "nofile") { Sound.setFile(null); return renderPanel(); }
+    if (d.rn) return rename(d.rn);
+    if (d.gf) return gift(d.gf);
+    if (d.kk) return kick(d.kk);
+    if (d.t === "close-room") return closeRoom();
+  };
+  $tp.onchange = e => { if (e.target.dataset.t === "file" && e.target.files[0]) { Sound.setFile(e.target.files[0]); renderPanel(); } };
 }

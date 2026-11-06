@@ -308,6 +308,22 @@ export function tick(T, now) {
   return false;
 }
 
+/* 선생님이 카드를 더 줄 때 */
+export function forceGive(T, pid, n) {
+  if (T.phase === "end" || !T.hands[pid]) return 0;
+  if (T.uno && T.uno.pid === pid) T.uno = null;
+  const got = give(T, pid, n);
+  T.seq++;
+  emit(T, { t: "gift", pid, got });
+  return got;
+}
+
+/* 일시 정지 뒤 다시 시작: 남은 시간을 그대로 이어 가도록 마감 시각을 미룸 */
+export function shiftTime(T, ms) {
+  T.deadline += ms;
+  if (T.quiz) T.quiz.deadline += ms;
+}
+
 /* 사람이 판에서 빠질 때 (선생님이 내보내기 등). 그 사람 카드는 더미 밑으로 */
 export function removePlayer(T, pid, now) {
   const at = T.players.indexOf(pid);
@@ -334,6 +350,16 @@ export function removePlayer(T, pid, now) {
   } else T.seq++;
   emit(T, { t: "leave", pid });
   return true;
+}
+
+/* 테이블 수 정하기: 정한 인원(size)을 넘지 않게 나누되,
+   3명 이상이면 2명짜리 테이블이 생기지 않게 테이블 수를 줄임 (그때는 size+1 명까지) */
+export function tableCount(n, size) {
+  if (n < 2) return 0;
+  let k = Math.ceil(n / size);
+  while (k > 1 && Math.floor(n / k) < 3) k--;
+  while (Math.ceil(n / k) > RULES.maxPlayers) k++;
+  return k;
 }
 
 /* 남은 카드 수 순위 (우승자 먼저) */

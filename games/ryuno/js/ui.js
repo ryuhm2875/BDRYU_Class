@@ -57,6 +57,7 @@ export function evText(e, nm) {
     case "timeout": return { big: null, small: `${N(e.pid)} 시간 초과${e.drew ? " · 1장" : ""}`, tone: "dim" };
     case "recycle": return { big: null, small: "버린 카드를 다시 섞어 더미를 채웠어요", tone: "dim" };
     case "leave": return { big: null, small: `${N(e.pid)} 판에서 나감`, tone: "dim" };
+    case "gift": return { big: "선생님 선물!", small: `${N(e.pid)} +${e.got}장`, tone: "hit" };
   }
   return null;
 }
@@ -73,6 +74,42 @@ export function toaster(el, ms = 1300) {
     setTimeout(run, t.big ? ms : 900);
   };
   return t => { if (!t) return; q.push(t); if (q.length > 2) q.splice(0, q.length - 2); if (!busy) run(); };
+}
+
+/* ---------- 자음 체계표 (카드 색 그대로) ----------
+   가로 = 조음 위치, 세로 = 조음 방법, 한 칸 안의 순서 = 예사 · 된 · 거센 */
+const PLACES = ["입술", "잇몸", "센입천장", "여린입천장", "목청"];
+const ROWS = [["파열음", "red"], ["마찰음", "blue"], ["파찰음", "yel"], ["비음", "grn"], ["유음", "grn"]];
+const ORDER_S = { "예사": 0, "된": 1, "거센": 2 };
+export function chartHTML() {
+  const cell = (manner, place) => Object.entries(CONS)
+    .filter(([, x]) => x.p === place && (x.sub ? x.sub === manner : COLOR_INFO[x.c].manner === manner))
+    .sort((a, b) => (ORDER_S[a[1].s] ?? 0) - (ORDER_S[b[1].s] ?? 0))
+    .map(([j]) => j).join("");
+  return `<table class="chart"><tr><th></th>${PLACES.map(p => `<th>${p}</th>`).join("")}</tr>
+    ${ROWS.map(([m, c]) => `<tr class="${c}"><th>${m}${m === "비음" || m === "유음" ? "<small>울림</small>" : ""}</th>${PLACES.map(p => { const v = cell(m, p); return `<td class="${v ? "on" : ""}">${v}</td>`; }).join("")}</tr>`).join("")}
+  </table><div class="chart-k">색 = 조음 방법 · 가로줄 = 조음 위치 · 한 칸 안 순서 = 예사 · 된 · 거센</div>`;
+}
+
+/* ---------- 학생용 규칙 ---------- */
+export function rulesHTML() {
+  return `<div class="rules">
+    <h3>이기는 법</h3><p>손에 든 카드를 가장 먼저 다 내면 이겨요.</p>
+    <h3>낼 수 있는 카드</h3>
+    <p>바닥 카드와 아래 가운데 <b>하나만</b> 같으면 돼요.</p>
+    <ul><li><b>색</b> (조음 방법) — 빨강 파열음 · 파랑 마찰음 · 노랑 파찰음 · 초록 울림소리</li>
+      <li><b>조음 위치</b> — ㄷ 위에 ㄴ (둘 다 잇몸소리)</li>
+      <li><b>소리 세기</b> — ㄷ 위에 ㅈ (둘 다 예사소리)</li>
+      <li>같은 글자, 같은 특수 카드</li></ul>
+    ${chartHTML()}
+    <h3>특수 카드</h3>
+    <ul><li>⊘ 건너뛰기 · ⇄ 방향 반대 · +2 다음 사람 2장</li>
+      <li>단모음 와일드 — 아무 데나 내고 색을 골라요</li>
+      <li>+4 — 다음 사람은 <b>방어 문제</b>! 맞히면 2장, 틀리면 4장</li></ul>
+    <h3>류노!</h3><p>1장 남으면 [류노!]를 눌러요. 안 누른 사이에 친구가 [잡았다!]를 먼저 누르면 2장을 받아요.</p>
+    <h3>음운 변동 콤보</h3><p>이어서 내면 다음 사람이 1장! 비음화 ㄱ→ㅇ · ㄷ→ㄴ · ㅂ→ㅁ, 유음화 ㄴ→ㄹ · ㄹ→ㄴ</p>
+    <h3>시간</h3><p>차례마다 20초. 지나면 저절로 1장 뽑고 넘어가요.</p>
+    <h3>별 ⭐</h3><p>승리 3개 · 방어 성공 1개 · 선생님 깜짝 문제 정답 1개</p></div>`;
 }
 
 /* 남은 시간(초) */

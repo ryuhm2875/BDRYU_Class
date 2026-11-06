@@ -101,7 +101,7 @@ body.board{overflow:hidden;background:#0b0b0b}
 .qr svg{width:100%;height:100%;display:block}
 .qr.big{width:300px;height:300px;margin:0 auto 18px}
 .codebig{font-size:68px;font-weight:900;letter-spacing:10px;color:var(--y);line-height:1.05;margin-bottom:6px}
-.lobby .lb-right{position:absolute;left:520px;right:60px;top:96px;bottom:70px;display:flex;flex-direction:column;gap:14px}
+.lobby .lb-right{position:absolute;left:520px;right:60px;top:96px;bottom:84px;display:flex;flex-direction:column;gap:14px}
 .lobby h2{margin:0;font-size:28px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;max-height:210px;overflow:hidden;align-content:flex-start}
 .chip{background:var(--d3);border-radius:20px;padding:6px 14px;font-size:17px;font-weight:700}
@@ -258,3 +258,95 @@ body.player{overflow:hidden}
 .colors button small{font-size:14px;opacity:.9}
 @media (min-width:700px){.status{font-size:22px}.opp{font-size:16px}.desc{font-size:16px}}
 @media (max-height:620px){.handwrap{padding-top:16px}.hand{--cw:min(17vw,84px)}.mid .topc{--cw:min(22vw,110px)}}
+
+/* ================= 6~8단계 추가 ================= */
+/* 바닥 카드: 낸 사람 자리에서 날아옴 */
+.card.fly{animation:fly .42s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes fly{from{transform:translate(var(--fx,0),var(--fy,-200px)) rotate(-25deg) scale(.45);opacity:.3}60%{opacity:1}to{transform:none}}
+.tag.st{background:#3a3412;color:var(--y)}
+.chip i{font-style:normal;color:var(--y);font-size:14px}
+.tbtn{background:var(--y)!important;color:var(--ink)!important}
+
+/* 자음 체계표 */
+.chart{border-collapse:separate;border-spacing:3px;font-weight:900;width:100%}
+.chart th{font-size:13px;color:#aaa;font-weight:700;text-align:center;padding:2px 4px;white-space:nowrap}
+.chart th small{display:block;font-size:10px;color:#777}
+.chart tr th:first-child{text-align:right;color:#ddd}
+.chart td{background:rgba(255,255,255,.04);border-radius:7px;text-align:center;font-size:19px;letter-spacing:2px;padding:2px 4px;min-width:56px}
+.chart tr.red td.on{background:var(--red)}.chart tr.blue td.on{background:var(--blue)}.chart tr.grn td.on{background:var(--grn)}
+.chart tr.yel td.on{background:var(--yel);color:#3a2a00}
+.chart-k{font-size:12px;color:var(--gray);margin-top:4px;text-align:center}
+.lobby .lb-chart{background:rgba(255,255,255,.04);border-radius:14px;padding:8px 10px}
+
+/* 결과의 별 순위 */
+.stars{position:absolute;left:80px;right:80px;bottom:120px;display:flex;gap:18px;justify-content:center;align-items:center;font-size:19px;flex-wrap:wrap}
+.stars b{color:var(--y)}.stars i{font-style:normal;color:var(--y);font-weight:900}
+.results.withstars{bottom:170px;overflow:hidden}
+
+/* 칠판 위에 겹쳐 뜨는 것 */
+.ov{display:none}
+.ov.on{display:flex;position:absolute;inset:0;z-index:40;align-items:center;justify-content:center;background:rgba(0,0,0,.62)}
+.pausebox{font-size:72px;font-weight:900;text-align:center;line-height:1.2}
+.pausebox span{display:block;font-size:22px;color:#ccc;font-weight:700}
+.popbox{width:900px;background:#17202e;border:3px solid #6aa8ff;border-radius:24px;padding:28px 36px}
+.pophd{display:flex;justify-content:space-between;font-size:22px;font-weight:900;color:#9cc4ff}
+.pophd b{font-size:34px;color:#fff}
+.popq{font-size:44px;font-weight:900;margin:12px 0 18px;line-height:1.25}
+.popo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.popo div{background:rgba(255,255,255,.08);border-radius:16px;padding:14px 18px;font-size:28px;font-weight:900;display:flex;gap:14px;align-items:center}
+.popo i{font-style:normal;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+.popo .right{background:var(--ok)}.popo .dim{opacity:.35}
+.popr{margin-top:16px;font-size:20px;color:#ddd}.popr b{color:var(--y)}
+
+/* 선생님 판 */
+.tp{position:absolute;top:0;right:0;bottom:0;width:470px;z-index:60;background:#191919;box-shadow:-20px 0 60px rgba(0,0,0,.6);
+  padding:18px 20px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.tp-hd{display:flex;justify-content:space-between;align-items:center;font-size:22px}
+.tp-sec{background:rgba(255,255,255,.04);border-radius:14px;padding:10px 12px}
+.tp-sec.grow{flex:1;min-height:0;display:flex;flex-direction:column}
+.tp-sec h4{font-size:15px;margin-bottom:6px}.tp-sec h4 .muted{font-size:12px;font-weight:500;margin-left:6px}
+.tp-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tp .pill{padding:9px 16px;font-size:15px}
+.seg.sm button{padding:6px 11px;font-size:14px}
+.tp-list{overflow:auto;flex:1;display:flex;flex-direction:column;gap:4px}
+.tp-p{display:flex;align-items:center;gap:6px;font-size:15px;padding:4px 6px;border-radius:8px;background:rgba(255,255,255,.03)}
+.tp-p.gone{opacity:.45}
+.tp-p .nm{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.tp-p .info{color:var(--gray);font-size:13px;margin-right:auto;white-space:nowrap}
+.tp-p button{font-size:13px;font-weight:700;background:var(--d3);border-radius:8px;padding:4px 8px}
+.tp-p button.r{background:rgba(237,73,86,.25);color:#ff9aa3}
+.tp-stars{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:15px}.tp-stars b{color:var(--y)}
+.tp-hist{font-size:14px;color:#ccc;display:flex;flex-direction:column;gap:2px}
+
+/* 문제 관리 (화면 전체) */
+.qm{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:20px}
+.qm-box{width:min(980px,100%);height:min(92vh,860px);background:#1a1a1a;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.qm-hd{display:flex;align-items:center;gap:14px;font-size:22px}.qm-hd .pill{margin-left:auto}
+.qm-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.qm-tools label{cursor:pointer}
+.qm-list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.qm-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:12px;padding:8px 12px}
+.qm-row.off{opacity:.45}
+.qm-lv{width:30px;height:30px;border-radius:50%;background:var(--d3);display:flex;align-items:center;justify-content:center;font-weight:900;flex:none}
+.qm-t{flex:1;min-width:0;display:flex;flex-direction:column}.qm-t b{font-size:16px}.qm-t span{font-size:13px;color:var(--gray)}
+.qm-form{background:#232323;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.qm-f{display:flex;align-items:center;gap:10px}.qm-f>span{width:44px;flex:none;color:#ccc;font-weight:700}
+.qm-f .inp{font-size:16px;padding:9px 12px}
+.qm-wr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex:1}
+
+/* 학생 화면 추가 */
+.pstar{color:var(--y);font-weight:900;font-size:15px}
+.hbtn{width:32px;height:32px;border-radius:50%;background:var(--d3);font-size:15px;font-weight:900;display:inline-flex;align-items:center;justify-content:center}
+.pause{position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;font-size:40px;font-weight:900;text-align:center}
+.pause.on{display:flex}
+.pause span{font-size:16px;color:#ccc;font-weight:700;margin-top:8px}
+#pop{z-index:55}
+.mbox.good{box-shadow:0 0 0 3px var(--ok)}
+.rulesbox{text-align:left;max-height:88vh;overflow:auto;width:min(560px,100%)}
+.rules h3{font-size:17px;color:var(--y);margin:14px 0 4px}.rules h3:first-child{margin-top:0}
+.rules p,.rules li{font-size:15px;color:#ddd}.rules ul{padding-left:18px}
+.rules .chart{margin:8px 0 2px}.rules .chart td{font-size:15px;min-width:0;letter-spacing:1px}
+.rulesbox>.pill{margin-top:14px;width:100%}
+/* 판 시작: 카드 나눠 주기 */
+.hand.deal .card{animation:deal .45s cubic-bezier(.2,1.2,.4,1) both;animation-delay:calc(var(--k,0) * 70ms)}
+@keyframes deal{from{transform:translateY(-60vh) rotate(-30deg) scale(.5);opacity:0}to{opacity:1}}

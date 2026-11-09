@@ -521,11 +521,66 @@ async function repoFiles() {
   if (!r.ok) throw new Error("tree " + r.status);
   const j = await r.json();
   if (j.truncated) toast("파일이 너무 많아 일부만 불러왔어요.");
-  return (j.tree || []).filter(t => t.type === "blob").map(t => t.path);
+  return (j.tree || []).filter(t => t.type === "blob").map(t => ({ path: t.path, sha: t.sha }));
 }
 const 묶음 = p => /^g1\//.test(p) ? "1학년" : /^g2\//.test(p) ? "2학년" : /^g3\//.test(p) ? "3학년" : /^games\//.test(p) ? "게임" : "홈 · 목차";
 const 묶음차례 = ["1학년", "2학년", "3학년", "게임", "홈 · 목차"];
 const 뿌리 = p => p.replace(/\.[^.\/]+$/, "");
+
+/* ---------- 알아보기 쉬운 이름 짓기 ---------- */
+const 꼬리표 = { note: "개념노트", worksheet: "학습지", activity: "활동지", test: "형성평가", handout: "유인물", plan: "기획서" };
+const 제목기억 = () => { try { return JSON.parse(localStorage.getItem("bdryu-title") || "{}"); } catch (e) { return {}; } };
+function 제목기억하기(sha, t) {
+  const m = 제목기억();
+  if (m[sha] === t) return;
+  m[sha] = t;
+  const k = Object.keys(m);                       // 너무 쌓이지 않게
+  if (k.length > 300) k.slice(0, k.length - 300).forEach(x => delete m[x]);
+  try { localStorage.setItem("bdryu-title", JSON.stringify(m)); } catch (e) {}
+}
+/* 목차 이름 + 꼬리표로 지어 본다. 못 지으면 빈 글자 → 파일 속 제목을 읽어 온다 */
+function 이름짓기(path) {
+  if (fileMap[path]) return fileMap[path];
+  const base = path.split("/").pop().replace(/\.html?$/i, "");
+  const m = base.match(/^(.+)-(note|worksheet|activity|test|handout|plan)$/i);
+  if (m) {
+    const 부모 = fileMap[path.replace(base + ".html", m[1] + ".html")];
+    if (부모) return 부모 + " · " + 꼬리표[m[2].toLowerCase()];
+  }
+  return "";
+}
+/* 파일 앞머리만 조금 가져와 <title> 을 읽는다 */
+async function 파일제목(path) {
+  const r = await fetch("../" + path, { headers: { Range: "bytes=0-8191" }, cache: "no-store" });
+  if (!r.ok && r.status !== 206) throw new Error("no");
+  let head;
+  if (r.body && r.body.getReader) {
+    const rd = r.body.getReader();
+    const { value } = await rd.read();
+    try { rd.cancel(); } catch (e) {}
+    head = new TextDecoder("utf-8").decode(value || new Uint8Array());
+  } else head = (await r.text()).slice(0, 8192);
+  const t = head.match(/<title[^>]*>([^<]*)<\/title>/i);
+  if (!t) return "";
+  return t[1].replace(/&amp;/g, "&")
+             .replace(/\s*·\s*류봉두[^·]*$/, "")           // "· 류봉두의 즐거운 국어 수업" 꼬리 떼기
+             .replace(/\s*\(\s*[1-3]학년\s*\)\s*$/, "")   // "(2학년)" 떼기 — 어차피 학년별로 묶여 있으니
+             .replace(/\s+/g, " ").trim();
+}
+/* 이름을 못 지은 것들만 뒤에서 조용히 채운다 */
+async function 이름채우기(남은) {
+  const 기억 = 제목기억();
+  for (let i = 0; i < 남은.length; i += 5) {
+    await Promise.all(남은.slice(i, i + 5).map(async o => {
+      let t = 기억[o.sha];
+      if (t === undefined) {
+        try { t = await 파일제목(o.path); } catch (e) { return; }
+        제목기억하기(o.sha, t);
+      }
+      if (t && o.op.isConnected) o.op.textContent = t;
+    }));
+  }
+}
 
 /* ---------- 수업 화면 / 학습지 / 그 밖 가려내기 ---------- */
 const 종류이름 = { 수업: "수업 화면 편집기", 학습지: "학습지 편집기", 그밖: "페이지 편집기" };
@@ -541,7 +596,7 @@ function 종류짐작(path, hasPdf) {
   const m = 기억읽기(); if (m[path]) return m[path];
   const base = path.split("/").pop();
   if (/^games\//.test(path) || base === "index.html") return "그밖";
-  if (hasPdf || /-(note|worksheet|activity|handout|plan)\.html?$/i.test(base)) return "학습지";
+  if (hasPdf || /-(note|worksheet|activity|test|handout|plan)\.html?$/i.test(base)) return "학습지";
   return "수업";
 }
 function 종류보이기(k) {
@@ -575,31 +630,43 @@ async function buildList2() {
 
   let opts = [];
   if (paths) {
-    const 딸린파일 = new Set(paths.filter(p => /\.(pdf|hwpx?)$/i.test(p)).map(뿌리));
-    opts = paths.filter(p => /\.html?$/i.test(p) && p !== "tools/editor.html").map(p => ({
-      path: p, group: 묶음(p),
-      label: (fileMap[p] || p) + (딸린파일.has(뿌리(p)) ? " · 학습지 원본" : ""),
-      pdf: paths.includes(뿌리(p) + ".pdf") ? 뿌리(p) + ".pdf" : "",
-      kind: 종류짐작(p, paths.includes(뿌리(p) + ".pdf"))
-    }));
+    const 길 = paths.map(f => f.path), sha = {};
+    paths.forEach(f => sha[f.path] = f.sha);
+    const 딸린파일 = new Set(길.filter(p => /\.(pdf|hwpx?)$/i.test(p)).map(뿌리));
+    const 기억 = 제목기억();
+    opts = 길.filter(p => /\.html?$/i.test(p) && p !== "tools/editor.html").map(p => {
+      let label = 이름짓기(p) || 기억[sha[p]] || "";
+      return {
+        path: p, group: 묶음(p), sha: sha[p],
+        label: label || p, 채울것: !label,
+        pdf: 길.includes(뿌리(p) + ".pdf") ? 뿌리(p) + ".pdf" : "",
+        kind: 종류짐작(p, 딸린파일.has(뿌리(p)))
+      };
+    });
     $("siteNoteT").textContent = `저장소에 있는 파일 ${opts.length}개 · ${시각()} 기준`;
   } else {
     // GitHub에 닿지 못할 때는 전처럼 목차에 적힌 것만
     opts = Object.entries(fileMap).filter(([p]) => /\.html?$/i.test(p)).map(([p, label]) => ({ path: p, group: 묶음(p), label, pdf: "", kind: 종류짐작(p, false) }));
     try {
       const list = await fetch("docs.json", { cache: "no-store" }).then(r => r.ok ? r.json() : null);
-      if (Array.isArray(list)) list.forEach(d => opts.push({ path: d.path, group: 묶음(d.path), label: d.name + " · 학습지 원본", pdf: d.pdf || "", kind: "학습지" }));
+      if (Array.isArray(list)) list.forEach(d => opts.push({ path: d.path, group: 묶음(d.path), label: d.name, pdf: d.pdf || "", kind: "학습지" }));
     } catch (e) {}
     $("siteNoteT").textContent = "GitHub에 닿지 못해서 목차에 적힌 파일만 보여요.";
   }
   if (!opts.length) return;
 
+  const 채울목록 = [];
   sp.querySelectorAll("optgroup").forEach(o => o.remove());
   for (const g of 묶음차례) {
     const list = opts.filter(o => o.group === g); if (!list.length) continue;
     list.sort((a, b) => a.path.localeCompare(b.path, "ko"));
     const og = document.createElement("optgroup"); og.label = g;
-    list.forEach(o => { const op = document.createElement("option"); op.value = o.path; op.textContent = o.label; op.dataset.pdf = o.pdf; op.dataset.kind = o.kind; og.appendChild(op); });
+    list.forEach(o => {
+      const op = document.createElement("option");
+      op.value = o.path; op.textContent = o.label; op.dataset.pdf = o.pdf; op.dataset.kind = o.kind;
+      og.appendChild(op);
+      if (o.채울것 && o.sha) 채울목록.push({ path: o.path, sha: o.sha, op: op });
+    });
     sp.appendChild(og);
   }
   $("siteWrap").hidden = false;
@@ -614,6 +681,7 @@ async function buildList2() {
   if (!종류이름[처음]) { try { 처음 = localStorage.getItem("bdryu-tab") || ""; } catch (e) {} }
   종류보이기(종류이름[처음] ? 처음 : "수업");
   목록만든적 = Date.now();
+  if (채울목록.length) 이름채우기(채울목록);   // 나머지 이름은 뒤에서 조용히 채웁니다
   sp.onchange = async () => {
     if (!sp.value) return;
     if (dirty && !confirmLeave()) { sp.value = ""; return; }

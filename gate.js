@@ -39,9 +39,9 @@
   if (/^__|^\s*$/.test(설정.hash)) return;       // 비밀번호를 아직 정하지 않았으면 그냥 엽니다
 
   var 열쇠 = "bdryu-gate-ok";
-  try {
-    if (localStorage.getItem(열쇠) === 설정.hash || sessionStorage.getItem(열쇠) === 설정.hash) return;
-  } catch (e) {}
+  /* 창을 닫으면 잊습니다. 한 번 열어 둔 동안에는 쪽을 옮겨 다녀도 다시 묻지 않습니다. */
+  try { localStorage.removeItem(열쇠); } catch (e) {}      // 전에 기기에 기억해 둔 것이 있으면 지웁니다
+  try { if (sessionStorage.getItem(열쇠) === 설정.hash) return; } catch (e) {}
 
   /* 화면이 잠깐이라도 비치지 않게 먼저 가립니다 */
   var 가림 = document.createElement("style");
@@ -67,8 +67,7 @@
     "  font:inherit;font-size:17px;font-weight:600;cursor:pointer}",
     "#__gatebox button:disabled{opacity:.5;cursor:default}",
     "#__gatebox .err{min-height:20px;margin-top:12px;font-size:14px;color:#d93025}",
-    "#__gatebox .chk{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:14px;font-size:13px;color:#86868b}",
-    "#__gatebox .chk input{width:15px;height:15px}"
+    "#__gatebox .chk{margin:14px 0 0;font-size:13px;color:#86868b}"
   ].join("\n");
 
   function 그리기() {
@@ -83,14 +82,13 @@
       '  <input type="password" id="__gatepw" autocomplete="current-password" placeholder="비밀번호" autofocus>' +
       '  <button type="button" id="__gatego">들어가기</button>' +
       '  <div class="err" id="__gateerr"></div>' +
-      '  <label class="chk"><input type="checkbox" id="__gatekeep" checked> 이 기기에서 기억하기</label>' +
+      '  <p class="chk">창을 닫으면 다시 물어봅니다.</p>' +
       "</div>";
     document.body.appendChild(box);
 
     var pw = box.querySelector("#__gatepw"),
         go = box.querySelector("#__gatego"),
-        err = box.querySelector("#__gateerr"),
-        keep = box.querySelector("#__gatekeep");
+        err = box.querySelector("#__gateerr");
     setTimeout(function () { pw.focus(); }, 60);
 
     function 확인() {
@@ -102,7 +100,7 @@
           go.disabled = false; pw.select();
           return;
         }
-        try { (keep.checked ? localStorage : sessionStorage).setItem(열쇠, 설정.hash); } catch (e) {}
+        try { sessionStorage.setItem(열쇠, 설정.hash); } catch (e) {}
         box.remove(); 가림.remove();
         document.documentElement.classList.remove("__gate");
       }).catch(function () {

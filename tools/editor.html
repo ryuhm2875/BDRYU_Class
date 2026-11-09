@@ -1337,7 +1337,7 @@ $("pwOk").onclick = async () => {
     if (!m) throw new Error("gate.js 모양이 달라져서 바꾸지 못했어요.");
     const 새 = txt.slice(0, m.index) + 'hash: "' + hash + '"' + txt.slice(m.index + m[0].length);
     await ghPut("gate.js", b64(새), g.sha, "사이트 비밀번호 변경");
-    try { localStorage.setItem("bdryu-gate-ok", hash); } catch (e) {}
+    try { sessionStorage.setItem("bdryu-gate-ok", hash); } catch (e) {}
     $("pwModal").hidden = true;
     toast("비밀번호를 바꿨어요. 1~2분 뒤부터 새 비밀번호로 들어옵니다.");
   } catch (e) { $("pwErr").textContent = e.message || "바꾸지 못했어요."; }

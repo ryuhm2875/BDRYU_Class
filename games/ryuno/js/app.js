@@ -5,10 +5,10 @@
    ?local=1           → 인터넷 없이 한 브라우저 탭끼리 시험
    ?tab=1             → 탭마다 다른 사람으로 접속 (PC 한 대로 시험할 때)
    ────────────────────────────────────────────────────────────── */
-import { Net, P, CODE_RE } from "./net.js?v=202611101414";
-import { Board } from "./board.js?v=202611101414";
-import { Player } from "./player.js?v=202611101414";
-import { esc, rulesHTML } from "./ui.js?v=202611101414";
+import { Net, P, CODE_RE } from "./net.js?v=202611101416";
+import { Board } from "./board.js?v=202611101416";
+import { Player } from "./player.js?v=202611101416";
+import { esc, rulesHTML } from "./ui.js?v=202611101416";
 
 const QS = new URLSearchParams(location.search);
 const $app = document.getElementById("app");

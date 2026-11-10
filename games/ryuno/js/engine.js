@@ -14,12 +14,13 @@
    · 받아치기: +2 위엔 +2나 +4, +4 위엔 +4. 장수는 쌓임.
      받아칠 카드가 없는 사람이 다 받음. 쌓인 것에 +4가 있으면 방어 문제(맞히면 2장 덜)
    · +4 이의 제기 없음
-   · 1장 남으면 류노! 다음 사람이 움직이기 전에 남이 먼저 [잡았다] → 2장
+   · 1장 남으면 류노! (카드를 낸 뒤에만 외칠 수 있음, 미리 외치기 없음)
+     다음 사람이 움직이기 전에 남이 먼저 [잡았다] → 2장
    · 음운 변동 콤보(비음화·유음화) → 다음 사람 1장
    · 차례마다 20초. 지나면 자동으로 1장 뽑고 넘어감
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611101414";
-import { shuffle, cryptoInt } from "./rng.js?v=202611101414";
+import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611101416";
+import { shuffle, cryptoInt } from "./rng.js?v=202611101416";
 
 export const RULES = {
   hand: 7,
@@ -198,11 +199,8 @@ function play(T, pid, a, now, quizPick) {
     emit(T, { t: "win", pid });
     return yes;
   }
-  /* 1장 남음: 미리 류노를 눌렀으면 안전, 아니면 빈틈 */
-  if (hand.length === 1) {
-    if (a.uno || T.ready[pid]) { T.uno = { pid, safe: true }; emit(T, { t: "uno", pid }); }
-    else T.uno = { pid, safe: false };
-  }
+  /* 1장 남음: 늘 빈틈으로 시작. 본인이 [류노!]를 먼저 누를지, 친구가 [잡았다!]를 먼저 누를지 */
+  if (hand.length === 1) T.uno = { pid, safe: false };
   delete T.ready[pid];
 
   switch (C.k) {
@@ -314,10 +312,7 @@ function uno(T, pid) {
     if (T.uno.safe) return no("이미 외침");
     T.uno.safe = true; emit(T, { t: "uno", pid }); return yes;
   }
-  if (T.phase === "play" && curPid(T) === pid && T.hands[pid].length === 2) {
-    T.ready[pid] = true; emit(T, { t: "ready", pid }); return yes;
-  }
-  return no("지금은 류노를 외칠 때가 아님");
+  return no("지금은 류노를 외칠 때가 아님");   // 카드를 내 1장이 된 뒤에만
 }
 
 function catchUno(T, pid) {

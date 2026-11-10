@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611101414";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611101414";
-import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611101414";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML } from "./ui.js?v=202611101414";
-import { Sound, fxOf } from "./sound.js?v=202611101414";
+import { Net, P } from "./net.js?v=202611101416";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611101416";
+import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611101416";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML } from "./ui.js?v=202611101416";
+import { Sound, fxOf } from "./sound.js?v=202611101416";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -151,10 +151,8 @@ export function Player(code, name, ctx) {
     if (mine && sel != null && can.has(sel)) btns.push(`<button class="pill y" data-a="play">${extra.size ? `${extra.size + 1}장 함께 내기` : "이 카드 내기"}</button>`);
     const n = cards.length;
     const unoOpen = V.uno && V.uno.pid === me && !V.uno.safe;
-    const unoReady = mine && n === 2 && !(V.ready || []).includes(me);
-    if (unoOpen || unoReady) btns.push(`<button class="pill uno ${unoOpen ? "hot" : ""}" data-a="uno">류노!</button>`);
+    if (unoOpen) btns.push(`<button class="pill uno hot" data-a="uno">류노!</button>`);
     if (V.uno && !V.uno.safe && V.uno.pid !== me && V.phase !== "end") btns.push(`<button class="pill r hot" data-a="catch">잡았다! ${esc(nm(V.uno.pid))}</button>`);
-    if ((V.ready || []).includes(me) && n === 2) btns.push(`<span class="ok">류노 준비 완료</span>`);
     g("acts").innerHTML = btns.join("");
 
     g("desc").innerHTML = sel != null

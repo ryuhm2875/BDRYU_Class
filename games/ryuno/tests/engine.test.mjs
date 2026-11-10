@@ -82,7 +82,7 @@ const fill = (c, cnt) => DECK.filter(x => x.k === "n" && x.c === c).slice(0, cnt
   ok(T.hands.B.length === 4 && T.ev.some(e => e.t === "combo" && e.name === "비음화"), "비음화 콤보 → B 1장");
   ok(E.curPid(T) === "B", "콤보 뒤에도 B 차례");
 }
-{ // 류노: 안 외침 → 잡힘 / 외침 → 안전 / 미리 외침
+{ // 류노: 안 외침 → 잡힘 / 외침 → 안전 / 미리 외치기는 안 됨
   const T = rig(["A", "B", "C"], { A: [pick("n", "red", "ㄱ", 1), pick("n", "blue", "ㅅ")], B: fill("yel", 3), C: fill("grn", 3) }, pick("n", "red", "ㄷ"));
   E.act(T, "A", { t: "play", card: T.hands.A[0] }, 0);
   ok(T.uno && !T.uno.safe, "1장 남음 → 빈틈");
@@ -96,9 +96,10 @@ const fill = (c, cnt) => DECK.filter(x => x.k === "n" && x.c === c).slice(0, cnt
   ok(!E.act(T2, "C", { t: "catch" }, 0).ok, "안전하면 못 잡음");
 
   const T3 = rig(["A", "B", "C"], { A: [pick("n", "red", "ㄱ", 1), pick("n", "blue", "ㅅ")], B: fill("yel", 3), C: fill("grn", 3) }, pick("n", "red", "ㄷ"));
-  ok(E.act(T3, "A", { t: "uno" }, 0).ok, "2장일 때 미리 외침");
-  E.act(T3, "A", { t: "play", card: T3.hands.A[0] }, 0);
-  ok(T3.uno && T3.uno.safe, "미리 외쳤으면 안전");
+  ok(!E.act(T3, "A", { t: "uno" }, 0).ok, "2장일 때 미리 외치기 X");
+  E.act(T3, "A", { t: "play", card: T3.hands.A[0], uno: true }, 0);
+  ok(T3.uno && !T3.uno.safe, "내면서 외쳐도 빈틈 (낸 뒤에 눌러야 함)");
+  ok(E.act(T3, "B", { t: "catch" }, 0).ok, "그 틈에 잡힘"); 
 
   const T4 = rig(["A", "B", "C"], { A: [pick("n", "red", "ㄱ", 1), pick("n", "blue", "ㅅ")], B: [pick("n", "red", "ㅂ"), ...fill("yel", 2)], C: fill("grn", 3) }, pick("n", "red", "ㄷ"));
   E.act(T4, "A", { t: "play", card: T4.hands.A[0] }, 0);

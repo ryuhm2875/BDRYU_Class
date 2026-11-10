@@ -350,3 +350,100 @@ body.player{overflow:hidden}
 /* 판 시작: 카드 나눠 주기 */
 .hand.deal .card{animation:deal .45s cubic-bezier(.2,1.2,.4,1) both;animation-delay:calc(var(--k,0) * 70ms)}
 @keyframes deal{from{transform:translateY(-60vh) rotate(-30deg) scale(.5);opacity:0}to{opacity:1}}
+
+/* =====================================================================
+   디자인 개선 (2026-11) — 이 블록만 지우면 이전 모습으로 돌아갑니다
+   ===================================================================== */
+
+/* ---------- 처음 화면 ---------- */
+/* 변경: 규칙 보기를 학생도 볼 수 있게 제목 아래로 옮기고, 보조 버튼(테두리만)으로 위계를 낮춤 */
+.pill.ghost{background:none;box-shadow:inset 0 0 0 2px #3a3a3a;color:#ddd;padding:10px 20px;font-size:15px}
+.pill.ghost:active{box-shadow:inset 0 0 0 2px var(--y)}
+/* 변경: 각 상자의 주요 버튼은 상자 폭을 꽉 채워 '여기를 누르면 된다'가 바로 보이게 */
+.pill.big{width:100%;padding:17px 24px;font-size:20px;box-shadow:0 6px 0 #b8a400,0 10px 24px rgba(254,229,0,.18);transition:transform .08s,box-shadow .08s}
+.pill.big:active{transform:translateY(4px);box-shadow:0 2px 0 #b8a400}
+/* 변경: 상자를 세로로 늘려 버튼이 아래쪽에 나란히 맞춰지게 */
+.homegrid .box{display:flex;flex-direction:column;border:1px solid #2a2a2a}
+.homegrid .box .pill.big{margin-top:auto}
+.homegrid .join{border-color:rgba(254,229,0,.35);background:linear-gradient(180deg,rgba(254,229,0,.06),var(--d2) 60%)}
+/* 변경: 휴대폰에서는 학생 참가를 맨 위로. 학생은 폰, 선생님은 PC를 쓰므로 스크롤 없이 바로 입력 */
+@media (max-width:720px){
+  .homegrid .join{order:-1}
+  .home h1{font-size:30px;letter-spacing:-1.2px}
+  .home .lead{font-size:16px;margin-bottom:14px}
+  .home .top{margin-bottom:16px}
+}
+
+/* 변경: 방 번호 6칸 입력 (실제 input은 하나, 투명하게 위에 겹침) */
+.otp{position:relative;display:block;margin-bottom:16px;cursor:text}
+.otp input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;caret-color:transparent}
+.otp .slots{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.otp .slots i{font-style:normal;aspect-ratio:4/5;max-height:72px;border-radius:12px;background:#0d0d0d;border:2px solid var(--d3);
+  display:flex;align-items:center;justify-content:center;font-size:clamp(24px,7vw,34px);font-weight:900;color:#fff;transition:border-color .15s,transform .15s}
+.otp .slots i:not(:empty){border-color:#555}
+.otp .slots i.cur{border-color:var(--y);box-shadow:0 0 0 3px rgba(254,229,0,.2)}
+.otp .slots i.cur:empty::after{content:"";width:2px;height:40%;background:var(--y);animation:caret 1s steps(2) infinite}
+@keyframes caret{50%{opacity:0}}
+
+/* 변경: 처음 화면 카드 미리보기를 휴대폰에서도 작게 보여 줌 (게임이라는 게 첫눈에 보이게) */
+@media (max-width:720px){
+  .hcards{display:block;position:relative;right:auto;top:auto;width:150px;height:92px;margin:0 0 8px 2px}
+  .hcards i{width:52px;height:76px;font-size:28px;border-width:3px;border-radius:9px}
+  .hcards .c1{left:0;top:14px}.hcards .c2{left:44px;top:0}.hcards .c3{left:88px;top:10px}
+}
+/* 변경: 미리보기 카드도 실제 카드와 같은 광택 */
+.hcards i{background-image:linear-gradient(155deg,rgba(255,255,255,.28),rgba(255,255,255,0) 45%,rgba(0,0,0,.16))}
+.hcards .c2{animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{50%{translate:0 -6px}}
+
+/* ---------- 카드 ---------- */
+/* 변경: 색 위에 비스듬한 빛 + 아래쪽 그림자 그라디언트를 얹어 입체감. 색 자체는 그대로라 칠판에서도 구분 잘 됨 */
+.card.red,.card.blue,.card.grn,.card.yel{background-image:
+  radial-gradient(120% 60% at 20% 0%,rgba(255,255,255,.30),rgba(255,255,255,0) 55%),
+  linear-gradient(180deg,rgba(255,255,255,0) 55%,rgba(0,0,0,.20))}
+.card.blk{background-image:radial-gradient(120% 60% at 20% 0%,rgba(255,255,255,.16),rgba(255,255,255,0) 55%)}
+.card.back{background-image:repeating-linear-gradient(135deg,rgba(254,229,0,.06) 0 6px,transparent 6px 14px),
+  radial-gradient(ellipse at 50% 40%,#2a2a2a,#111 75%)}
+/* 변경: 흰 테두리 안쪽에 아주 얇은 그림자를 둬 테두리가 종이처럼 살짝 떠 보이게 */
+.card{box-shadow:inset 0 0 0 .08em rgba(0,0,0,.12),0 .25em .9em rgba(0,0,0,.45)}
+/* 변경: 가운데 흰 원에 살짝 볼록한 광택 */
+.card .cm span{box-shadow:inset 0 -.08em 0 rgba(0,0,0,.14),inset 0 .1em .2em rgba(255,255,255,.9),0 .06em .2em rgba(0,0,0,.18)}
+/* 변경: 낼 수 있는 카드는 노란 테두리가 숨쉬듯 빛남 (학생이 고를 카드를 바로 찾게) */
+.hand .card.can{animation:canpulse 1.4s ease-in-out infinite}
+@keyframes canpulse{50%{box-shadow:0 0 0 .3em var(--y),0 0 1.4em rgba(254,229,0,.7),0 .3em 1em rgba(0,0,0,.5)}}
+.hand .card.sel{animation:none;box-shadow:0 0 0 .35em #fff,0 .5em 1.4em rgba(0,0,0,.6)}
+
+/* ---------- 칠판 ---------- */
+/* 변경: 지금 차례인 자리를 노란 빛이 맥박처럼 감싸고, 위에 ▼ 표시 */
+.seat{overflow:visible}
+.seat .bar{border-radius:0 0 16px 16px;overflow:hidden}
+.seat.now{background:linear-gradient(180deg,rgba(254,229,0,.26),rgba(254,229,0,.10));transform:translateY(-14px) scale(1.06);
+  animation:seatglow 1.1s ease-in-out infinite alternate;z-index:2}
+@keyframes seatglow{from{box-shadow:0 0 0 3px var(--y),0 0 12px rgba(254,229,0,.35)}to{box-shadow:0 0 0 4px var(--y),0 0 38px rgba(254,229,0,.75)}}
+.seat.now::before{content:"▼";position:absolute;left:50%;top:-30px;transform:translateX(-50%);color:var(--y);font-size:20px;animation:bob 1s ease-in-out infinite}
+.seat.now .sn{color:var(--y)}
+/* 변경: 여러 테이블 화면에서도 지금 차례 줄이 빛나게 */
+.pb li.now{box-shadow:0 0 16px rgba(254,229,0,.55)}
+
+/* 변경: 시간 막대가 30% 아래로 줄면 빨갛게 깜빡임 (JS가 .low를 붙임) */
+.bar{height:6px}
+.bar.low i{background:var(--bad);animation:blink .5s steps(2) infinite}
+
+/* ---------- 학생 화면 ---------- */
+/* 변경: 내 차례면 상태 줄이 더 크게 맥박치고, 화면 가장자리 전체가 노랗게 빛남 (폰을 내려놓고 있어도 보임) */
+.status.mine{font-size:22px;animation:minepulse .9s ease-in-out infinite alternate}
+@keyframes minepulse{from{box-shadow:0 0 0 0 rgba(254,229,0,.0);transform:scale(1)}to{box-shadow:0 0 28px 4px rgba(254,229,0,.7);transform:scale(1.02)}}
+.pl:has(.status.mine)::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:35;
+  box-shadow:inset 0 0 0 5px var(--y),inset 0 0 60px rgba(254,229,0,.35);animation:edge 1.1s ease-in-out infinite alternate}
+@keyframes edge{from{opacity:.55}to{opacity:1}}
+/* 변경: 5초 남으면 상태 줄과 가장자리가 빨간색으로 바뀜 (JS가 .low를 붙임) */
+.status.mine.low,.status.quiz.low{background:var(--bad);color:#fff;animation:minepulse .35s ease-in-out infinite alternate}
+.pl:has(.status.mine.low)::after{box-shadow:inset 0 0 0 5px var(--bad),inset 0 0 60px rgba(237,73,86,.4)}
+/* 변경: 방어 문제도 파란 테두리로 화면 전체 표시 */
+.status.quiz{animation:minepulse .9s ease-in-out infinite alternate}
+.pl:has(.status.quiz)::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:35;box-shadow:inset 0 0 0 5px var(--blue)}
+
+/* 변경: 움직임을 줄이도록 설정한 기기에서는 반복 애니메이션 끄기 */
+@media (prefers-reduced-motion:reduce){
+  .seat.now,.status.mine,.status.quiz,.hand .card.can,.hcards .c2,.seat.now::before,.pl::after,.bar.low i{animation:none!important}
+}

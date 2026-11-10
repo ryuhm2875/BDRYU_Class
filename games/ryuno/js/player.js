@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611061333";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611061333";
-import { matchReason, RULES } from "./engine.js?v=202611061333";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611061333";
-import { Sound, fxOf } from "./sound.js?v=202611061333";
+import { Net, P } from "./net.js?v=202611100937";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611100937";
+import { matchReason, RULES } from "./engine.js?v=202611100937";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611100937";
+import { Sound, fxOf } from "./sound.js?v=202611100937";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -213,7 +213,10 @@ export function Player(code, name, ctx) {
     const now = Net.now();
     document.querySelectorAll("#app [data-dl]").forEach(el => {
       if (pub && pub.paused && !el.closest("#pop")) return;          // 멈춘 동안은 시간도 멈춤
-      el.textContent = secLeft(+el.dataset.dl, now);
+      const s = secLeft(+el.dataset.dl, now);
+      el.textContent = s;
+      const st = el.closest(".status");
+      if (st) st.classList.toggle("low", s > 0 && s <= 5);          // 5초 남으면 상태 줄이 빨갛게
     });
   }
 

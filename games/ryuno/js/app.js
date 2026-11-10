@@ -5,10 +5,10 @@
    ?local=1           → 인터넷 없이 한 브라우저 탭끼리 시험
    ?tab=1             → 탭마다 다른 사람으로 접속 (PC 한 대로 시험할 때)
    ────────────────────────────────────────────────────────────── */
-import { Net, P, CODE_RE } from "./net.js?v=202611061333";
-import { Board } from "./board.js?v=202611061333";
-import { Player } from "./player.js?v=202611061333";
-import { esc, rulesHTML } from "./ui.js?v=202611061333";
+import { Net, P, CODE_RE } from "./net.js?v=202611100937";
+import { Board } from "./board.js?v=202611100937";
+import { Player } from "./player.js?v=202611100937";
+import { esc, rulesHTML } from "./ui.js?v=202611100937";
 
 const QS = new URLSearchParams(location.search);
 const $app = document.getElementById("app");
@@ -57,17 +57,27 @@ function Home() {
   $app.innerHTML = `<div class="wrap home">${top("류노")}
     <div class="hero"><div class="hcards"><i class="c1">ㄷ</i><i class="c2">ㄴ</i><i class="c3">ㅈ</i></div>
       <h1>한글 음운으로 하는<br>우노, <span class="y">류노!</span></h1>
-      <p class="lead">색이 같거나, 조음 위치가 같거나, 소리 세기가 같으면 낼 수 있어요.<br>손에 든 카드를 가장 먼저 다 내면 이겨요.</p></div>
-    <div class="grid2">
-      <div class="box"><h2 style="margin-top:0">칠판 · 모둠 태블릿</h2>
-        <p class="muted" style="margin-bottom:16px">방 번호와 QR을 띄우고 게임판을 보여 줍니다. 이 기기가 심판을 맡아요.</p>
-        <div class="row"><button class="pill y" id="mk">방 만들기</button><button class="pill" id="rl">📖 규칙 보기</button></div></div>
-      <div class="box"><h2 style="margin-top:0">참가 (학생)</h2>
-        <input class="inp code" id="jc" maxlength="6" placeholder="방 번호" autocomplete="off" autocapitalize="characters">
-        <div class="row" style="margin-top:12px"><button class="pill" id="jb">들어가기</button></div>
+      <p class="lead">색이 같거나, 조음 위치가 같거나, 소리 세기가 같으면 낼 수 있어요.<br>손에 든 카드를 가장 먼저 다 내면 이겨요.</p>
+      <button class="pill ghost" id="rl">📖 규칙 보기</button></div>
+    <div class="grid2 homegrid">
+      <div class="box host"><h2 style="margin-top:0">칠판 · 모둠 태블릿</h2>
+        <p class="muted" style="margin-bottom:18px">방 번호와 QR을 띄우고 게임판을 보여 줍니다. 이 기기가 심판을 맡아요.</p>
+        <button class="pill y big" id="mk">방 만들기</button></div>
+      <div class="box join"><h2 style="margin-top:0">참가 (학생)</h2>
+        <label class="otp"><input id="jc" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" aria-label="방 번호 6자리">
+          <span class="slots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></label>
+        <button class="pill y big" id="jb">들어가기</button>
         <div id="jm"></div></div>
     </div></div>`;
   watchConn();
+  // 방 번호 6칸: 입력값을 칸에 나눠 보여 줌
+  const jc = document.getElementById("jc"), slots = [...document.querySelectorAll(".otp .slots i")];
+  const paint = () => {
+    jc.value = jc.value.toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 6);
+    const v = jc.value, f = document.activeElement === jc;
+    slots.forEach((s, i) => { s.textContent = v[i] || ""; s.className = f && i === Math.min(v.length, 5) ? "cur" : ""; });
+  };
+  ["input", "focus", "blur"].forEach(e => jc.addEventListener(e, paint)); paint();
   document.getElementById("rl").onclick = () => {
     const m = document.createElement("div"); m.className = "modal on";
     m.innerHTML = `<div class="mbox rulesbox">${rulesHTML()}<button class="pill y">알겠어요</button></div>`;

@@ -5,14 +5,14 @@
    - 전자칠판: 테이블 여러 개를 한꺼번에 / 모둠 태블릿: 테이블 하나
    - [선생님] 판: 멈춤 · 깜짝 문제 · 난이도 · 학생 관리 · 별 순위 · 소리
    ────────────────────────────────────────────────────────────── */
-import { Net, P, newCode } from "./net.js?v=202611061333";
-import { STALE_MS } from "./firebase-config.js?v=202611061333";
-import * as E from "./engine.js?v=202611061333";
-import { COLOR_INFO } from "./cards.js?v=202611061333";
-import { shuffle } from "./rng.js?v=202611061333";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML } from "./ui.js?v=202611061333";
-import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611061333";
-import { Sound, fxOf } from "./sound.js?v=202611061333";
+import { Net, P, newCode } from "./net.js?v=202611100937";
+import { STALE_MS } from "./firebase-config.js?v=202611100937";
+import * as E from "./engine.js?v=202611100937";
+import { COLOR_INFO } from "./cards.js?v=202611100937";
+import { shuffle } from "./rng.js?v=202611100937";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML } from "./ui.js?v=202611100937";
+import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611100937";
+import { Sound, fxOf } from "./sound.js?v=202611100937";
 
 const LS = "ryuno-host-v1";
 const LEVELS = {
@@ -172,7 +172,11 @@ function loop() {
   $stage.querySelectorAll("[data-dl]").forEach(el => {
     const dl = +el.dataset.dl, tot = +el.dataset.tot || 20000;
     const left = H.paused && !el.closest(".ov") ? dl - H.paused : dl - now;
-    if (el.classList.contains("bar")) el.firstElementChild.style.width = Math.max(0, Math.min(100, left / tot * 100)) + "%";
+    if (el.classList.contains("bar")) {
+      const pct = Math.max(0, Math.min(100, left / tot * 100));
+      el.firstElementChild.style.width = pct + "%";
+      el.classList.toggle("low", pct < 30);                         // 30% 아래면 빨간 막대
+    }
     else el.textContent = Math.max(0, Math.ceil(left / 1000));
   });
 }

@@ -1,7 +1,7 @@
 /* ──────────────────────────────────────────────────────────────
    RYUNO · 칠판과 학생 화면이 함께 쓰는 그림·글
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611101302";
+import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611101414";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const 이가 = w => /[가-힣]$/.test(w) && (w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? "이" : "가";
@@ -118,3 +118,27 @@ export function rulesHTML() {
 
 /* 남은 시간(초) */
 export const secLeft = (dl, now) => Math.max(0, Math.ceil((dl - now) / 1000));
+
+/* ---------- 카드 나눠 주기 시각 (칠판과 학생 화면이 같은 박자로 맞춤) ----------
+   r번째 바퀴, s번째 자리 카드 → k = r*N + s 번째로 더미를 떠남 */
+export const DEAL = { ms: 3000, fly: 380, hand: 7 };
+export const dealLeave = (k, N) => k * (DEAL.ms - DEAL.fly - 500) / (DEAL.hand * N);
+export function dealCount(s, N, t) {
+  let c = 0;
+  for (let r = 0; r < DEAL.hand; r++) if (dealLeave(r * N + s, N) + DEAL.fly <= t) c++;
+  return c;
+}
+
+/* ---------- 색종이: 다시 그려도 같은 모양으로 이어지게 (elapsed = 시작 뒤 지난 ms) ---------- */
+const CF = ["#E5322D", "#1F6FD1", "#F2B705", "#22A447", "#FEE500", "#ffffff"];
+export function confettiHTML(n, elapsed = 0, seed = 1) {
+  let x = (seed * 7919) % 233280;
+  const R = () => (x = (x * 9301 + 49297) % 233280) / 233280;
+  let h = "";
+  for (let i = 0; i < n; i++) {
+    const left = R() * 100, dx = (R() - .5) * 260, rot = R() * 900 - 450, dur = 2300 + R() * 1700,
+      delay = R() * 900 - elapsed, w = 8 + R() * 9, c = CF[Math.floor(R() * CF.length)], round = R() < .3;
+    h += `<i style="left:${left.toFixed(1)}%;--dx:${dx | 0}px;--rot:${rot | 0}deg;width:${w | 0}px;height:${(round ? w : w * 1.6) | 0}px;background:${c};${round ? "border-radius:50%;" : ""}animation-duration:${dur | 0}ms;animation-delay:${delay | 0}ms"></i>`;
+  }
+  return `<div class="confetti" aria-hidden="true">${h}</div>`;
+}

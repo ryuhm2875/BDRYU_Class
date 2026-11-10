@@ -5,14 +5,14 @@
    - 전자칠판: 테이블 여러 개를 한꺼번에 / 모둠 태블릿: 테이블 하나
    - [선생님] 판: 멈춤 · 깜짝 문제 · 난이도 · 학생 관리 · 별 순위 · 소리
    ────────────────────────────────────────────────────────────── */
-import { Net, P, newCode } from "./net.js?v=202611101302";
-import { STALE_MS } from "./firebase-config.js?v=202611101302";
-import * as E from "./engine.js?v=202611101302";
-import { COLOR_INFO } from "./cards.js?v=202611101302";
-import { shuffle } from "./rng.js?v=202611101302";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML } from "./ui.js?v=202611101302";
-import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611101302";
-import { Sound, fxOf } from "./sound.js?v=202611101302";
+import { Net, P, newCode } from "./net.js?v=202611101414";
+import { STALE_MS } from "./firebase-config.js?v=202611101414";
+import * as E from "./engine.js?v=202611101414";
+import { COLOR_INFO } from "./cards.js?v=202611101414";
+import { shuffle } from "./rng.js?v=202611101414";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML, DEAL, dealLeave, dealCount, confettiHTML } from "./ui.js?v=202611101414";
+import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611101414";
+import { Sound, fxOf } from "./sound.js?v=202611101414";
 
 const LS = "ryuno-host-v1";
 const LEVELS = {
@@ -27,7 +27,7 @@ const ls = {
 };
 
 let H = null, code = null, seats = {}, ctx = null;
-let $stage, $tp = null, toast, lastEv = {}, flash = {}, tpOpen = false, popLevel = 2;
+let $stage, $tp = null, toast, lastEv = {}, flash = {}, won = {}, tpOpen = false, popLevel = 2;
 
 /* ================================================================ 시작 */
 export async function Board(context) {
@@ -81,7 +81,8 @@ function publish() {
     for (const [id, T] of Object.entries(H.tables)) tables[id] = E.publicView(T);
     const pop = H.pop ? { id: H.pop.id, q: H.pop.q, opts: H.pop.opts, dl: H.pop.dl, cnt: Object.keys(H.pop.ans).length, done: H.pop.done,
       a: H.pop.done ? H.pop.a : null, ex: H.pop.done ? H.pop.ex : null, right: H.pop.done ? H.pop.right : null } : null;
-    Net.set(P.pub(code), { phase: H.phase, round: H.round, cfg: H.cfg, tables, paused: !!H.paused, pop, stars: H.stars }).catch(() => {});
+    Net.set(P.pub(code), { phase: H.phase, round: H.round, cfg: H.cfg, tables, paused: !!H.paused, pop, stars: H.stars,
+      deal: H.dealUntil ? { at: H.dealAt, ms: DEAL.ms } : null }).catch(() => {});
 
     const upd = {}, inGame = new Set();
     for (const T of Object.values(H.tables)) for (const p of T.players) {
@@ -121,7 +122,7 @@ function handle(u, m) {
     if (!p || p.done || Net.now() > p.dl + 500 || p.ans[u] != null || !seats[u]) return false;
     p.ans[u] = +m.choice; return true;
   }
-  if (H.phase !== "play" || H.paused) return false;
+  if (H.phase !== "play" || H.paused || dealing()) return false;   // 카드 나눠 주는 동안은 받지 않음
   const T = tableOf(u); if (!T) return false;
   return E.act(T, u, m, Net.now(), () => pickQuestion(LEVELS[H.cfg.level].lv, H.recentQ)).ok;
 }
@@ -137,7 +138,7 @@ function afterChange() {
     H.awarded[T.id] = T.evn;
   }
   if (H.phase === "play" && Object.values(H.tables).every(T => T.phase === "end")) {
-    H.phase = "end";
+    H.phase = "end"; H.celebrate = H.round;          // 우승 장면에서 멈춤 → [결과 보기]
     H.history.push({ round: H.round, tables: Object.values(H.tables).map(T => ({ id: T.id, winner: T.winner, ranks: E.ranking(T).map(p => [p, T.hands[p].length]) })) });
     if (H.history.length > 30) H.history.shift();
   }
@@ -156,6 +157,10 @@ function loop() {
   } else if (H.pop && H.pop.done && now > H.pop.shownUntil) {
     const resume = H.pop.autoPaused; H.pop = null;
     if (resume && H.paused) togglePause(); else afterChange();
+  }
+  if (H.phase === "play" && !H.paused && H.dealUntil) {
+    if (now < H.dealUntil) dealTick(now);
+    else { H.dealUntil = 0; render(); }
   }
   if (H.phase === "play" && !H.paused) {
     let ch = false;
@@ -189,12 +194,34 @@ function startRound() {
   const k = E.tableCount(ids.length, H.cfg.size);
   const groups = Array.from({ length: k }, () => []);
   ids.forEach((u, j) => groups[j % k].push(u));
-  H.tables = {}; H.awarded = {}; H.paused = null;
+  H.tables = {}; H.awarded = {}; H.paused = null; H.celebrate = null; won = {};
   const now = Net.now();
   groups.forEach((g, i) => { const id = String(i + 1); H.tables[id] = E.newTable(id, g, now); });
+  /* 카드 나눠 주기: 그동안 첫 차례 시간이 줄지 않게 마감을 미룸 */
+  H.dealAt = now; H.dealUntil = now + DEAL.ms;
+  Object.values(H.tables).forEach(T => E.shiftTime(T, DEAL.ms));
   H.round++; H.phase = "play"; lastEv = {};
   Sound.start();
+  const N = Math.max(...groups.map(g => g.length));
+  for (let r = 0; r < DEAL.hand; r++) setTimeout(() => Sound.fx("draw"), dealLeave(r * N, N) + DEAL.fly);
+  setTimeout(() => Sound.fx("card"), DEAL.ms - 420);
   afterChange();
+}
+const dealing = () => H && H.phase === "play" && H.dealUntil && Net.now() < H.dealUntil;
+/* 나눠 주는 동안 0.25초마다: 자리마다 받은 장수만 고쳐 씀 (날아가는 카드는 그대로 둠) */
+function dealTick(now) {
+  const ts = Object.values(H.tables);
+  if (ts.length > 1) return render();
+  const T = ts[0], N = T.players.length, el = document.getElementById("seats");
+  if (!el) return;
+  [...el.children].forEach((seat, s) => {
+    const c = dealCount(s, N, now - H.dealAt), b = seat.querySelector(".sc b");
+    if (b && b.textContent !== String(c)) {
+      b.textContent = c;
+      seat.querySelector(".fan").innerHTML = "<i></i>".repeat(c);
+      seat.classList.remove("got"); void seat.offsetWidth; seat.classList.add("got");
+    }
+  });
 }
 function toLobby() { H.phase = "lobby"; H.tables = {}; H.paused = null; afterChange(); }
 function togglePause() {
@@ -252,7 +279,7 @@ const nm = p => (seats[p] && seats[p].name) || "?";
 function render() {
   if (!$stage) return;
   if (H.phase === "lobby") renderLobby();
-  else if (H.phase === "end") renderEnd();
+  else if (H.phase === "end") H.celebrate === H.round ? renderWin() : renderEnd();
   else { const ts = Object.values(H.tables); if (ts.length === 1) renderOne(ts[0]); else renderMany(ts); }
   renderOverlay();
   if (tpOpen) renderPanel();
@@ -272,6 +299,7 @@ function wire() {
     if (k === "sound") { Sound.toggleBgm(); return render(); }
     if (k === "pause") return togglePause();
     if (k === "start" || k === "next") return startRound();
+    if (k === "results") { H.celebrate = null; save(); return render(); }
     if (k === "lobby") return toLobby();
     if (k === "qm") return openManager(document.body, () => {});
   });
@@ -316,6 +344,7 @@ function renderOne(T) {
       <div class="cname" id="cname"></div>
       <div class="seats" id="seats"></div>
       <div class="quizbox" id="quiz"></div>
+      <div class="dealfx" id="dealfx"></div>
       <div class="toastwrap" id="toast"></div>${bbar(`<button class="pill sm" data-b="pause" id="pz"></button>`)}`;
     toast = toaster(document.getElementById("toast"));
     wire();
@@ -327,11 +356,15 @@ function renderOne(T) {
   g("dir").className = "dir " + (V.dir > 0 ? "cw" : "ccw");
   g("dir").innerHTML = V.dir > 0 ? "↻" : "↺";
   g("deck").innerHTML = `${backHTML()}<b>${V.deck}</b>`;
-  g("seats").innerHTML = V.p.map(p => seatHTML(T, V, p)).join("");
+  const now = Net.now(), dl = dealing(), N = V.p.length;
+  g("seats").innerHTML = V.p.map((p, s) => seatHTML(T, V, p, dl ? dealCount(s, N, now - H.dealAt) : null)).join("");
 
-  /* 바닥 카드: 낸 사람 자리에서 날아오게 */
-  const disc = g("disc"), topKey = String(V.top) + ":" + T.disc.length;
-  if (disc.dataset.k !== topKey) {
+  /* 바닥 카드: 낸 사람 자리에서 날아오게. 나눠 주는 동안은 뒷면, 끝나면 뒤집힘 */
+  const disc = g("disc"), topKey = dl ? "deal" : String(V.top) + ":" + T.disc.length;
+  if (dl) {
+    if (disc.dataset.k !== "deal") { disc.dataset.k = "deal"; disc.innerHTML = backHTML(); }
+  } else if (disc.dataset.k !== topKey) {
+    const flip = disc.dataset.k === "deal";
     disc.dataset.k = topKey;
     const last = [...T.ev].reverse().find(e => e.t === "play" && e.card === V.top);
     let from = "";
@@ -343,10 +376,12 @@ function renderOne(T) {
         from = `style="--fx:${Math.round(dx)}px;--fy:${Math.round(dy)}px"`;
       }
     }
-    disc.innerHTML = cardHTML(V.top, { cls: "fly", attr: from });
+    disc.innerHTML = cardHTML(V.top, { cls: flip ? "flipin" : "fly", attr: flip ? "" : from });
   }
-  disc.style.setProperty("--glow", COLOR_INFO[V.color].hex);
-  g("cname").innerHTML = `<span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${colorName(V.color)}${V.atk ? ` <span class="atkb">⚔ +${V.atk.n} 쌓임</span>` : ""}`;
+  disc.style.setProperty("--glow", dl ? "transparent" : COLOR_INFO[V.color].hex);   // 나눠 주는 동안은 색을 숨김
+  dealFly(g, V, dl, now);                                // 바닥 카드를 놓은 뒤에 재야 더미 위치가 맞음
+  if (dl) g("cname").innerHTML = `<span class="muted">카드를 나눠 주는 중…</span>`;
+  else g("cname").innerHTML = `<span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${colorName(V.color)}${V.atk ? ` <span class="atkb">⚔ +${V.atk.n} 쌓임</span>` : ""}`;
   g("quiz").innerHTML = V.quiz ? `<div class="qhd">${esc(nm(V.quiz.target))} 방어 문제 · ${V.quiz.n || 4}장 <b data-dl="${V.quiz.dl}" data-tot="${E.RULES.quizMs}">${secLeft(V.quiz.dl, Net.now())}</b></div>
       <div class="qq">${esc(V.quiz.q)}</div><ol>${V.quiz.opts.map(o => `<li>${esc(o)}</li>`).join("")}</ol>` : "";
   g("quiz").classList.toggle("on", !!V.quiz);
@@ -354,8 +389,8 @@ function renderOne(T) {
   newEvents(T, e => { toast(evText(e, nm)); const f = fxOf(e); if (f && (!best || f !== "card")) best = f; });
   if (best) Sound.fx(best);
 }
-function seatHTML(T, V, p) {
-  const s = seats[p] || {}, me = V.turn === p, n = V.n[p];
+function seatHTML(T, V, p, dealt = null) {
+  const s = seats[p] || {}, me = dealt == null && V.turn === p, n = dealt ?? V.n[p];
   const tags = [];
   if (V.uno && V.uno.pid === p) tags.push(V.uno.safe ? `<i class="tag uno">류노!</i>` : `<i class="tag warn">1장!</i>`);
   if (V.quiz && V.quiz.target === p) tags.push(`<i class="tag q">방어 중</i>`);
@@ -374,6 +409,48 @@ function newEvents(T, fn) {
   lastEv[T.id] = T.evn;
 }
 
+/* 더미에서 각 자리로 날아가는 카드. 다시 그려도 지난 시간만큼 이어서 날아감 */
+function dealFly(g, V, dl, now) {
+  const fx = g("dealfx");
+  if (!dl) { if (fx.innerHTML) fx.innerHTML = ""; return; }
+  const deck = g("deck"), pile = deck.parentElement, seatsEl = g("seats");
+  const x0 = pile.offsetLeft + deck.offsetLeft + deck.offsetWidth / 2, y0 = pile.offsetTop + deck.offsetTop + deck.offsetHeight / 2;
+  const N = V.p.length, t = now - H.dealAt;
+  let h = "";
+  for (let r = 0; r < DEAL.hand; r++) for (let s = 0; s < N; s++) {
+    const leave = dealLeave(r * N + s, N);
+    if (leave + DEAL.fly <= t) continue;                       // 이미 도착
+    const seat = seatsEl.children[s]; if (!seat) continue;
+    const x1 = seatsEl.offsetLeft + seat.offsetLeft + seat.offsetWidth / 2, y1 = seatsEl.offsetTop + seat.offsetTop + 40;
+    h += `<div class="dfly" style="left:${x0 | 0}px;top:${y0 | 0}px;--tx:${(x1 - x0) | 0}px;--ty:${(y1 - y0) | 0}px;--rt:${((s - (N - 1) / 2) * 9) | 0}deg;animation-duration:${DEAL.fly}ms;animation-delay:${(leave - t) | 0}ms">${backHTML()}</div>`;
+  }
+  fx.innerHTML = h;
+}
+
+/* ---------- 우승 장면 (선생님이 [결과 보기]를 누를 때까지) ---------- */
+function renderWin() {
+  const ts = Object.values(H.tables);
+  if ($stage.dataset.win === String(H.round) && $stage.classList.contains("win")) {     // 이미 그림 → 색종이는 그대로, 이름만 고침
+    const bs = $stage.querySelectorAll(".wtitle b, .wlist b");
+    ts.forEach((t, i) => { if (bs[i]) bs[i].textContent = t.winner ? nm(t.winner) : "-"; });
+    return;
+  }
+  $stage.dataset.win = String(H.round);
+  $stage.className = "stage win";
+  const one = ts.length === 1, T = ts[0];
+  const last = one ? T.disc[T.disc.length - 1] : null;
+  $stage.innerHTML = `${head(`<span class="bround">${H.round}판</span>`)}
+    <div class="wglow"></div>
+    ${one ? `<div class="wcard" style="--glow:${COLOR_INFO[T.color].hex}">${cardHTML(last)}</div>` : ""}
+    <div class="wtitle">${one ? `<span class="wtro">🏆</span><b>${esc(nm(T.winner))}</b> 승리!` : `<span class="wtro">🏆</span>테이블별 우승`}</div>
+    ${one ? `<div class="wsub">${T.ev.some(e => e.t === "win" && e.left) ? "혼자 남았어요" : "카드를 모두 냈어요!"}</div>`
+      : `<div class="wlist">${ts.map(t => `<div><i>${t.id}번</i><b>${esc(t.winner ? nm(t.winner) : "-")}</b></div>`).join("")}</div>`}
+    ${confettiHTML(140, 0, H.round)}
+    <div class="ego"><button class="pill y xl" data-b="results">결과 보기</button><button class="pill" data-b="next">다음 판</button></div>${bbar()}`;
+  wire();
+  Sound.fx("win");
+}
+
 /* ---------- 테이블 여러 개: 격자 ---------- */
 function renderMany(ts) {
   $stage.className = "stage many";
@@ -386,7 +463,8 @@ function renderMany(ts) {
   if (best && best !== "card" && best !== "draw") Sound.fx(best);
 }
 function panelHTML(T, onFx) {
-  const V = E.publicView(T);
+  const V = E.publicView(T), dl = dealing(), t = Net.now() - (H.dealAt || 0);
+  if (V.phase === "end" && !won[T.id]) won[T.id] = Date.now();
   let line = "";
   newEvents(T, e => { const t = evText(e, nm); if (t) { line = t.big ? `${t.big} ${t.small || ""}` : t.small; flash[T.id] = Date.now(); } const f = fxOf(e); if (f) onFx(f); });
   if (line) flash[T.id + "l"] = line;
@@ -398,9 +476,10 @@ function panelHTML(T, onFx) {
       <div class="pcn"><span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${COLOR_INFO[V.color].manner}</div></div>
       <ul>${V.p.map(p => {
         const tag = V.winner === p ? "🏆" : V.uno && V.uno.pid === p ? (V.uno.safe ? "류노!" : "1장!") : V.quiz && V.quiz.target === p ? "방어 중" : V.atk && V.turn === p ? `+${V.atk.n}!` : "";
-        return `<li class="${V.turn === p ? "now" : ""} ${seats[p] && seats[p].on ? "" : "gone"}"><span>${esc(nm(p))}</span><i>${tag}</i><b>${V.n[p]}</b></li>`;
+        return `<li class="${!dl && V.turn === p ? "now" : ""} ${seats[p] && seats[p].on ? "" : "gone"}"><span>${esc(nm(p))}</span><i>${tag}</i><b>${dl ? dealCount(V.p.indexOf(p), V.p.length, t) : V.n[p]}</b></li>`;
       }).join("")}</ul></div>
-    <div class="pline">${esc(V.phase === "end" ? `${nm(V.winner)} 승리!` : flash[T.id + "l"] || colorName(V.color))}</div></div>`;
+    <div class="pline">${esc(dl ? "카드를 나눠 주는 중…" : V.phase === "end" ? `🏆 ${nm(V.winner)} 승리!` : flash[T.id + "l"] || colorName(V.color))}</div>
+    ${won[T.id] && Date.now() - won[T.id] < 4500 ? confettiHTML(40, Date.now() - won[T.id], +T.id) : ""}</div>`;
 }
 
 /* ---------- 결과 ---------- */

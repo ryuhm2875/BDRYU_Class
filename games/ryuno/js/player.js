@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611101302";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611101302";
-import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611101302";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611101302";
-import { Sound, fxOf } from "./sound.js?v=202611101302";
+import { Net, P } from "./net.js?v=202611101414";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611101414";
+import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611101414";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML } from "./ui.js?v=202611101414";
+import { Sound, fxOf } from "./sound.js?v=202611101414";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -108,7 +108,8 @@ export function Player(code, name, ctx) {
     if (fx) Sound.fx(fx);
     if (draw.star !== (pub.stars || {})[me]) { draw.star = (pub.stars || {})[me]; g("star").textContent = draw.star ? `⭐${draw.star}` : ""; }
 
-    const mine = V.turn === me && V.phase === "play";
+    const dl = !!(pub.deal && Net.now() < pub.deal.at + pub.deal.ms);   // 칠판이 카드를 나눠 주는 중
+    const mine = !dl && V.turn === me && V.phase === "play";
     const cards = (hand.cards || []).slice().sort((a, b) => sortKey(a) - sortKey(b));
     const can = new Set(mine ? cards.filter(i => (hand.drawn == null || i === hand.drawn) && canPlay(i, V.top, V.color, V.atk)) : []);
     if (sel != null && !cards.includes(sel)) sel = null;
@@ -121,6 +122,7 @@ export function Player(code, name, ctx) {
     if (V.phase === "end") { st.className = "status " + (V.winner === me ? "win" : "end"); st.innerHTML = V.winner === me ? "🏆 내가 이겼어요!" : `${esc(nm(V.winner))} 승리! 다음 판을 기다려요.`; }
     else if (V.quiz && V.quiz.target === me) { st.className = "status quiz"; st.innerHTML = `방어 문제! <b data-dl="${V.quiz.dl}"></b>`; }
     else if (V.quiz) { st.className = "status"; st.innerHTML = `${esc(nm(V.quiz.target))} 방어 문제 푸는 중…`; }
+    else if (dl) { st.className = "status wait"; st.innerHTML = "카드를 받는 중…"; }
     else if (mine && V.atk) { st.className = "status mine atk"; st.innerHTML = `⚔ +${V.atk.n} 공격! 받아칠까요? <b data-dl="${V.dl}"></b>`; }
     else if (mine) { st.className = "status mine"; st.innerHTML = `${hand.drawn != null ? "뽑은 카드를 낼까요?" : "내 차례!"} <b data-dl="${V.dl}"></b>`; }
     else { st.className = "status"; st.innerHTML = `${esc(nm(V.turn))} 차례 <b data-dl="${V.dl}"></b>`; }
@@ -129,15 +131,17 @@ export function Player(code, name, ctx) {
     const at = V.p.indexOf(me), order = V.p.map((_, k) => V.p[(at + V.dir * (k + 1) + V.p.length * 7) % V.p.length]).filter(p => p !== me);
     g("opps").innerHTML = order.map(p => {
       const tag = V.uno && V.uno.pid === p ? (V.uno.safe ? `<i class="tag uno">류노!</i>` : `<i class="tag warn">1장!</i>`) : "";
-      return `<div class="opp ${V.turn === p ? "now" : ""} ${seats[p] && seats[p].on ? "" : "gone"}"><span>${esc(nm(p))}</span><b>${V.n[p]}</b>${tag}</div>`;
+      return `<div class="opp ${V.turn === p ? "now" : ""} ${seats[p] && seats[p].on ? "" : "gone"}"><span>${esc(nm(p))}</span><b>${dl ? dealCount(V.p.indexOf(p), V.p.length, Net.now() - pub.deal.at) : V.n[p]}</b>${tag}</div>`;
     }).join("");
 
     g("deck").innerHTML = `${backHTML()}<b>${V.deck}</b>`;
     g("deck").disabled = !(mine && hand.drawn == null) || busy();
-    g("top").style.setProperty("--glow", COLOR_INFO[V.color].hex);
-    g("top").innerHTML = cardHTML(V.top);
-    g("cname").innerHTML = `<span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${colorName(V.color)}`;
-    g("dir").textContent = V.dir > 0 ? "↻ 시계 방향" : "↺ 반시계 방향";
+    g("top").style.setProperty("--glow", dl ? "transparent" : COLOR_INFO[V.color].hex);
+    g("top").innerHTML = dl ? backHTML() : cardHTML(V.top);
+
+    g("cname").innerHTML = dl ? "" : `<span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${colorName(V.color)}`;
+    g("dir").textContent = dl ? "" : V.dir > 0 ? "↻ 시계 방향" : "↺ 반시계 방향";
+    if (dl) { clearTimeout(draw.dt); draw.dt = setTimeout(draw, 250); }     // 친구 장수가 올라가게
 
     /* 단추들 */
     const btns = [];
@@ -158,12 +162,27 @@ export function Player(code, name, ctx) {
       : (mine ? (V.atk ? (can.size ? "공격 카드로 받아치거나, 그냥 받으세요." : "받아칠 카드가 없어요.") : can.size ? "낼 수 있는 카드가 위로 올라와 있어요." : "낼 카드가 없어요. 한 장 뽑으세요.") : "");
 
     /* 손패 */
+    /* 나눠 주는 동안: 칠판에서 내 자리로 카드가 갈 때 한 장씩 들어옴 (다시 그려도 박자가 이어짐) */
+    const N = V.p.length, seat = V.p.indexOf(me), el = dl ? Net.now() - pub.deal.at : 0;
+    const dealStyle = k => dl ? `;animation-delay:${(dealLeave(k * N + seat, N) + DEAL.fly - 320 - el) | 0}ms` : "";
     g("hand").innerHTML = cards.map((i, k) => cardHTML(i, {
       cls: [mine ? (can.has(i) || twins.has(i) ? "can" : "no") : "", sel === i ? "sel" : "", extra.has(i) ? "sel2" : twins.has(i) ? "twin" : "", hand.drawn === i ? "new" : ""].join(" "),
-      attr: `data-i="${i}" style="--k:${k}"`
+      attr: `data-i="${i}" style="--k:${k}${dealStyle(k)}"`
     })).join("");
-    if (dealt) { draw.dealUntil = Date.now() + 1100; g("hand").classList.remove("deal"); void g("hand").offsetWidth; g("hand").classList.add("deal"); Sound.fx("draw"); }
+    g("hand").classList.toggle("dealin", dl);
+    if (dealt && !dl) { draw.dealUntil = Date.now() + 1100; g("hand").classList.remove("deal"); void g("hand").offsetWidth; g("hand").classList.add("deal"); Sound.fx("draw"); }
     else if (Date.now() > (draw.dealUntil || 0)) g("hand").classList.remove("deal");
+
+    /* 내가 이겼으면 화면 가득 색종이 (판마다 한 번) */
+    if (V.phase === "end" && V.winner === me && draw.won !== pub.round) {
+      draw.won = pub.round;
+      const w = document.createElement("div"); w.className = "winfx";
+      w.innerHTML = `${confettiHTML(90, 0, pub.round)}<div class="wbox"><span>🏆</span><b>내가 이겼어요!</b></div>`;
+      document.body.appendChild(w);
+      setTimeout(() => w.classList.add("out"), 4200); setTimeout(() => w.remove(), 5000);
+      Sound.fx("win");
+      if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) navigator.vibrate([120, 60, 120, 60, 220]);
+    }
     fitHand();
 
     /* 방어 문제 */

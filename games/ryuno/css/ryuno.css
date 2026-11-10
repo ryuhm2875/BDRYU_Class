@@ -447,3 +447,28 @@ body.player{overflow:hidden}
 @media (prefers-reduced-motion:reduce){
   .seat.now,.status.mine,.status.quiz,.hand .card.can,.hcards .c2,.seat.now::before,.pl::after,.bar.low i{animation:none!important}
 }
+
+/* =====================================================================
+   여러 장 내기 · 받아치기 · 대기실 이름 (2026-11)
+   ===================================================================== */
+/* 변경: 대기실 이름 칸이 자음 체계표에 밀려 높이 0이 되던 문제. 이름 칸이 먼저 자리를 차지하고, 체계표는 조금 작게 */
+.lobby .lb-right{gap:10px}
+.lobby .chips{flex:1 1 auto;min-height:96px;max-height:none;overflow:auto;gap:10px;align-content:flex-start;
+  background:rgba(255,255,255,.03);border-radius:14px;padding:10px}
+.lobby .chip{font-size:22px;padding:8px 18px;background:#2f2f2f;box-shadow:inset 0 0 0 2px rgba(254,229,0,.25);animation:chipin .35s cubic-bezier(.2,1.5,.4,1)}
+@keyframes chipin{from{transform:scale(.4);opacity:0}}
+.lobby .lb-chart{flex:none;padding:4px 8px}
+.lobby .lb-chart .chart{border-spacing:2px}
+.lobby .lb-chart .chart td{font-size:15px;padding:0 4px;line-height:1.55}
+.lobby .lb-chart .chart th{font-size:12px;padding:0 4px}
+.lobby .lb-chart .chart th small,.lobby .lb-chart .chart-k{display:none}
+
+/* 변경: 함께 낼 수 있는 같은 카드는 점선, 함께 내려고 고른 카드는 고른 카드와 같은 높이로 */
+.hand .card.twin{box-shadow:0 0 0 .3em rgba(254,229,0,.0),0 0 0 .3em var(--y);outline:.25em dashed var(--y);outline-offset:.15em}
+.hand .card.sel2{z-index:3;transform:translateY(-26px) scale(1.06);animation:none;box-shadow:0 0 0 .35em #fff,0 .5em 1.4em rgba(0,0,0,.6)}
+
+/* 변경: 공격이 걸린 내 차례는 빨간 상태 줄 + 빨간 가장자리 */
+.status.mine.atk{background:var(--bad);color:#fff}
+.pl:has(.status.mine.atk)::after{box-shadow:inset 0 0 0 5px var(--bad),inset 0 0 60px rgba(237,73,86,.4)}
+/* 변경: 칠판 색 이름 옆에 쌓인 공격 장수 */
+.atkb{display:inline-block;margin-left:10px;padding:2px 12px;border-radius:14px;background:var(--bad);color:#fff;font-size:.9em;animation:blink .8s steps(2) infinite}

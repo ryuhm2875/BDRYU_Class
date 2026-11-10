@@ -140,7 +140,7 @@ export function fxOf(e) {
     case "draw": return "draw";
     case "skip": return "skip";
     case "rev": return "rev";
-    case "d2": case "w4": return "hit";
+    case "d2": case "w4": case "atk": return "hit";
     case "combo": return "combo";
     case "uno": return "uno";
     case "catch": return "catch";

@@ -136,6 +136,73 @@ const fill = (c, cnt) => DECK.filter(x => x.k === "n" && x.c === c).slice(0, cnt
   ok(T.phase === "end" && T.winner === "B", "한 명 남으면 끝");
 }
 
+/* ---------- 3-2. 여러 장 내기 · 받아치기 ---------- */
+const Q4 = () => ({ id: "q", q: "?", opts: ["a", "b", "c", "d"], a: 1, ex: "" });
+{ // 같은 자음 2장
+  const g0 = pick("n", "red", "ㄱ", 0), g1 = pick("n", "red", "ㄱ", 1);
+  const T = rig(["A", "B", "C"], { A: [g0, g1, ...fill("blue", 2)], B: fill("yel", 3), C: fill("grn", 3) }, pick("n", "red", "ㄷ"));
+  ok(E.act(T, "A", { t: "play", cards: [g0, g1] }, 0).ok && T.hands.A.length === 2 && E.curPid(T) === "B", "ㄱ 2장 한꺼번에");
+  ok(T.disc.length === 3, "바닥에 2장 쌓임");
+  const T2 = rig(["A", "B"], { A: [g0, n("ㄷ"), ...fill("blue", 2)], B: fill("yel", 3) }, pick("n", "red", "ㅂ"));
+  ok(!E.act(T2, "A", { t: "play", cards: [g0, n("ㄷ")] }, 0).ok, "다른 글자는 함께 못 냄");
+}
+{ // 색이 다른 건너뛰기는 함께 못 냄, 같은 색 2장은 두 명 건너뜀
+  const s0 = pick("skip", "red", null, 0), s1 = pick("skip", "red", null, 1), sb = pick("skip", "blue", null, 0);
+  const T = rig(["A", "B", "C", "D"], { A: [s0, s1, sb, ...fill("blue", 2)], B: fill("yel", 3), C: fill("grn", 3), D: fill("yel", 3).map((x, i) => pick("n", "yel", "ㅈ", i)) }, pick("n", "red", "ㄱ"));
+  ok(!E.act(T, "A", { t: "play", cards: [s0, sb] }, 0).ok, "다른 색 건너뛰기 X");
+  ok(E.act(T, "A", { t: "play", cards: [s0, s1] }, 0).ok && E.curPid(T) === "D", "건너뛰기 2장 → B·C 건너 D");
+  const T3 = rig(["A", "B", "C"], { A: [s0, s1, ...fill("blue", 2)], B: fill("yel", 3), C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T3, "A", { t: "play", cards: [s0, s1] }, 0);
+  ok(E.curPid(T3) === "A", "3명에서 2장 → 다시 A");
+}
+{ // 방향 반대 2장 = 방향 그대로
+  const r0 = pick("rev", "red", null, 0), r1 = pick("rev", "red", null, 1);
+  const T = rig(["A", "B", "C"], { A: [r0, r1, ...fill("blue", 2)], B: fill("yel", 3), C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T, "A", { t: "play", cards: [r0, r1] }, 0);
+  ok(T.dir === 1 && E.curPid(T) === "B", "반대 2장 → 방향 그대로");
+}
+{ // +2 받아치기 → 쌓여서 C가 받음
+  const a2 = pick("d2", "red", null, 0), b2 = pick("d2", "blue", null, 0);
+  const T = rig(["A", "B", "C"], { A: [a2, ...fill("blue", 2)], B: [b2, ...fill("yel", 2)], C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T, "A", { t: "play", card: a2 }, 0);
+  ok(E.curPid(T) === "B" && T.attack && T.attack.n === 2, "B에게 +2 걸림, 받아칠 수 있어 B 차례");
+  ok(!E.act(T, "B", { t: "draw" }, 0).ok, "공격 걸린 동안 뽑기 X");
+  ok(!E.act(T, "B", { t: "play", card: T.hands.B[1] }, 0).ok, "공격 걸린 동안 일반 카드 X");
+  ok(E.act(T, "B", { t: "play", card: b2 }, 0).ok, "B가 +2로 받아침");
+  ok(T.hands.C.length === 7 && E.curPid(T) === "A" && !T.attack, "C가 4장 받고 쉼 → A");
+}
+{ // +2 위에 +4 → 쌓인 6장, 받는 사람은 방어 문제
+  const a2 = pick("d2", "red", null, 0), w4 = DECK.find(x => x.k === "w4").i;
+  const T = rig(["A", "B", "C"], { A: [a2, ...fill("blue", 2)], B: [w4, ...fill("yel", 2)], C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T, "A", { t: "play", card: a2 }, 0, Q4);
+  ok(E.act(T, "B", { t: "play", card: w4, color: "yel" }, 0, Q4).ok && T.phase === "quiz" && T.quiz.target === "C" && T.quiz.n === 6, "+2 위 +4 → C 방어 문제(6장)");
+  E.act(T, "C", { t: "answer", choice: 1 }, 0);
+  ok(T.hands.C.length === 7 && E.curPid(T) === "A", "맞혀서 2장 덜(4장) 받고 쉼");
+}
+{ // +4 위에 +2는 못 냄, 받기를 누르면 방어 문제
+  const w4 = DECK.find(x => x.k === "w4").i, b2 = pick("d2", "blue", null, 0), w4b = DECK.filter(x => x.k === "w4")[1].i;
+  const T = rig(["A", "B", "C"], { A: [w4, ...fill("blue", 2)], B: [b2, w4b, ...fill("yel", 2)], C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T, "A", { t: "play", card: w4, color: "blue" }, 0, Q4);
+  ok(E.curPid(T) === "B" && T.attack && T.attack.w4, "B는 +4가 있어 받아칠 기회");
+  ok(!E.act(T, "B", { t: "play", card: b2 }, 0, Q4).ok, "+4 위에 +2 X");
+  ok(E.act(T, "B", { t: "take" }, 0, Q4).ok && T.phase === "quiz" && T.quiz.target === "B" && T.quiz.n === 4, "받기 → B 방어 문제(4장)");
+  E.act(T, "B", { t: "answer", choice: 0 }, 0);
+  ok(T.hands.B.length === 8 && E.curPid(T) === "C", "틀려서 4장, 쉼 → C");
+}
+{ // 받아칠 수 있어도 시간이 지나면 그대로 받음
+  const a2 = pick("d2", "red", null, 0), b2 = pick("d2", "blue", null, 0);
+  const T = rig(["A", "B", "C"], { A: [a2, ...fill("blue", 2)], B: [b2, ...fill("yel", 2)], C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T, "A", { t: "play", card: a2 }, 0);
+  E.tick(T, 2e12, Q4);
+  ok(T.hands.B.length === 5 && E.curPid(T) === "C" && !T.attack, "시간 초과 → B 2장 받고 쉼");
+}
+{ // +2 2장 한꺼번에 = 4장
+  const a2 = pick("d2", "red", null, 0), a2b = pick("d2", "red", null, 1);
+  const T = rig(["A", "B", "C"], { A: [a2, a2b, ...fill("blue", 2)], B: fill("yel", 3), C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T, "A", { t: "play", cards: [a2, a2b] }, 0);
+  ok(T.hands.B.length === 7 && E.curPid(T) === "C", "+2 2장 → B 4장");
+}
+
 /* ---------- 4. 무작위 자동 대전 ---------- */
 function check(T) {
   const all = [...T.draw, ...T.disc, ...Object.values(T.hands).flat()];
@@ -159,7 +226,7 @@ for (let g = 0; g < 3000; g++) {
       if (r < 10) E.tick(T, T.quiz.deadline + 1);
       else E.act(T, T.quiz.target, { t: "answer", choice: rint(4) }, now);
     } else if (r < 3) {
-      E.tick(T, T.deadline + 1); now = T.deadline - E.RULES.turnMs;
+      E.tick(T, T.deadline + 1, rint(5) ? QP : null); now = T.deadline - E.RULES.turnMs;
     } else if (r < 8 && T.uno && !T.uno.safe) {
       const others = ps.filter(p => p !== T.uno.pid && T.players.includes(p));
       E.act(T, others[rint(others.length)], { t: "catch" }, now);
@@ -174,8 +241,10 @@ for (let g = 0; g < 3000; g++) {
       if (E.RULES && T.hands[me].length === 2 && rint(2)) E.act(T, me, { t: "uno" }, now);
       if (can.length && rint(10)) {
         const c = can[rint(can.length)];
-        E.act(T, me, { t: "play", card: c, color: COLORS[rint(4)], seq: T.seq }, now, rint(5) ? QP : null);
-      } else if (T.drawn != null) E.act(T, me, { t: "pass", seq: T.seq }, now);
+        const cards = T.drawn == null && rint(2) ? [c, ...T.hands[me].filter(x => x !== c && E.sameFace(c, x))] : [c];
+        E.act(T, me, { t: "play", cards, color: COLORS[rint(4)], seq: T.seq }, now, rint(5) ? QP : null);
+      } else if (T.attack) E.act(T, me, { t: "take", seq: T.seq }, now, rint(5) ? QP : null);
+      else if (T.drawn != null) E.act(T, me, { t: "pass", seq: T.seq }, now);
       else E.act(T, me, { t: "draw", seq: T.seq }, now);
     }
     if (T.phase !== "end") check(T);

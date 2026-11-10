@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611100937";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611100937";
-import { matchReason, RULES } from "./engine.js?v=202611100937";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611100937";
-import { Sound, fxOf } from "./sound.js?v=202611100937";
+import { Net, P } from "./net.js?v=202611101302";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611101302";
+import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611101302";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML } from "./ui.js?v=202611101302";
+import { Sound, fxOf } from "./sound.js?v=202611101302";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -20,7 +20,7 @@ const sortKey = i => {
 
 export function Player(code, name, ctx) {
   const me = Net.uid;
-  let pub = null, hand = null, seats = {}, sel = null, pending = 0, lastN = 0, lastRound = -1, answered = null;
+  let pub = null, hand = null, seats = {}, sel = null, extra = new Set(), pending = 0, lastN = 0, lastRound = -1, answered = null;
 
   document.body.classList.add("player");
   const $app = document.getElementById("app");
@@ -67,7 +67,7 @@ export function Player(code, name, ctx) {
   };
   /* 차례 행동(내기·뽑기·넘기기)만 답이 올 때까지 잠깐 잠금. 류노·잡았다·문제 답은 잠그지 않음 */
   const send = msg => {
-    if (["play", "draw", "pass"].includes(msg.t)) pending = Date.now();
+    if (["play", "draw", "pass", "take"].includes(msg.t)) pending = Date.now();
     return Net.push(P.mail(code, me), Object.assign({ at: Net.TS }, msg)).catch(() => { pending = 0; });
   };
   const busy = () => Date.now() - pending < 2500;
@@ -91,7 +91,7 @@ export function Player(code, name, ctx) {
     }
 
     let dealt = false;
-    if (pub.round !== lastRound) { lastRound = pub.round; lastN = 0; sel = null; answered = null; dealt = true; }
+    if (pub.round !== lastRound) { lastRound = pub.round; lastN = 0; sel = null; extra.clear(); answered = null; dealt = true; }
     if (V.seq !== draw.seq) { draw.seq = V.seq; pending = 0; }
 
     /* 새 사건 알림 */
@@ -110,14 +110,18 @@ export function Player(code, name, ctx) {
 
     const mine = V.turn === me && V.phase === "play";
     const cards = (hand.cards || []).slice().sort((a, b) => sortKey(a) - sortKey(b));
-    const can = new Set(mine ? cards.filter(i => (hand.drawn == null || i === hand.drawn) && matchReason(i, V.top, V.color)) : []);
+    const can = new Set(mine ? cards.filter(i => (hand.drawn == null || i === hand.drawn) && canPlay(i, V.top, V.color, V.atk)) : []);
     if (sel != null && !cards.includes(sel)) sel = null;
+    /* 함께 낼 수 있는 같은 카드: 고른 카드가 낼 수 있을 때만 */
+    const twins = new Set(sel != null && can.has(sel) && hand.drawn == null ? cards.filter(i => i !== sel && sameFace(sel, i)) : []);
+    for (const x of [...extra]) if (!twins.has(x)) extra.delete(x);
 
     /* 상태 띠 */
     const st = g("status");
     if (V.phase === "end") { st.className = "status " + (V.winner === me ? "win" : "end"); st.innerHTML = V.winner === me ? "🏆 내가 이겼어요!" : `${esc(nm(V.winner))} 승리! 다음 판을 기다려요.`; }
     else if (V.quiz && V.quiz.target === me) { st.className = "status quiz"; st.innerHTML = `방어 문제! <b data-dl="${V.quiz.dl}"></b>`; }
     else if (V.quiz) { st.className = "status"; st.innerHTML = `${esc(nm(V.quiz.target))} 방어 문제 푸는 중…`; }
+    else if (mine && V.atk) { st.className = "status mine atk"; st.innerHTML = `⚔ +${V.atk.n} 공격! 받아칠까요? <b data-dl="${V.dl}"></b>`; }
     else if (mine) { st.className = "status mine"; st.innerHTML = `${hand.drawn != null ? "뽑은 카드를 낼까요?" : "내 차례!"} <b data-dl="${V.dl}"></b>`; }
     else { st.className = "status"; st.innerHTML = `${esc(nm(V.turn))} 차례 <b data-dl="${V.dl}"></b>`; }
 
@@ -137,9 +141,10 @@ export function Player(code, name, ctx) {
 
     /* 단추들 */
     const btns = [];
-    if (mine && hand.drawn == null) btns.push(`<button class="pill" data-a="draw" ${busy() ? "disabled" : ""}>한 장 뽑기</button>`);
+    if (mine && V.atk) btns.push(`<button class="pill r" data-a="take" ${busy() ? "disabled" : ""}>${V.atk.n}장 받기${V.atk.w4 ? " (방어 문제)" : ""}</button>`);
+    else if (mine && hand.drawn == null) btns.push(`<button class="pill" data-a="draw" ${busy() ? "disabled" : ""}>한 장 뽑기</button>`);
     if (mine && hand.drawn != null) btns.push(`<button class="pill" data-a="pass" ${busy() ? "disabled" : ""}>넘기기</button>`);
-    if (mine && sel != null && can.has(sel)) btns.push(`<button class="pill y" data-a="play">이 카드 내기</button>`);
+    if (mine && sel != null && can.has(sel)) btns.push(`<button class="pill y" data-a="play">${extra.size ? `${extra.size + 1}장 함께 내기` : "이 카드 내기"}</button>`);
     const n = cards.length;
     const unoOpen = V.uno && V.uno.pid === me && !V.uno.safe;
     const unoReady = mine && n === 2 && !(V.ready || []).includes(me);
@@ -148,11 +153,13 @@ export function Player(code, name, ctx) {
     if ((V.ready || []).includes(me) && n === 2) btns.push(`<span class="ok">류노 준비 완료</span>`);
     g("acts").innerHTML = btns.join("");
 
-    g("desc").innerHTML = sel != null ? esc(describe(DECK[sel])) : (mine ? (can.size ? "낼 수 있는 카드가 위로 올라와 있어요." : "낼 카드가 없어요. 한 장 뽑으세요.") : "");
+    g("desc").innerHTML = sel != null
+      ? (twins.size ? `<b class="y">같은 카드가 ${twins.size}장 더 있어요.</b> 눌러서 함께 낼 수 있어요.` : esc(describe(DECK[sel])))
+      : (mine ? (V.atk ? (can.size ? "공격 카드로 받아치거나, 그냥 받으세요." : "받아칠 카드가 없어요.") : can.size ? "낼 수 있는 카드가 위로 올라와 있어요." : "낼 카드가 없어요. 한 장 뽑으세요.") : "");
 
     /* 손패 */
     g("hand").innerHTML = cards.map((i, k) => cardHTML(i, {
-      cls: [mine ? (can.has(i) ? "can" : "no") : "", sel === i ? "sel" : "", hand.drawn === i ? "new" : ""].join(" "),
+      cls: [mine ? (can.has(i) || twins.has(i) ? "can" : "no") : "", sel === i ? "sel" : "", extra.has(i) ? "sel2" : twins.has(i) ? "twin" : "", hand.drawn === i ? "new" : ""].join(" "),
       attr: `data-i="${i}" style="--k:${k}"`
     })).join("");
     if (dealt) { draw.dealUntil = Date.now() + 1100; g("hand").classList.remove("deal"); void g("hand").offsetWidth; g("hand").classList.add("deal"); Sound.fx("draw"); }
@@ -165,7 +172,7 @@ export function Player(code, name, ctx) {
       if (m.dataset.q !== V.quiz.q + V.seq) {
         m.dataset.q = V.quiz.q + V.seq; answered = null;
         m.className = "modal on";
-        m.innerHTML = `<div class="mbox quiz"><div class="mh">🛡️ 방어 문제 · 맞히면 2장만! <b data-dl="${V.quiz.dl}"></b></div>
+        m.innerHTML = `<div class="mbox quiz"><div class="mh">🛡️ 방어 문제 · 맞히면 ${(V.quiz.n || 4) - 2}장만! <b data-dl="${V.quiz.dl}"></b></div>
           <div class="mq">${esc(V.quiz.q)}</div>
           <div class="mo">${V.quiz.opts.map((o, k) => `<button data-ans="${k}">${esc(o)}</button>`).join("")}</div></div>`;
       }
@@ -223,8 +230,8 @@ export function Player(code, name, ctx) {
   /* ---------- 누르기 ---------- */
   const playSel = color => {
     const V = T(); if (!V || sel == null) return;
-    const card = sel; sel = null;
-    send({ t: "play", card, color: color || null, seq: V.seq });
+    const cards = [sel, ...extra]; sel = null; extra.clear();
+    send({ t: "play", card: cards[0], cards, color: color || null, seq: V.seq });
     draw();
   };
   const askColor = () => {
@@ -241,12 +248,16 @@ export function Player(code, name, ctx) {
     if (cardEl) {
       const i = +cardEl.dataset.i;
       const mine = V && V.turn === me && V.phase === "play";
-      const ok = mine && (hand.drawn == null || i === hand.drawn) && matchReason(i, V.top, V.color);
-      if (sel === i && ok && !busy()) {                // 두 번 누르면 냄
+      const ok = mine && (hand.drawn == null || i === hand.drawn) && canPlay(i, V.top, V.color, V.atk);
+      if (sel === i && ok && !busy()) {                // 두 번 누르면 냄 (같은 카드를 골라 뒀으면 함께)
         if (DECK[i].c == null) return askColor();
         return playSel();
       }
-      sel = i; draw(); return;
+      /* 고른 카드와 같은 카드를 누르면 '함께 내기'에 넣었다 뺐다 */
+      if (sel != null && i !== sel && hand.drawn == null && mine && canPlay(sel, V.top, V.color, V.atk) && sameFace(sel, i)) {
+        extra.has(i) ? extra.delete(i) : extra.add(i); draw(); return;
+      }
+      sel = i; extra.clear(); draw(); return;
     }
     if (e.target.closest("[data-rules]")) return g("rules").click();
     if (e.target.closest("[data-close]")) { const m = g("modal"); m.className = "modal"; m.dataset.kind = ""; return draw(); }
@@ -269,10 +280,10 @@ export function Player(code, name, ctx) {
       const a = b.dataset.a;
       if (!V) return;
       if (a === "play") { if (DECK[sel] && DECK[sel].c == null) return askColor(); return playSel(); }
-      if (a === "draw" || a === "pass") { send({ t: a, seq: V.seq }); return draw(); }
+      if (a === "draw" || a === "pass" || a === "take") { send({ t: a, seq: V.seq }); return draw(); }
       if (a === "uno") { send({ t: "uno" }); return; }
       if (a === "catch") { send({ t: "catch" }); return; }
     }
-    if (e.target.closest("#deck") && V && V.turn === me && hand.drawn == null && !busy()) { send({ t: "draw", seq: V.seq }); draw(); }
+    if (e.target.closest("#deck") && V && V.turn === me && hand.drawn == null && !busy()) { send({ t: V.atk ? "take" : "draw", seq: V.seq }); draw(); }
   });
 }

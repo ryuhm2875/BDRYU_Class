@@ -9,13 +9,17 @@
    · 낼 카드가 없으면 1장 뽑기. 뽑은 카드를 낼 수 있으면 바로 내거나 넘기기
    · 건너뛰기, 방향 반대(2명이면 건너뛰기), +2(받고 쉼), 와일드(색 고름),
      +4(색 고름, 다음 사람은 방어 문제: 맞히면 2장 · 틀리면 4장, 그리고 쉼)
-   · 쌓기 없음, +4 이의 제기 없음
+   · 같은 카드(색·글자·기호가 모두 같음)는 여러 장을 한꺼번에 낼 수 있음
+     건너뛰기 2장 = 두 사람 건너뜀, 방향 반대 2장 = 방향 그대로, +2 2장 = 4장
+   · 받아치기: +2 위엔 +2나 +4, +4 위엔 +4. 장수는 쌓임.
+     받아칠 카드가 없는 사람이 다 받음. 쌓인 것에 +4가 있으면 방어 문제(맞히면 2장 덜)
+   · +4 이의 제기 없음
    · 1장 남으면 류노! 다음 사람이 움직이기 전에 남이 먼저 [잡았다] → 2장
    · 음운 변동 콤보(비음화·유음화) → 다음 사람 1장
    · 차례마다 20초. 지나면 자동으로 1장 뽑고 넘어감
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611100937";
-import { shuffle, cryptoInt } from "./rng.js?v=202611100937";
+import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611101302";
+import { shuffle, cryptoInt } from "./rng.js?v=202611101302";
 
 export const RULES = {
   hand: 7,
@@ -48,6 +52,21 @@ export function matchReason(cardIdx, topIdx, color) {
   }
   return null;
 }
+/* 받아칠 공격(atk = { n, w4 })이 걸려 있으면 공격 카드만 낼 수 있음 */
+export function canPlay(cardIdx, topIdx, color, atk) {
+  if (atk) {
+    const k = DECK[cardIdx].k;
+    if (k === "w4") return "stack";
+    if (k === "d2" && !atk.w4) return "stack";
+    return null;
+  }
+  return matchReason(cardIdx, topIdx, color);
+}
+/* 함께 낼 수 있는 '같은 카드': 종류·색·글자가 모두 같음 (모음 와일드는 한 장씩) */
+export function sameFace(a, b) {
+  const A = DECK[a], B = DECK[b];
+  return A.k !== "wild" && A.k === B.k && A.c === B.c && A.j === B.j;
+}
 export const REASON_TEXT = {
   wild: "와일드!",
   same: "같은 글자!",
@@ -74,7 +93,7 @@ export function newTable(id, pids, now) {
     id, players: pids.slice(), hands, draw, disc: [top],
     color: DECK[top].c, dir: 1, turn: RINT(pids.length),
     phase: "play", seq: 0, deadline: 0, drawn: null,
-    uno: null, ready: {}, quiz: null, winner: null, evn: 0, ev: []
+    uno: null, ready: {}, quiz: null, attack: null, winner: null, evn: 0, ev: []
   };
   startTurn(T, now);
   return T;
@@ -118,7 +137,7 @@ function closeUno(T, byPid) { if (T.uno && T.uno.pid !== byPid) T.uno = null; }
 export function playable(T, pid) {
   if (T.phase !== "play" || curPid(T) !== pid) return [];
   const pool = T.drawn != null ? [T.drawn] : T.hands[pid];
-  return pool.filter(i => matchReason(i, topIdx(T), T.color));
+  return pool.filter(i => canPlay(i, topIdx(T), T.color, T.attack));
 }
 
 /* ================================================================
@@ -135,6 +154,7 @@ export function act(T, pid, a, now, quizPick) {
     case "uno":    return uno(T, pid);
     case "catch":  return catchUno(T, pid);
     case "answer": return answer(T, pid, a, now);
+    case "take":   return take(T, pid, a, now, quizPick);
   }
   return no("모르는 행동");
 }
@@ -150,29 +170,31 @@ function myTurn(T, pid, a) {
 
 function play(T, pid, a, now, quizPick) {
   const bad = myTurn(T, pid, a); if (bad) return no(bad);
-  const card = a.card, hand = T.hands[pid];
-  const at = hand.indexOf(card);
-  if (at < 0) return no("손에 없는 카드");
-  if (T.drawn != null && card !== T.drawn) return no("뽑은 카드만 낼 수 있음");
-  const top = topIdx(T);
-  const why = matchReason(card, top, T.color);
+  const hand = T.hands[pid];
+  const cards = Array.isArray(a.cards) && a.cards.length ? a.cards.map(Number) : [a.card];
+  if (new Set(cards).size !== cards.length) return no("같은 카드를 두 번 고름");
+  if (cards.some(c => hand.indexOf(c) < 0)) return no("손에 없는 카드");
+  if (T.drawn != null && (cards.length > 1 || cards[0] !== T.drawn)) return no("뽑은 카드만 낼 수 있음");
+  const lead = cards[0], top = topIdx(T);
+  const why = canPlay(lead, top, T.color, T.attack);
   if (!why) return no("낼 수 없는 카드");
-  const C = DECK[card];
+  if (cards.some(c => !sameFace(lead, c) && c !== lead)) return no("같은 카드만 함께 낼 수 있음");
+  const C = DECK[lead], cnt = cards.length;
   if ((C.k === "wild" || C.k === "w4") && !COLORS.includes(a.color)) return no("색을 골라야 함");
 
   closeUno(T, pid);
-  hand.splice(at, 1);
-  T.disc.push(card);
+  for (const c of cards) { hand.splice(hand.indexOf(c), 1); T.disc.push(c); }
   T.color = C.c || a.color;
   const combo = (C.k === "n" && DECK[top].k === "n") ? findCombo(DECK[top].j, C.j) : null;
-  const ev = { t: "play", pid, card, why, color: T.color };
+  const ev = { t: "play", pid, card: lead, why, color: T.color };
+  if (cnt > 1) ev.cnt = cnt;
   if (why === "place") ev.via = CONS[C.j].p;
   if (why === "strength") ev.via = CONS[C.j].s;
   emit(T, ev);
 
   /* 다 냈으면 승리 */
   if (!hand.length) {
-    T.phase = "end"; T.winner = pid; T.uno = null; T.seq++;
+    T.phase = "end"; T.winner = pid; T.uno = null; T.attack = null; T.seq++;
     emit(T, { t: "win", pid });
     return yes;
   }
@@ -184,35 +206,17 @@ function play(T, pid, a, now, quizPick) {
   delete T.ready[pid];
 
   switch (C.k) {
-    case "skip": {
-      const v = nextPid(T); advance(T, 2);
-      emit(T, { t: "skip", pid: v });
-      break;
-    }
+    case "skip": skipMany(T, cnt, "skip"); break;
     case "rev": {
-      if (N(T) === 2) { const v = nextPid(T); advance(T, 2); emit(T, { t: "rev", two: true, pid: v }); }
-      else { T.dir *= -1; advance(T, 1); emit(T, { t: "rev", dir: T.dir }); }
-      break;
-    }
-    case "d2": {
-      const v = nextPid(T); const got = give(T, v, 2); advance(T, 2);
-      emit(T, { t: "d2", pid: v, got });
-      break;
-    }
-    case "w4": {
-      const v = nextPid(T);
-      const q = quizPick ? quizPick(v) : null;
-      if (q) {
-        T.phase = "quiz";
-        T.quiz = { target: v, by: pid, id: q.id, q: q.q, opts: q.opts, a: q.a, ex: q.ex, deadline: now + RULES.quizMs };
-        T.seq++;
-        emit(T, { t: "w4", pid: v, quiz: true });
-        return yes;
+      if (N(T) === 2) skipMany(T, cnt, "rev");
+      else {
+        if (cnt % 2) T.dir *= -1;              // 짝수 장이면 방향 그대로
+        advance(T, 1); emit(T, { t: "rev", dir: T.dir, cnt });
       }
-      const got = give(T, v, RULES.w4); advance(T, 2);
-      emit(T, { t: "w4", pid: v, got });
       break;
     }
+    case "d2": return attack(T, pid, 2 * cnt, false, now, quizPick);
+    case "w4": return attack(T, pid, RULES.w4 * cnt, true, now, quizPick);
     case "wild":
       advance(T, 1);
       break;
@@ -228,9 +232,62 @@ function play(T, pid, a, now, quizPick) {
   return yes;
 }
 
+/* 건너뛰기 cnt장: cnt명을 건너뜀 (다른 사람 수보다 많이 건너뛰지는 않음) */
+function skipMany(T, cnt, t) {
+  const k = Math.min(cnt, N(T) - 1);
+  const pids = Array.from({ length: k }, (_, i) => T.players[idxAfter(T, i + 1)]);
+  advance(T, k + 1);
+  emit(T, t === "rev" ? { t: "rev", two: true, pid: pids[0], pids } : { t: "skip", pid: pids[0], pids });
+}
+
+/* 공격(+2·+4): 다음 사람에게 쌓임. 받아칠 카드가 있으면 그 사람 차례, 없으면 바로 받음 */
+function attack(T, pid, add, isW4, now, quizPick) {
+  const A = T.attack || { n: 0, w4: false, k: 0 };
+  T.attack = null;
+  A.n += add; A.w4 = A.w4 || isW4; A.by = pid; A.k++;
+  advance(T, 1);
+  const v = curPid(T);
+  if (T.hands[v].some(i => canPlay(i, topIdx(T), T.color, A))) {
+    T.attack = A;
+    emit(T, { t: "atk", pid: v, by: pid, n: A.n, w4: A.w4 });
+    startTurn(T, now);
+    return yes;
+  }
+  return takeAttack(T, v, A, now, quizPick);
+}
+/* 공격을 받음 (지금 차례 = 받는 사람). +4가 섞였으면 방어 문제 */
+function takeAttack(T, v, A, now, quizPick) {
+  T.attack = null; T.drawn = null;
+  if (A.w4) {
+    const q = quizPick ? quizPick(v) : null;
+    if (q) {
+      T.phase = "quiz";
+      T.quiz = { target: v, by: A.by, n: A.n, id: q.id, q: q.q, opts: q.opts, a: q.a, ex: q.ex, deadline: now + RULES.quizMs };
+      T.seq++;
+      emit(T, { t: "w4", pid: v, quiz: true, n: A.n, stacked: A.k > 1 });
+      return yes;
+    }
+    const got = give(T, v, A.n);
+    emit(T, { t: "w4", pid: v, got, stacked: A.k > 1 });
+  } else {
+    const got = give(T, v, A.n);
+    emit(T, { t: "d2", pid: v, got, stacked: A.k > 1 });
+  }
+  advance(T, 1);                         // 받은 사람은 차례를 쉼
+  startTurn(T, now);
+  return yes;
+}
+function take(T, pid, a, now, quizPick) {
+  const bad = myTurn(T, pid, a); if (bad) return no(bad);
+  if (!T.attack) return no("받을 공격이 없음");
+  closeUno(T, pid);
+  return takeAttack(T, pid, T.attack, now, quizPick);
+}
+
 function draw(T, pid, a, now) {
   const bad = myTurn(T, pid, a); if (bad) return no(bad);
   if (T.drawn != null) return no("이미 뽑았음");
+  if (T.attack) return no("공격을 받거나 받아쳐야 함");
   closeUno(T, pid);
   const got = give(T, pid, 1);
   emit(T, { t: "draw", pid, got });
@@ -277,9 +334,9 @@ function answer(T, pid, a, now) {
   return resolveQuiz(T, a.choice === T.quiz.a, a.choice, now);
 }
 function resolveQuiz(T, ok, choice, now) {
-  const Q = T.quiz, v = Q.target;
-  const got = give(T, v, ok ? RULES.w4Defended : RULES.w4);
-  emit(T, { t: "quizres", pid: v, ok, got, choice: choice ?? null, a: Q.a, ex: Q.ex, q: Q.q, opts: Q.opts });
+  const Q = T.quiz, v = Q.target, n = Q.n || RULES.w4;
+  const got = give(T, v, ok ? n - (RULES.w4 - RULES.w4Defended) : n);
+  emit(T, { t: "quizres", pid: v, ok, got, n, choice: choice ?? null, a: Q.a, ex: Q.ex, q: Q.q, opts: Q.opts });
   T.quiz = null; T.phase = "play";
   T.turn = T.players.indexOf(v);
   advance(T, 1);                       // 문제를 푼 사람은 차례를 쉼
@@ -288,7 +345,7 @@ function resolveQuiz(T, ok, choice, now) {
 }
 
 /* ---------- 시간 흐름: 심판이 0.25초마다 부름. 바뀐 게 있으면 true ---------- */
-export function tick(T, now) {
+export function tick(T, now, quizPick) {
   if (T.phase === "quiz" && T.quiz && now > T.quiz.deadline) {
     resolveQuiz(T, false, null, now);
     return true;
@@ -296,6 +353,11 @@ export function tick(T, now) {
   if (T.phase === "play" && now > T.deadline) {
     const pid = curPid(T);
     closeUno(T, pid);
+    if (T.attack) {                                   // 받아치지 않고 시간이 지나면 그대로 받음
+      emit(T, { t: "timeout", pid, drew: false });
+      takeAttack(T, pid, T.attack, now, quizPick);
+      return true;
+    }
     if (T.drawn != null) {
       emit(T, { t: "timeout", pid, drew: false });
     } else {
@@ -335,6 +397,7 @@ export function removePlayer(T, pid, now) {
   T.players.splice(at, 1);
   let quizGone = null;
   if (T.quiz && T.quiz.target === pid) { quizGone = T.quiz.by; T.quiz = null; T.phase = "play"; }
+  if (wasTurn) T.attack = null;          // 공격을 받을 사람이 나가면 공격은 없어짐
   if (T.players.length < 2) {
     T.phase = "end"; T.winner = T.players[0] || null; T.seq++;
     emit(T, { t: "win", pid: T.winner, left: true });
@@ -377,7 +440,8 @@ export function publicView(T) {
     phase: T.phase, seq: T.seq, dl: T.deadline,
     drawn: T.drawn != null ? curPid(T) : null,
     uno: T.uno, ready: Object.keys(T.ready),
-    quiz: T.quiz ? { target: T.quiz.target, by: T.quiz.by, q: T.quiz.q, opts: T.quiz.opts, dl: T.quiz.deadline } : null,
+    quiz: T.quiz ? { target: T.quiz.target, by: T.quiz.by, n: T.quiz.n || RULES.w4, q: T.quiz.q, opts: T.quiz.opts, dl: T.quiz.deadline } : null,
+    atk: T.attack ? { n: T.attack.n, w4: T.attack.w4, by: T.attack.by } : null,
     winner: T.winner, ev: T.ev.slice(-6)
   };
 }

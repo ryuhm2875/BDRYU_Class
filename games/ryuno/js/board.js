@@ -5,14 +5,14 @@
    - 전자칠판: 테이블 여러 개를 한꺼번에 / 모둠 태블릿: 테이블 하나
    - [선생님] 판: 멈춤 · 깜짝 문제 · 난이도 · 학생 관리 · 별 순위 · 소리
    ────────────────────────────────────────────────────────────── */
-import { Net, P, newCode } from "./net.js?v=202611100937";
-import { STALE_MS } from "./firebase-config.js?v=202611100937";
-import * as E from "./engine.js?v=202611100937";
-import { COLOR_INFO } from "./cards.js?v=202611100937";
-import { shuffle } from "./rng.js?v=202611100937";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML } from "./ui.js?v=202611100937";
-import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611100937";
-import { Sound, fxOf } from "./sound.js?v=202611100937";
+import { Net, P, newCode } from "./net.js?v=202611101302";
+import { STALE_MS } from "./firebase-config.js?v=202611101302";
+import * as E from "./engine.js?v=202611101302";
+import { COLOR_INFO } from "./cards.js?v=202611101302";
+import { shuffle } from "./rng.js?v=202611101302";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML } from "./ui.js?v=202611101302";
+import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611101302";
+import { Sound, fxOf } from "./sound.js?v=202611101302";
 
 const LS = "ryuno-host-v1";
 const LEVELS = {
@@ -159,7 +159,7 @@ function loop() {
   }
   if (H.phase === "play" && !H.paused) {
     let ch = false;
-    for (const T of Object.values(H.tables)) if (T.phase !== "end" && E.tick(T, now)) ch = true;
+    for (const T of Object.values(H.tables)) if (T.phase !== "end" && E.tick(T, now, () => pickQuestion(LEVELS[H.cfg.level].lv, H.recentQ))) ch = true;
     if (ch) afterChange();
     /* 테이블 하나일 때 마지막 5초 똑딱 */
     const ts = Object.values(H.tables);
@@ -346,8 +346,8 @@ function renderOne(T) {
     disc.innerHTML = cardHTML(V.top, { cls: "fly", attr: from });
   }
   disc.style.setProperty("--glow", COLOR_INFO[V.color].hex);
-  g("cname").innerHTML = `<span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${colorName(V.color)}`;
-  g("quiz").innerHTML = V.quiz ? `<div class="qhd">${esc(nm(V.quiz.target))} 방어 문제 <b data-dl="${V.quiz.dl}" data-tot="${E.RULES.quizMs}">${secLeft(V.quiz.dl, Net.now())}</b></div>
+  g("cname").innerHTML = `<span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${colorName(V.color)}${V.atk ? ` <span class="atkb">⚔ +${V.atk.n} 쌓임</span>` : ""}`;
+  g("quiz").innerHTML = V.quiz ? `<div class="qhd">${esc(nm(V.quiz.target))} 방어 문제 · ${V.quiz.n || 4}장 <b data-dl="${V.quiz.dl}" data-tot="${E.RULES.quizMs}">${secLeft(V.quiz.dl, Net.now())}</b></div>
       <div class="qq">${esc(V.quiz.q)}</div><ol>${V.quiz.opts.map(o => `<li>${esc(o)}</li>`).join("")}</ol>` : "";
   g("quiz").classList.toggle("on", !!V.quiz);
   let best = null;
@@ -359,6 +359,7 @@ function seatHTML(T, V, p) {
   const tags = [];
   if (V.uno && V.uno.pid === p) tags.push(V.uno.safe ? `<i class="tag uno">류노!</i>` : `<i class="tag warn">1장!</i>`);
   if (V.quiz && V.quiz.target === p) tags.push(`<i class="tag q">방어 중</i>`);
+  if (V.atk && V.turn === p) tags.push(`<i class="tag warn">+${V.atk.n} 받아치기?</i>`);
   if (V.winner === p) tags.push(`<i class="tag win">승리</i>`);
   if (H.stars[p]) tags.push(`<i class="tag st">⭐${H.stars[p]}</i>`);
   if (!s.on) tags.push(`<i class="tag off">나감</i>`);
@@ -396,7 +397,7 @@ function panelHTML(T, onFx) {
     <div class="pb"><div class="pcol"><div class="ptc" style="--glow:${COLOR_INFO[V.color].hex}">${cardHTML(V.top)}</div>
       <div class="pcn"><span class="sw" style="background:${COLOR_INFO[V.color].hex}"></span>${COLOR_INFO[V.color].manner}</div></div>
       <ul>${V.p.map(p => {
-        const tag = V.winner === p ? "🏆" : V.uno && V.uno.pid === p ? (V.uno.safe ? "류노!" : "1장!") : V.quiz && V.quiz.target === p ? "방어 중" : "";
+        const tag = V.winner === p ? "🏆" : V.uno && V.uno.pid === p ? (V.uno.safe ? "류노!" : "1장!") : V.quiz && V.quiz.target === p ? "방어 중" : V.atk && V.turn === p ? `+${V.atk.n}!` : "";
         return `<li class="${V.turn === p ? "now" : ""} ${seats[p] && seats[p].on ? "" : "gone"}"><span>${esc(nm(p))}</span><i>${tag}</i><b>${V.n[p]}</b></li>`;
       }).join("")}</ul></div>
     <div class="pline">${esc(V.phase === "end" ? `${nm(V.winner)} 승리!` : flash[T.id + "l"] || colorName(V.color))}</div></div>`;

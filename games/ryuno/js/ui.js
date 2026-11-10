@@ -1,7 +1,7 @@
 /* ──────────────────────────────────────────────────────────────
    RYUNO · 칠판과 학생 화면이 함께 쓰는 그림·글
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611100937";
+import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611101302";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const 이가 = w => /[가-힣]$/.test(w) && (w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? "이" : "가";
@@ -40,16 +40,18 @@ export function evText(e, nm) {
   const N = p => nm(p) || "누군가";
   switch (e.t) {
     case "play":
+      if (e.cnt > 1) return { big: `${e.cnt}장 한꺼번에!`, small: `${N(e.pid)} · 같은 카드 ${e.cnt}장`, tone: "link" };
       if (e.why === "place") return { big: `${e.via}소리끼리!`, small: `${N(e.pid)} · ${DECK[e.card].j}`, tone: "link" };
       if (e.why === "strength") return { big: `${e.via}소리끼리!`, small: `${N(e.pid)} · ${DECK[e.card].j}`, tone: "link" };
       if (e.why === "same") return { big: "같은 글자!", small: N(e.pid), tone: "link" };
       if (e.why === "wild" && DECK[e.card].k === "wild") return { big: "와일드!", small: `${N(e.pid)} → ${colorName(e.color)}`, tone: "wild" };
       return null;
-    case "skip": return { big: "건너뛰기!", small: `${N(e.pid)} 차례를 건너뜀`, tone: "act" };
-    case "rev": return e.two ? { big: "방향 반대!", small: `둘이라 ${N(e.pid)} 차례를 건너뜀`, tone: "act" } : { big: "방향 반대!", small: e.dir > 0 ? "시계 방향" : "반시계 방향", tone: "act" };
-    case "d2": return { big: "+2!", small: `${N(e.pid)} +${e.got}장, 차례 쉼`, tone: "hit" };
-    case "w4": return e.quiz ? { big: "+4!", small: `${N(e.pid)} 방어 문제 도전!`, tone: "hit" } : { big: "+4!", small: `${N(e.pid)} +${e.got}장`, tone: "hit" };
-    case "quizres": return e.ok ? { big: "방어 성공!", small: `${N(e.pid)} 2장만 받음`, tone: "good" } : { big: "방어 실패…", small: `${N(e.pid)} 4장 · 정답: ${e.opts ? e.opts[e.a] : ""}`, tone: "hit" };
+    case "skip": return { big: (e.pids || []).length > 1 ? `${e.pids.length}명 건너뛰기!` : "건너뛰기!", small: `${(e.pids || [e.pid]).map(N).join(" · ")} 차례를 건너뜀`, tone: "act" };
+    case "rev": return e.two ? { big: "방향 반대!", small: `둘이라 ${N(e.pid)} 차례를 건너뜀`, tone: "act" } : { big: "방향 반대!", small: e.cnt > 1 && e.cnt % 2 === 0 ? `${e.cnt}장이라 방향 그대로` : e.dir > 0 ? "시계 방향" : "반시계 방향", tone: "act" };
+    case "atk": return { big: `+${e.n} 공격!`, small: `${N(e.pid)} 받아칠까? 받을까?`, tone: "hit" };
+    case "d2": return { big: `+${e.got}!`, small: `${N(e.pid)} +${e.got}장, 차례 쉼${e.stacked ? " (쌓인 공격)" : ""}`, tone: "hit" };
+    case "w4": return e.quiz ? { big: `+${e.n || 4}!`, small: `${N(e.pid)} 방어 문제 도전!`, tone: "hit" } : { big: `+${e.got}!`, small: `${N(e.pid)} +${e.got}장`, tone: "hit" };
+    case "quizres": return e.ok ? { big: "방어 성공!", small: `${N(e.pid)} ${e.got}장만 받음`, tone: "good" } : { big: "방어 실패…", small: `${N(e.pid)} ${e.got}장 · 정답: ${e.opts ? e.opts[e.a] : ""}`, tone: "hit" };
     case "combo": return { big: `${e.name} 콤보!`, small: `${e.show} · ${e.ex[0]} · ${N(e.pid)} +1장`, tone: "combo" };
     case "uno": return { big: "류노!", small: `${N(e.pid)} 한 장 남음`, tone: "uno" };
     case "catch": return { big: "잡았다!", small: `${N(e.by)}${이가(N(e.by))} ${N(e.pid)}${을를(N(e.pid))} 잡음 · +${e.got}장`, tone: "hit" };
@@ -106,6 +108,8 @@ export function rulesHTML() {
     <ul><li>⊘ 건너뛰기 · ⇄ 방향 반대 · +2 다음 사람 2장</li>
       <li>단모음 와일드 — 아무 데나 내고 색을 골라요</li>
       <li>+4 — 다음 사람은 <b>방어 문제</b>! 맞히면 2장, 틀리면 4장</li></ul>
+    <h3>여러 장 한꺼번에</h3><p>색과 글자(기호)가 <b>똑같은</b> 카드는 함께 낼 수 있어요. 건너뛰기 2장이면 두 명을 건너뛰고, 방향 반대 2장이면 방향은 그대로, +2 2장이면 4장!</p>
+    <h3>받아치기</h3><p>+2를 맞으면 +2나 +4로, +4를 맞으면 +4로 다음 사람에게 넘길 수 있어요. 장수는 쌓여요. 받아치지 못한 사람이 모두 받고, 쌓인 것에 +4가 있으면 방어 문제를 풀어요(맞히면 2장 덜).</p>
     <h3>류노!</h3><p>1장 남으면 [류노!]를 눌러요. 안 누른 사이에 친구가 [잡았다!]를 먼저 누르면 2장을 받아요.</p>
     <h3>음운 변동 콤보</h3><p>이어서 내면 다음 사람이 1장! 비음화 ㄱ→ㅇ · ㄷ→ㄴ · ㅂ→ㅁ, 유음화 ㄴ→ㄹ · ㄹ→ㄴ</p>
     <h3>시간</h3><p>차례마다 20초. 지나면 저절로 1장 뽑고 넘어가요.</p>

@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611101416";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611101416";
-import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611101416";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML } from "./ui.js?v=202611101416";
-import { Sound, fxOf } from "./sound.js?v=202611101416";
+import { Net, P } from "./net.js?v=202611101448";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611101448";
+import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611101448";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsToggle } from "./ui.js?v=202611101448";
+import { Sound, fxOf } from "./sound.js?v=202611101448";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -27,7 +27,7 @@ export function Player(code, name, ctx) {
   $app.innerHTML = `<div class="pl">
     <header class="ptop"><span class="logo">RYUNO</span><span class="pname" id="pname">${esc(name)}</span><span class="ptbl" id="tbl"></span>
       <span class="pstar" id="star"></span>
-      <span class="conn"><button class="hbtn" id="rules" aria-label="규칙">?</button><button class="hbtn" id="snd" aria-label="소리">${Sound.sfxOn ? "🔊" : "🔈"}</button><span class="dot" id="cdot"></span></span></header>
+      <span class="conn"><button class="hbtn" id="rules" aria-label="규칙">?</button>${fsOK() ? `<button class="hbtn" id="fs" aria-label="전체 화면">⛶</button>` : ""}<button class="hbtn" id="snd" aria-label="소리">${Sound.sfxOn ? "🔊" : "🔈"}</button><span class="dot" id="cdot"></span></span></header>
     <div class="status" id="status"></div>
     <div class="opps" id="opps"></div>
     <div class="mid"><button class="deckbtn" id="deck"></button><div class="topc" id="top"></div>
@@ -43,6 +43,7 @@ export function Player(code, name, ctx) {
   const g = id => document.getElementById(id);
   const toast = toaster(g("toast"), 1400);
   Sound.unlockOnTouch(false);
+  if (g("fs")) g("fs").onclick = e => { e.stopPropagation(); fsToggle(); };
   g("snd").onclick = e => { e.stopPropagation(); g("snd").textContent = Sound.toggleSfx() ? "🔊" : "🔈"; };
   g("rules").onclick = e => {
     e.stopPropagation();

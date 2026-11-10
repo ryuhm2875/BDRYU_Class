@@ -532,3 +532,5 @@ body.player{overflow:hidden}
 .winfx .wbox b{font-size:38px;color:var(--y);font-weight:900;text-shadow:0 4px 20px rgba(0,0,0,.6)}
 
 @media (prefers-reduced-motion:reduce){.confetti,.wglow{display:none}.dfly{animation-duration:1ms!important}}
+/* 변경: 대기실 [방 정리] 버튼은 제목 옆에 작게 */
+.lobby h2 .tidy{vertical-align:middle;margin-left:12px;font-size:14px;padding:6px 14px;background:rgba(255,255,255,.08);color:#ccc}

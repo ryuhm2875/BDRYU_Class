@@ -5,14 +5,14 @@
    - 전자칠판: 테이블 여러 개를 한꺼번에 / 모둠 태블릿: 테이블 하나
    - [선생님] 판: 멈춤 · 깜짝 문제 · 난이도 · 학생 관리 · 별 순위 · 소리
    ────────────────────────────────────────────────────────────── */
-import { Net, P, newCode } from "./net.js?v=202611101416";
-import { STALE_MS } from "./firebase-config.js?v=202611101416";
-import * as E from "./engine.js?v=202611101416";
-import { COLOR_INFO } from "./cards.js?v=202611101416";
-import { shuffle } from "./rng.js?v=202611101416";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML, DEAL, dealLeave, dealCount, confettiHTML } from "./ui.js?v=202611101416";
-import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611101416";
-import { Sound, fxOf } from "./sound.js?v=202611101416";
+import { Net, P, newCode } from "./net.js?v=202611101448";
+import { STALE_MS } from "./firebase-config.js?v=202611101448";
+import * as E from "./engine.js?v=202611101448";
+import { COLOR_INFO } from "./cards.js?v=202611101448";
+import { shuffle } from "./rng.js?v=202611101448";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsOn, fsToggle } from "./ui.js?v=202611101448";
+import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611101448";
+import { Sound, fxOf } from "./sound.js?v=202611101448";
 
 const LS = "ryuno-host-v1";
 const LEVELS = {
@@ -223,6 +223,14 @@ function dealTick(now) {
     }
   });
 }
+/* 방 정리: 나간 학생·별·판 기록을 지우고 대기실로. 지금 들어와 있는 학생은 그대로 */
+function tidyRoom() {
+  const gone = Object.entries(seats).filter(([, s]) => !s || !s.on).map(([u]) => u);
+  if (!confirm(`방을 정리할까요?\n\n· 나간 학생 ${gone.length}명의 이름, 별, 판 기록을 지워요\n· 지금 들어와 있는 학생은 그대로 남아요`)) return;
+  gone.forEach(u => { Net.remove(P.seat(code, u)).catch(() => {}); delete seats[u]; });
+  H.stars = {}; H.history = []; H.awarded = {}; H.round = 0; H.celebrate = null; H.pop = null;
+  toLobby();
+}
 function toLobby() { H.phase = "lobby"; H.tables = {}; H.paused = null; afterChange(); }
 function togglePause() {
   if (H.phase !== "play") return;
@@ -290,7 +298,7 @@ function head(extra = "") {
     <span class="conn"><span class="dot ${Net.ok ? "" : "off"}"></span>${Net.kind === "local" ? "시험 모드" : Net.ok ? "연결됨" : "연결 끊김"}</span></div>`;
 }
 function bbar(extra = "") {
-  return `<div class="bbar">${extra}<button class="pill sm" data-b="sound">${Sound.bgmOn ? "🔊" : "🔈"}</button><button class="pill sm tbtn" data-b="panel">⚙ 선생님</button></div>`;
+  return `<div class="bbar">${extra}${fsOK() ? `<button class="pill sm" data-b="fs">⛶ 전체 화면</button>` : ""}<button class="pill sm" data-b="sound">${Sound.bgmOn ? "🔊" : "🔈"}</button><button class="pill sm tbtn" data-b="panel">⚙ 선생님</button></div>`;
 }
 function wire() {
   $stage.querySelectorAll("[data-b]").forEach(b => b.onclick = () => {
@@ -298,7 +306,9 @@ function wire() {
     if (k === "panel") { tpOpen = !tpOpen; return tpOpen ? renderPanel() : closePanel(); }
     if (k === "sound") { Sound.toggleBgm(); return render(); }
     if (k === "pause") return togglePause();
-    if (k === "start" || k === "next") return startRound();
+    if (k === "start" || k === "next") { if (fsOK() && !fsOn()) fsToggle(true); return startRound(); }
+    if (k === "fs") return fsToggle();
+    if (k === "tidy") return tidyRoom();
     if (k === "results") { H.celebrate = null; save(); return render(); }
     if (k === "lobby") return toLobby();
     if (k === "qm") return openManager(document.body, () => {});
@@ -318,7 +328,7 @@ function renderLobby() {
       <div class="muted small">${esc(ctx.joinURL(code).replace(/^https?:\/\//, ""))}</div>
     </div>
     <div class="lb-right">
-      <h2>들어온 사람 <b class="y">${on.length}</b>명</h2>
+      <h2>들어온 사람 <b class="y">${on.length}</b>명${ids.length > on.length || H.round || Object.keys(H.stars).length ? ` <button class="pill sm tidy" data-b="tidy">🧹 방 정리</button>` : ""}</h2>
       <div class="chips">${ids.length ? ids.map(u => `<span class="chip ${seats[u].on ? "" : "off"}">${esc(seats[u].name)}${H.stars[u] ? ` <i>⭐${H.stars[u]}</i>` : ""}</span>`).join("") : `<span class="muted">QR을 찍거나 방 번호를 넣어 들어오세요.</span>`}</div>
       <div class="opt"><span>한 테이블 인원</span><div class="seg">${[3, 4, 5, 6].map(n => `<button data-size="${n}" class="${H.cfg.size === n ? "on" : ""}">${n}명</button>`).join("")}</div></div>
       <div class="opt"><span>방어 문제</span><div class="seg">${Object.entries(LEVELS).map(([k2, v]) => `<button data-lv="${k2}" class="${H.cfg.level === k2 ? "on" : ""}">${v.name}</button>`).join("")}</div>
@@ -493,7 +503,7 @@ function renderEnd() {
       ${ts.length > 1 ? `<div class="rt">${T.id}번 테이블</div>` : ""}
       <ol>${E.ranking(T).map((p, i) => `<li class="${i === 0 ? "w" : ""}"><span>${i === 0 ? "🏆" : i + 1}</span>${esc(nm(p))}<b>${T.hands[p].length}장</b></li>`).join("")}</ol></div>`).join("")}</div>
     ${top.length ? `<div class="stars"><b>⭐ 별 순위</b>${top.map(([u, n], i) => `<span>${i + 1}. ${esc(nm(u))} <i>${n}</i></span>`).join("")}</div>` : ""}
-    <div class="ego"><button class="pill y xl" data-b="next">다음 판</button><button class="pill" data-b="lobby">대기실로</button></div>${bbar()}`;
+    <div class="ego"><button class="pill y xl" data-b="next">다음 판</button><button class="pill" data-b="tidy">🧹 방 정리</button><button class="pill" data-b="lobby">대기실로</button></div>${bbar()}`;
   wire();
 }
 

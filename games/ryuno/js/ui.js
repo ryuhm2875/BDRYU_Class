@@ -1,7 +1,7 @@
 /* ──────────────────────────────────────────────────────────────
    RYUNO · 칠판과 학생 화면이 함께 쓰는 그림·글
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611101416";
+import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611101448";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const 이가 = w => /[가-힣]$/.test(w) && (w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? "이" : "가";
@@ -141,4 +141,16 @@ export function confettiHTML(n, elapsed = 0, seed = 1) {
     h += `<i style="left:${left.toFixed(1)}%;--dx:${dx | 0}px;--rot:${rot | 0}deg;width:${w | 0}px;height:${(round ? w : w * 1.6) | 0}px;background:${c};${round ? "border-radius:50%;" : ""}animation-duration:${dur | 0}ms;animation-delay:${delay | 0}ms"></i>`;
   }
   return `<div class="confetti" aria-hidden="true">${h}</div>`;
+}
+
+/* ---------- 전체 화면 (아이폰 사파리는 막혀 있음 → '홈 화면에 추가'로 대신) ---------- */
+export const fsOK = () => !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+export const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+export function fsToggle(on = !fsOn()) {
+  const d = document.documentElement;
+  try {
+    const r = on ? (d.requestFullscreen || d.webkitRequestFullscreen).call(d)
+                 : (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    if (r && r.catch) r.catch(() => {});
+  } catch (e) {}
 }

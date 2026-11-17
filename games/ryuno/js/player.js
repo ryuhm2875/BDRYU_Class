@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611172054";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611172054";
-import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611172054";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsToggle, lastLine } from "./ui.js?v=202611172054";
-import { Sound, fxOf } from "./sound.js?v=202611172054";
+import { Net, P } from "./net.js?v=202611172106";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611172106";
+import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611172106";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsToggle, lastLine } from "./ui.js?v=202611172106";
+import { Sound, fxOf } from "./sound.js?v=202611172106";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -253,7 +253,7 @@ export function Player(code, name, ctx) {
   }
 
   /* ---------- 누르기 ---------- */
-  let swapTo = null;                                   // 손패 바꾸기: 고른 친구
+  let swapTo = null;                                   // 맞바꿈: 고른 친구
   const playSel = color => {
     const V = T(); if (!V || sel == null) return;
     const cards = [sel, ...extra]; sel = null; extra.clear();
@@ -265,7 +265,7 @@ export function Player(code, name, ctx) {
     const m = g("modal"), V = T();
     if (DECK[sel] && DECK[sel].k === "swap" && swapTo == null) {      // 먼저 바꿀 친구 고르기
       m.dataset.kind = "color"; m.className = "modal on";
-      m.innerHTML = `<div class="mbox"><div class="mh">🤝 누구와 손패를 바꿀까요?</div>
+      m.innerHTML = `<div class="mbox"><div class="mh">🤝 누구와 맞바꿀까요?</div>
         <div class="mo swapto">${V.p.filter(p => p !== me).map(p => `<button data-swap="${esc(p)}"><span>${esc(nm(p))}</span><b>${V.n[p]}장</b></button>`).join("")}</div>
         <button class="pill sm" data-color="" style="margin-top:12px">취소</button></div>`;
       return;

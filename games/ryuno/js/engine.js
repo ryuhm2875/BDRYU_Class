@@ -19,8 +19,8 @@
    · 음운 변동 콤보(비음화·유음화) → 다음 사람 1장
    · 차례마다 20초. 지나면 자동으로 1장 뽑고 넘어감
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611172054";
-import { shuffle, cryptoInt } from "./rng.js?v=202611172054";
+import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611172106";
+import { shuffle, cryptoInt } from "./rng.js?v=202611172106";
 
 export const RULES = {
   hand: 7,
@@ -219,7 +219,7 @@ function play(T, pid, a, now, quizPick) {
     case "wild":
       advance(T, 1);
       break;
-    case "swap": {                    // 손패 바꾸기: 나와 고른 친구의 손패를 통째로 바꿈
+    case "swap": {                    // 맞바꿈: 나와 고른 친구의 손패를 통째로 바꿈
       const v = a.target;
       [T.hands[pid], T.hands[v]] = [T.hands[v], T.hands[pid]];
       T.uno = null; delete T.ready[pid]; delete T.ready[v];

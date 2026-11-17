@@ -5,14 +5,14 @@
    - 전자칠판: 테이블 여러 개를 한꺼번에 / 모둠 태블릿: 테이블 하나
    - [선생님] 판: 멈춤 · 깜짝 문제 · 난이도 · 학생 관리 · 별 순위 · 소리
    ────────────────────────────────────────────────────────────── */
-import { Net, P, newCode } from "./net.js?v=202611172054";
-import { STALE_MS } from "./firebase-config.js?v=202611172054";
-import * as E from "./engine.js?v=202611172054";
-import { COLOR_INFO } from "./cards.js?v=202611172054";
-import { shuffle } from "./rng.js?v=202611172054";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsOn, fsToggle } from "./ui.js?v=202611172054";
-import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611172054";
-import { Sound, fxOf } from "./sound.js?v=202611172054";
+import { Net, P, newCode } from "./net.js?v=202611172106";
+import { STALE_MS } from "./firebase-config.js?v=202611172106";
+import * as E from "./engine.js?v=202611172106";
+import { COLOR_INFO } from "./cards.js?v=202611172106";
+import { shuffle } from "./rng.js?v=202611172106";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsOn, fsToggle } from "./ui.js?v=202611172106";
+import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611172106";
+import { Sound, fxOf } from "./sound.js?v=202611172106";
 
 const LS = "ryuno-host-v1";
 const LEVELS = {
@@ -572,7 +572,7 @@ function panelHTML(T, onFx) {
   newEvents(T, e => {
     const x = evText(e, nm);
     if (x) { line = x.big ? `${x.big} ${x.small || ""}` : x.small; flash[T.id] = Date.now(); }
-    /* 눈여겨볼 일은 칸 테두리로 알림: 류노·잡았다·공격·손패 바꾸기·우승 */
+    /* 눈여겨볼 일은 칸 테두리로 알림: 류노·잡았다·공격·맞바꿈·우승 */
     const k = e.t === "win" ? "win" : ["uno", "catch"].includes(e.t) ? "uno" : ["atk", "w4", "swap"].includes(e.t) ? "hot" : null;
     if (k) alertK[T.id] = { k, at: Date.now() };
     const f = fxOf(e); if (f) onFx(f);

@@ -1,7 +1,7 @@
 /* ──────────────────────────────────────────────────────────────
    RYUNO · 칠판과 학생 화면이 함께 쓰는 그림·글
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611172054";
+import { DECK, CONS, COLOR_INFO, ACTION_NAME } from "./cards.js?v=202611172106";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const 이가 = w => /[가-힣]$/.test(w) && (w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? "이" : "가";
@@ -25,7 +25,7 @@ export function cardHTML(i, o = {}) {
   } else if (c.k === "w4") {
     mid = "+4"; corner = "+4"; badge = "+4 와일드";
   } else if (c.k === "swap") {
-    mid = "🤝"; corner = "⇆"; badge = "손패 바꾸기";
+    mid = "🤝"; corner = "⇆"; badge = "맞바꿈";
   } else {
     mid = { skip: "⊘", rev: "⇄", d2: "+2" }[c.k]; corner = mid; badge = ACTION_NAME[c.k];
   }
@@ -51,7 +51,7 @@ export function evText(e, nm) {
     case "skip": return { big: (e.pids || []).length > 1 ? `${e.pids.length}명 건너뛰기!` : "건너뛰기!", small: `${(e.pids || [e.pid]).map(N).join(" · ")} 차례를 건너뜀`, tone: "act" };
     case "rev": return e.two ? { big: "방향 반대!", small: `둘이라 ${N(e.pid)} 차례를 건너뜀`, tone: "act" } : { big: "방향 반대!", small: e.cnt > 1 && e.cnt % 2 === 0 ? `${e.cnt}장이라 방향 그대로` : e.dir > 0 ? "시계 방향" : "반시계 방향", tone: "act" };
     case "join": return { big: "새 친구!", small: `${N(e.pid)} 이 테이블에 들어옴`, tone: "link" };
-    case "swap": return { big: "손패 바꾸기!", small: `${N(e.pid)} ⇆ ${N(e.target)} · 이제 ${e.a}장 / ${e.b}장`, tone: "wild" };
+    case "swap": return { big: "🤝 맞바꿈!", small: `${N(e.pid)} ⇆ ${N(e.target)} · 이제 ${e.a}장 / ${e.b}장`, tone: "wild" };
     case "atk": return { big: `+${e.n} 공격!`, small: `${N(e.pid)} 받아칠까? 받을까?`, tone: "hit" };
     case "d2": return { big: `+${e.got}!`, small: `${N(e.pid)} +${e.got}장, 차례 쉼${e.stacked ? " (쌓인 공격)" : ""}`, tone: "hit" };
     case "w4": return e.quiz ? { big: `+${e.n || 4}!`, small: `${N(e.pid)} 방어 문제 도전!`, tone: "hit" } : { big: `+${e.got}!`, small: `${N(e.pid)} +${e.got}장`, tone: "hit" };
@@ -112,7 +112,7 @@ export function rulesHTML() {
     <ul><li>⊘ 건너뛰기 · ⇄ 방향 반대 · +2 다음 사람 2장</li>
       <li>단모음 와일드 — 아무 데나 내고 색을 골라요</li>
       <li>+4 — 다음 사람은 <b>방어 문제</b>! 맞히면 2장, 틀리면 4장</li></ul>
-    <h3>🤝 손패 바꾸기</h3><p>와일드처럼 아무 때나 내고 색을 골라요. 그리고 친구 한 명을 골라 <b>손에 든 카드를 모두 바꿔요.</b> 내가 5장, 친구가 1장이면 바꾼 뒤엔 내가 1장! (공격을 받는 중에는 못 내요)</p>
+    <h3>🤝 맞바꿈</h3><p>와일드처럼 아무 때나 내고 색을 골라요. 그리고 친구 한 명을 골라 <b>손에 든 카드를 모두 바꿔요.</b> 내가 5장, 친구가 1장이면 바꾼 뒤엔 내가 1장! (공격을 받는 중에는 못 내요)</p>
     <h3>여러 장 한꺼번에</h3><p>색과 글자(기호)가 <b>똑같은</b> 카드는 함께 낼 수 있어요. 건너뛰기 2장이면 두 명을 건너뛰고, 방향 반대 2장이면 방향은 그대로, +2 2장이면 4장!</p>
     <h3>받아치기</h3><p>+2를 맞으면 +2나 +4로, +4를 맞으면 +4로 다음 사람에게 넘길 수 있어요. 장수는 쌓여요. 받아치지 못한 사람이 모두 받고, 쌓인 것에 +4가 있으면 방어 문제를 풀어요(맞히면 2장 덜).</p>
     <h3>류노!</h3><p>카드를 내서 1장이 남으면 그때 [류노!]를 눌러요. 미리 누를 수는 없어요. 내가 누르기 전에 친구가 [잡았다!]를 먼저 누르면 2장을 받아요.</p>

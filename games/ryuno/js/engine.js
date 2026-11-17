@@ -19,8 +19,8 @@
    · 음운 변동 콤보(비음화·유음화) → 다음 사람 1장
    · 차례마다 20초. 지나면 자동으로 1장 뽑고 넘어감
    ────────────────────────────────────────────────────────────── */
-import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611101448";
-import { shuffle, cryptoInt } from "./rng.js?v=202611101448";
+import { DECK, CONS, COLORS, findCombo } from "./cards.js?v=202611172054";
+import { shuffle, cryptoInt } from "./rng.js?v=202611172054";
 
 export const RULES = {
   hand: 7,
@@ -41,7 +41,7 @@ export function useRng(rint) { RINT = rint || cryptoInt; }
    돌려주는 값: 'wild' 'same' 'color' 'place' 'strength' 'symbol' 또는 null */
 export function matchReason(cardIdx, topIdx, color) {
   const c = DECK[cardIdx], t = topIdx == null ? null : DECK[topIdx];
-  if (c.k === "wild" || c.k === "w4") return "wild";
+  if (c.k === "wild" || c.k === "w4" || c.k === "swap") return "wild";
   if (t && c.k === "n" && t.k === "n" && c.j === t.j) return "same";
   if (c.c === color) return "color";
   if (!t) return null;
@@ -66,7 +66,7 @@ export function canPlay(cardIdx, topIdx, color, atk) {
 /* 함께 낼 수 있는 '같은 카드': 종류·색·글자가 모두 같음 (모음 와일드는 한 장씩) */
 export function sameFace(a, b) {
   const A = DECK[a], B = DECK[b];
-  return A.k !== "wild" && A.k === B.k && A.c === B.c && A.j === B.j;
+  return A.k !== "wild" && A.k !== "swap" && A.k === B.k && A.c === B.c && A.j === B.j;
 }
 export const REASON_TEXT = {
   wild: "와일드!",
@@ -181,7 +181,8 @@ function play(T, pid, a, now, quizPick) {
   if (!why) return no("낼 수 없는 카드");
   if (cards.some(c => !sameFace(lead, c) && c !== lead)) return no("같은 카드만 함께 낼 수 있음");
   const C = DECK[lead], cnt = cards.length;
-  if ((C.k === "wild" || C.k === "w4") && !COLORS.includes(a.color)) return no("색을 골라야 함");
+  if (C.c == null && !COLORS.includes(a.color)) return no("색을 골라야 함");
+  if (C.k === "swap" && (a.target === pid || !T.players.includes(a.target))) return no("바꿀 친구를 골라야 함");
 
   closeUno(T, pid);
   for (const c of cards) { hand.splice(hand.indexOf(c), 1); T.disc.push(c); }
@@ -200,7 +201,7 @@ function play(T, pid, a, now, quizPick) {
     return yes;
   }
   /* 1장 남음: 늘 빈틈으로 시작. 본인이 [류노!]를 먼저 누를지, 친구가 [잡았다!]를 먼저 누를지 */
-  if (hand.length === 1) T.uno = { pid, safe: false };
+  if (hand.length === 1 && C.k !== "swap") T.uno = { pid, safe: false };
   delete T.ready[pid];
 
   switch (C.k) {
@@ -218,6 +219,16 @@ function play(T, pid, a, now, quizPick) {
     case "wild":
       advance(T, 1);
       break;
+    case "swap": {                    // 손패 바꾸기: 나와 고른 친구의 손패를 통째로 바꿈
+      const v = a.target;
+      [T.hands[pid], T.hands[v]] = [T.hands[v], T.hands[pid]];
+      T.uno = null; delete T.ready[pid]; delete T.ready[v];
+      emit(T, { t: "swap", pid, target: v, a: T.hands[pid].length, b: T.hands[v].length });
+      if (T.hands[pid].length === 1) T.uno = { pid, safe: false };          // 바꾼 뒤 1장이면 류노 빈틈
+      else if (T.hands[v].length === 1) T.uno = { pid: v, safe: false };
+      advance(T, 1);
+      break;
+    }
     default: {                        // 자음 카드
       if (combo) {
         const v = nextPid(T); const got = give(T, v, 1);
@@ -379,6 +390,19 @@ export function forceGive(T, pid, n) {
 export function shiftTime(T, ms) {
   T.deadline += ms;
   if (T.quiz) T.quiz.deadline += ms;
+}
+
+/* 판 중간에 사람이 들어올 때 (자리 옮기기·대기 학생). 지금 차례 바로 앞 자리에 앉아 7장을 받음 */
+export function addPlayer(T, pid, now) {
+  if (T.phase === "end" || T.players.includes(pid) || T.players.length >= RULES.maxPlayers) return false;
+  const at = T.dir > 0 ? T.turn : T.turn + 1;           // 한 바퀴 돌고 맨 마지막에 차례가 옴
+  T.players.splice(at, 0, pid);
+  if (T.dir > 0) T.turn++;
+  T.hands[pid] = [];
+  give(T, pid, RULES.hand);
+  T.seq++;
+  emit(T, { t: "join", pid });
+  return true;
 }
 
 /* 사람이 판에서 빠질 때 (선생님이 내보내기 등). 그 사람 카드는 더미 밑으로 */

@@ -3,15 +3,16 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611101448";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611101448";
-import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611101448";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsToggle } from "./ui.js?v=202611101448";
-import { Sound, fxOf } from "./sound.js?v=202611101448";
+import { Net, P } from "./net.js?v=202611172054";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611172054";
+import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611172054";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsToggle, lastLine } from "./ui.js?v=202611172054";
+import { Sound, fxOf } from "./sound.js?v=202611172054";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
   const c = DECK[i];
+  if (c.k === "swap") return 950;
   if (c.k === "w4") return 900;
   if (c.k === "wild") return 800 + i;
   const ci = COLORS.indexOf(c.c) * 100;
@@ -32,6 +33,7 @@ export function Player(code, name, ctx) {
     <div class="opps" id="opps"></div>
     <div class="mid"><button class="deckbtn" id="deck"></button><div class="topc" id="top"></div>
       <div class="minfo"><div id="cname"></div><div class="dirp" id="dir"></div></div></div>
+    <div class="lastl" id="lastl"></div>
     <div class="acts" id="acts"></div>
     <div class="desc" id="desc"></div>
     <div class="handwrap"><div class="hand" id="hand"></div></div>
@@ -63,8 +65,9 @@ export function Player(code, name, ctx) {
 
   const nm = p => p === me ? "나" : ((seats[p] && seats[p].name) || "?");
   const T = () => {
-    if (!pub || !pub.tables || !hand || hand.round !== pub.round) return null;
-    return pub.tables[hand.tid] || null;
+    if (!pub || !pub.tables || !hand) return null;
+    const V = pub.tables[hand.tid];
+    return V && V.rk === hand.rk ? V : null;            // 내 테이블의 지금 판
   };
   /* 차례 행동(내기·뽑기·넘기기)만 답이 올 때까지 잠깐 잠금. 류노·잡았다·문제 답은 잠그지 않음 */
   const send = msg => {
@@ -80,10 +83,10 @@ export function Player(code, name, ctx) {
     g("tbl").textContent = V ? `${hand.tid}번 테이블` : "";
     if (!pub || pub.phase === "lobby" || !V) {
       const msg = !pub || pub.phase === "lobby" ? "선생님이 게임을 시작하면 카드가 나와요."
-        : pub.phase === "play" ? "지금 판이 진행 중이에요. 다음 판부터 함께해요." : "판이 끝났어요. 다음 판을 기다려요.";
+        : "잠깐 기다려요. 테이블 판이 끝나면 다음 판에 들어가요.";
       g("status").className = "status wait";
       g("status").innerHTML = msg;
-      ["opps", "desc"].forEach(k => g(k).innerHTML = "");
+      ["opps", "desc", "lastl"].forEach(k => g(k).innerHTML = "");
       g("acts").innerHTML = `<button class="pill" data-rules="1">📖 규칙 보기</button>`;
       g("top").innerHTML = ""; g("deck").innerHTML = ""; g("cname").textContent = ""; g("dir").textContent = "";
       g("hand").innerHTML = "";
@@ -92,7 +95,7 @@ export function Player(code, name, ctx) {
     }
 
     let dealt = false;
-    if (pub.round !== lastRound) { lastRound = pub.round; lastN = 0; sel = null; extra.clear(); answered = null; dealt = true; }
+    if (V.rk !== lastRound) { lastRound = V.rk; lastN = 0; sel = null; extra.clear(); answered = null; dealt = true; }
     if (V.seq !== draw.seq) { draw.seq = V.seq; pending = 0; }
 
     /* 새 사건 알림 */
@@ -100,7 +103,7 @@ export function Player(code, name, ctx) {
     for (const e of V.ev || []) if (e.n > lastN) {
       const t = evText(e, nm); if (t) toast(t);
       const f = fxOf(e); if (f && lastN && (e.pid === me || e.by === me || ["uno", "catch", "combo", "win", "skip", "rev"].includes(e.t))) fx = f;
-      if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive && (e.pid === me) && ["d2", "w4", "catch", "skip"].includes(e.t)) navigator.vibrate(120);
+      if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive && (e.pid === me || (e.t === "swap" && e.target === me)) && ["d2", "w4", "catch", "skip", "swap"].includes(e.t)) navigator.vibrate(120);
     }
     lastN = Math.max(lastN, ...(V.ev || []).map(e => e.n), 0);
     const turnNow = V.turn === me && V.phase === "play" ? V.seq : null;
@@ -109,7 +112,7 @@ export function Player(code, name, ctx) {
     if (fx) Sound.fx(fx);
     if (draw.star !== (pub.stars || {})[me]) { draw.star = (pub.stars || {})[me]; g("star").textContent = draw.star ? `⭐${draw.star}` : ""; }
 
-    const dl = !!(pub.deal && Net.now() < pub.deal.at + pub.deal.ms);   // 칠판이 카드를 나눠 주는 중
+    const deal = V.deal, dl = !!(deal && Net.now() < deal.at + deal.ms);   // 칠판이 카드를 나눠 주는 중
     const mine = !dl && V.turn === me && V.phase === "play";
     const cards = (hand.cards || []).slice().sort((a, b) => sortKey(a) - sortKey(b));
     const can = new Set(mine ? cards.filter(i => (hand.drawn == null || i === hand.drawn) && canPlay(i, V.top, V.color, V.atk)) : []);
@@ -122,7 +125,7 @@ export function Player(code, name, ctx) {
     const st = g("status");
     if (V.phase === "end") { st.className = "status " + (V.winner === me ? "win" : "end"); st.innerHTML = V.winner === me ? "🏆 내가 이겼어요!" : `${esc(nm(V.winner))} 승리! 다음 판을 기다려요.`; }
     else if (V.quiz && V.quiz.target === me) { st.className = "status quiz"; st.innerHTML = `방어 문제! <b data-dl="${V.quiz.dl}"></b>`; }
-    else if (V.quiz) { st.className = "status"; st.innerHTML = `${esc(nm(V.quiz.target))} 방어 문제 푸는 중…`; }
+    else if (V.quiz) { st.className = "status"; st.innerHTML = `🛡️ ${esc(nm(V.quiz.target))} 방어 문제 푸는 중… <b data-dl="${V.quiz.dl}"></b>`; }
     else if (dl) { st.className = "status wait"; st.innerHTML = "카드를 받는 중…"; }
     else if (mine && V.atk) { st.className = "status mine atk"; st.innerHTML = `⚔ +${V.atk.n} 공격! 받아칠까요? <b data-dl="${V.dl}"></b>`; }
     else if (mine) { st.className = "status mine"; st.innerHTML = `${hand.drawn != null ? "뽑은 카드를 낼까요?" : "내 차례!"} <b data-dl="${V.dl}"></b>`; }
@@ -131,9 +134,11 @@ export function Player(code, name, ctx) {
     /* 다른 사람들 (도는 순서대로, 내 다음 사람부터) */
     const at = V.p.indexOf(me), order = V.p.map((_, k) => V.p[(at + V.dir * (k + 1) + V.p.length * 7) % V.p.length]).filter(p => p !== me);
     g("opps").innerHTML = order.map(p => {
-      const tag = V.uno && V.uno.pid === p ? (V.uno.safe ? `<i class="tag uno">류노!</i>` : `<i class="tag warn">1장!</i>`) : "";
-      return `<div class="opp ${V.turn === p ? "now" : ""} ${seats[p] && seats[p].on ? "" : "gone"}"><span>${esc(nm(p))}</span><b>${dl ? dealCount(V.p.indexOf(p), V.p.length, Net.now() - pub.deal.at) : V.n[p]}</b>${tag}</div>`;
+      const tag = V.uno && V.uno.pid === p ? (V.uno.safe ? `<i class="tag uno">류노!</i>` : `<i class="tag warn">1장!</i>`)
+        : V.atk && V.turn === p ? `<i class="tag warn">⚔+${V.atk.n}</i>` : V.quiz && V.quiz.target === p ? `<i class="tag q">🛡️</i>` : "";
+      return `<div class="opp ${V.turn === p ? "now" : ""} ${seats[p] && seats[p].on ? "" : "gone"}"><span>${esc(nm(p))}</span><b>${dl ? dealCount(V.p.indexOf(p), V.p.length, Net.now() - deal.at) : V.n[p]}</b>${tag}</div>`;
     }).join("");
+    g("lastl").textContent = dl ? "" : lastLine(V.ev, nm);
 
     g("deck").innerHTML = `${backHTML()}<b>${V.deck}</b>`;
     g("deck").disabled = !(mine && hand.drawn == null) || busy();
@@ -162,7 +167,7 @@ export function Player(code, name, ctx) {
 
     /* 손패 */
     /* 나눠 주는 동안: 칠판에서 내 자리로 카드가 갈 때 한 장씩 들어옴 (다시 그려도 박자가 이어짐) */
-    const N = V.p.length, seat = V.p.indexOf(me), el = dl ? Net.now() - pub.deal.at : 0;
+    const N = V.p.length, seat = V.p.indexOf(me), el = dl ? Net.now() - deal.at : 0;
     const dealStyle = k => dl ? `;animation-delay:${(dealLeave(k * N + seat, N) + DEAL.fly - 320 - el) | 0}ms` : "";
     g("hand").innerHTML = cards.map((i, k) => cardHTML(i, {
       cls: [mine ? (can.has(i) || twins.has(i) ? "can" : "no") : "", sel === i ? "sel" : "", extra.has(i) ? "sel2" : twins.has(i) ? "twin" : "", hand.drawn === i ? "new" : ""].join(" "),
@@ -173,10 +178,10 @@ export function Player(code, name, ctx) {
     else if (Date.now() > (draw.dealUntil || 0)) g("hand").classList.remove("deal");
 
     /* 내가 이겼으면 화면 가득 색종이 (판마다 한 번) */
-    if (V.phase === "end" && V.winner === me && draw.won !== pub.round) {
-      draw.won = pub.round;
+    if (V.phase === "end" && V.winner === me && draw.won !== V.rk) {
+      draw.won = V.rk;
       const w = document.createElement("div"); w.className = "winfx";
-      w.innerHTML = `${confettiHTML(90, 0, pub.round)}<div class="wbox"><span>🏆</span><b>내가 이겼어요!</b></div>`;
+      w.innerHTML = `${confettiHTML(90, 0, V.n[me] + V.p.length * 7)}<div class="wbox"><span>🏆</span><b>내가 이겼어요!</b></div>`;
       document.body.appendChild(w);
       setTimeout(() => w.classList.add("out"), 4200); setTimeout(() => w.remove(), 5000);
       Sound.fx("win");
@@ -203,7 +208,8 @@ export function Player(code, name, ctx) {
   let popId = null, popPick = null;
   function overlays() {
     if (!g("pause")) return;
-    g("pause").classList.toggle("on", !!(pub && pub.paused && !pub.pop && pub.phase === "play"));
+    const tv = T();
+    g("pause").classList.toggle("on", !!(pub && (pub.paused || (tv && tv.paused && tv.phase !== "end")) && !pub.pop && pub.phase === "play"));
     const pm = g("pop"), p = pub && pub.pop;
     if (!p) { pm.className = "modal"; popId = null; return; }
     if (popId !== p.id + p.dl) { popId = p.id + p.dl; popPick = null; Sound.fx("pop"); }
@@ -237,7 +243,8 @@ export function Player(code, name, ctx) {
   function timers() {
     const now = Net.now();
     document.querySelectorAll("#app [data-dl]").forEach(el => {
-      if (pub && pub.paused && !el.closest("#pop")) return;          // 멈춘 동안은 시간도 멈춤
+      const tv = T();
+      if (pub && (pub.paused || (tv && tv.paused)) && !el.closest("#pop")) return;   // 멈춘 동안은 시간도 멈춤
       const s = secLeft(+el.dataset.dl, now);
       el.textContent = s;
       const st = el.closest(".status");
@@ -246,14 +253,23 @@ export function Player(code, name, ctx) {
   }
 
   /* ---------- 누르기 ---------- */
+  let swapTo = null;                                   // 손패 바꾸기: 고른 친구
   const playSel = color => {
     const V = T(); if (!V || sel == null) return;
     const cards = [sel, ...extra]; sel = null; extra.clear();
-    send({ t: "play", card: cards[0], cards, color: color || null, seq: V.seq });
+    send({ t: "play", card: cards[0], cards, color: color || null, target: swapTo, seq: V.seq });
+    swapTo = null;
     draw();
   };
   const askColor = () => {
-    const m = g("modal");
+    const m = g("modal"), V = T();
+    if (DECK[sel] && DECK[sel].k === "swap" && swapTo == null) {      // 먼저 바꿀 친구 고르기
+      m.dataset.kind = "color"; m.className = "modal on";
+      m.innerHTML = `<div class="mbox"><div class="mh">🤝 누구와 손패를 바꿀까요?</div>
+        <div class="mo swapto">${V.p.filter(p => p !== me).map(p => `<button data-swap="${esc(p)}"><span>${esc(nm(p))}</span><b>${V.n[p]}장</b></button>`).join("")}</div>
+        <button class="pill sm" data-color="" style="margin-top:12px">취소</button></div>`;
+      return;
+    }
     m.dataset.kind = "color"; m.className = "modal on";
     m.innerHTML = `<div class="mbox"><div class="mh">어떤 색으로 바꿀까요?</div>
       <div class="colors">${COLORS.map(c => `<button data-color="${c}" style="background:${COLOR_INFO[c].hex}">${COLOR_INFO[c].name}<small>${COLOR_INFO[c].manner}</small></button>`).join("")}</div>
@@ -281,11 +297,13 @@ export function Player(code, name, ctx) {
     if (e.target.closest("[data-close]")) { const m = g("modal"); m.className = "modal"; m.dataset.kind = ""; return draw(); }
     const pb = e.target.closest("[data-pop]");
     if (pb) { if (popPick != null) return; popPick = +pb.dataset.pop; send({ t: "pop", choice: popPick }); return overlays(); }
+    const sw = e.target.closest("[data-swap]");
+    if (sw) { swapTo = sw.dataset.swap; return askColor(); }
     const b = e.target.closest("[data-a],[data-ans],[data-color]");
     if (b && b.id !== "deck") {
       if (b.dataset.color != null) {
         const m = g("modal"); m.className = "modal"; m.dataset.kind = "";
-        if (b.dataset.color) playSel(b.dataset.color); else draw();
+        if (b.dataset.color) playSel(b.dataset.color); else { swapTo = null; draw(); }
         return;
       }
       if (b.dataset.ans != null) {

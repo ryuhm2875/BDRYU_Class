@@ -65,8 +65,8 @@ export function findCombo(topJ, playJ) {
   return COMBOS.find(c => c.from.includes(topJ) && c.to === playJ) || null;
 }
 
-/* ---------- 카드 110장 ----------
-   k: n(자음) · skip · rev · d2(+2) · wild · w4(+4)
+/* ---------- 카드 112장 ----------
+   k: n(자음) · skip · rev · d2(+2) · wild · w4(+4) · swap(손패 바꾸기)
    c: 색 (와일드는 null)   j: 카드에 적힌 글자 */
 const N_COPIES = {
   red:  { "ㄱ": 2, "ㄲ": 2, "ㅋ": 2, "ㄷ": 2, "ㄸ": 2, "ㅌ": 2, "ㅂ": 2, "ㅃ": 2, "ㅍ": 2 },
@@ -82,12 +82,13 @@ export const DECK = (() => {
   }
   for (const v of Object.keys(VOWELS)) d.push({ k: "wild", c: null, j: v });
   for (let i = 0; i < 4; i++) d.push({ k: "w4", c: null, j: null });
+  for (let i = 0; i < 2; i++) d.push({ k: "swap", c: null, j: null });
   d.forEach((x, i) => x.i = i);
   return Object.freeze(d.map(Object.freeze));
 })();
 
-export const ACTION_NAME = { skip: "건너뛰기", rev: "방향 반대", d2: "+2", wild: "와일드", w4: "+4" };
-export const ACTION_MARK = { skip: "⊘", rev: "⇄", d2: "+2", wild: "", w4: "+4" };
+export const ACTION_NAME = { skip: "건너뛰기", rev: "방향 반대", d2: "+2", wild: "와일드", w4: "+4", swap: "손패 바꾸기" };
+export const ACTION_MARK = { skip: "⊘", rev: "⇄", d2: "+2", wild: "", w4: "+4", swap: "🤝" };
 
 /* 카드 한 줄 설명 (학생 화면에서 고른 카드 아래에 표시) */
 export function describe(card) {
@@ -100,6 +101,7 @@ export function describe(card) {
     const v = VOWELS[card.j];
     return `${card.j} · 단모음 · ${v.f} · ${v.h}모음 · ${v.r} — 아무 데나 내고 색을 고릅니다`;
   }
+  if (card.k === "swap") return "손패 바꾸기 — 색을 고르고, 친구 한 명과 손에 든 카드를 모두 바꿉니다";
   if (card.k === "w4") return "+4 — 색을 고르고, 다음 사람이 4장 (방어 문제를 맞히면 2장)";
   const map = { skip: "다음 사람 차례를 건너뜁니다", rev: "도는 방향이 바뀝니다", d2: "다음 사람이 2장 받고 차례를 쉽니다" };
   return `${COLOR_INFO[card.c].manner} ${ACTION_NAME[card.k]} — ${map[card.k]}`;

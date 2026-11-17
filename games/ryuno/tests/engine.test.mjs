@@ -10,7 +10,7 @@ const n = j => idx("n", CONS[j].c, j);
 let pass = 0; const ok = (cond, msg) => { assert.ok(cond, msg); pass++; };
 
 /* ---------- 1. 카드 구성 ---------- */
-ok(DECK.length === 110, "110장");
+ok(DECK.length === 112, "112장");
 for (const c of COLORS) ok(DECK.filter(x => x.c === c && x.k === "n").length === 18, c + " 자음 18장");
 ok(DECK.filter(x => x.k === "wild").length === 10 && DECK.filter(x => x.k === "w4").length === 4, "와일드 10 · +4 4");
 
@@ -204,11 +204,40 @@ const Q4 = () => ({ id: "q", q: "?", opts: ["a", "b", "c", "d"], a: 1, ex: "" })
   ok(T.hands.B.length === 7 && E.curPid(T) === "C", "+2 2장 → B 4장");
 }
 
+/* ---------- 3-3. 손패 바꾸기 ---------- */
+{
+  const sw = DECK.find(x => x.k === "swap").i;
+  const T = rig(["A", "B", "C"], { A: [sw, ...fill("blue", 4)], B: fill("yel", 3), C: [pick("n", "grn", "ㄴ")] }, pick("n", "red", "ㄱ"));
+  ok(!E.act(T, "A", { t: "play", card: sw, color: "red" }, 0).ok, "친구를 안 고르면 X");
+  ok(!E.act(T, "A", { t: "play", card: sw, color: "red", target: "A" }, 0).ok, "나 자신 X");
+  ok(E.act(T, "A", { t: "play", card: sw, color: "blue", target: "C" }, 0).ok, "C와 바꿈");
+  ok(T.hands.A.length === 1 && T.hands.C.length === 4 && T.color === "blue" && E.curPid(T) === "B", "A 1장 · C 4장 · 파랑 · B 차례");
+  ok(T.uno && T.uno.pid === "A" && !T.uno.safe, "바꾼 뒤 1장 → 류노 빈틈");
+  const T2 = rig(["A", "B"], { A: [sw], B: fill("yel", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T2, "A", { t: "play", card: sw, color: "red", target: "B" }, 0);
+  ok(T2.phase === "end" && T2.winner === "A", "마지막 한 장이면 바로 승리");
+  const a2 = pick("d2", "red", null, 0), b2 = pick("d2", "blue", null, 0);
+  const T3 = rig(["A", "B", "C"], { A: [a2, ...fill("blue", 2)], B: [b2, sw, ...fill("yel", 2)], C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  E.act(T3, "A", { t: "play", card: a2 }, 0);
+  ok(!E.act(T3, "B", { t: "play", card: sw, color: "red", target: "C" }, 0).ok, "공격 받는 중엔 X");
+}
+
+/* ---------- 3-4. 판 중간에 들어오기 ---------- */
+{
+  const T = rig(["A", "B", "C"], { A: fill("red", 3), B: fill("yel", 3), C: fill("grn", 3) }, pick("n", "red", "ㄱ"));
+  T.turn = 1;                                             // B 차례
+  ok(E.addPlayer(T, "D", 0) && T.hands.D.length === 7 && E.curPid(T) === "B", "D가 들어와도 차례는 그대로 B");
+  ok(T.players.join("") === "ADBC", "D는 B 바로 앞 자리");
+  ok(!E.addPlayer(T, "D", 0), "두 번은 못 들어옴");
+  const T2 = rig(["A", "B", "C", "D", "E", "F"], {}, pick("n", "red", "ㄱ"));
+  ok(!E.addPlayer(T2, "G", 0), "6명이면 더 못 들어옴");
+}
+
 /* ---------- 4. 무작위 자동 대전 ---------- */
 function check(T) {
   const all = [...T.draw, ...T.disc, ...Object.values(T.hands).flat()];
-  assert.equal(all.length, 110, "카드 수");
-  assert.equal(new Set(all).size, 110, "같은 카드 두 장");
+  assert.equal(all.length, DECK.length, "카드 수");
+  assert.equal(new Set(all).size, DECK.length, "같은 카드 두 장");
   assert.ok(COLORS.includes(T.color), "색");
 }
 const QP = () => ({ id: "q", q: "?", opts: ["a", "b", "c", "d"], a: 2, ex: "" });
@@ -234,7 +263,7 @@ for (let g = 0; g < 3000; g++) {
     } else if (r < 12 && T.uno && !T.uno.safe) {
       E.act(T, T.uno.pid, { t: "uno" }, now);
     } else if (r < 14) {
-      E.act(T, ps[rint(ps.length)], { t: "play", card: rint(110), seq: T.seq }, now);   // 엉뚱한 요청
+      E.act(T, ps[rint(ps.length)], { t: "play", card: rint(DECK.length), seq: T.seq }, now);   // 엉뚱한 요청
     } else if (r === 14 && T.players.length > 2) {
       E.removePlayer(T, T.players[rint(T.players.length)], now);
     } else {
@@ -243,7 +272,8 @@ for (let g = 0; g < 3000; g++) {
       if (can.length && rint(10)) {
         const c = can[rint(can.length)];
         const cards = T.drawn == null && rint(2) ? [c, ...T.hands[me].filter(x => x !== c && E.sameFace(c, x))] : [c];
-        E.act(T, me, { t: "play", cards, color: COLORS[rint(4)], seq: T.seq }, now, rint(5) ? QP : null);
+        const others = T.players.filter(x => x !== me);
+        E.act(T, me, { t: "play", cards, color: COLORS[rint(4)], target: others[rint(others.length)], seq: T.seq }, now, rint(5) ? QP : null);
       } else if (T.attack) E.act(T, me, { t: "take", seq: T.seq }, now, rint(5) ? QP : null);
       else if (T.drawn != null) E.act(T, me, { t: "pass", seq: T.seq }, now);
       else E.act(T, me, { t: "draw", seq: T.seq }, now);
@@ -260,7 +290,7 @@ E.useRng(null);
 ok(games === 3000, "자동 대전 3000판 모두 끝남");
 
 /* ---------- 5. 섞기 고르기 (카이제곱) ---------- */
-const K = 110, RUNS = 110000, cnt = Array.from({ length: K }, () => new Array(K).fill(0));
+const K = DECK.length, RUNS = 110000, cnt = Array.from({ length: K }, () => new Array(K).fill(0));
 const base = DECK.map(c => c.i);
 for (let r = 0; r < RUNS; r++) { const s = shuffle(base); for (let p = 0; p < K; p++) cnt[s[p]][p]++; }
 const exp = RUNS / K;
@@ -271,9 +301,9 @@ for (let c = 0; c < K; c++) {
 }
 const meanChi = chiAll.reduce((a, b) => a + b, 0) / K;
 /* 자유도 109 → 기댓값 109, 표준편차 약 14.8. 평균이 109 근처면 고르게 섞인 것 */
-ok(Math.abs(meanChi - 109) < 6, "섞기 평균 카이제곱 " + meanChi.toFixed(1));
+ok(Math.abs(meanChi - (K - 1)) < 6, "섞기 평균 카이제곱 " + meanChi.toFixed(1));
 
 console.log(`✅ ${pass}개 확인 통과`);
 console.log(`   자동 대전 3000판 (2~6명) · 가장 긴 판 ${turnsMax}번 움직임`);
 console.log(`   나온 사건 수:`, JSON.stringify(events));
-console.log(`   섞기 ${RUNS.toLocaleString()}번: 카드별 카이제곱 평균 ${meanChi.toFixed(1)} (이론값 109) · 한 칸 최대 차이 ${(worst * 100).toFixed(1)}%`);
+console.log(`   섞기 ${RUNS.toLocaleString()}번: 카드별 카이제곱 평균 ${meanChi.toFixed(1)} (이론값 ${K - 1}) · 한 칸 최대 차이 ${(worst * 100).toFixed(1)}%`);

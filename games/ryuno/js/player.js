@@ -3,11 +3,11 @@
    - 공개 정보(pub)와 내 손패(hands/나)만 구독합니다.
    - 하는 일은 모두 신호함(inbox)에 '요청'으로 보내고, 판정은 칠판이 합니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611180750";
-import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611180750";
-import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611180750";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsToggle, lastLine } from "./ui.js?v=202611180750";
-import { Sound, fxOf } from "./sound.js?v=202611180750";
+import { Net, P } from "./net.js?v=202611180818";
+import { DECK, CONS, COLORS, COLOR_INFO, describe } from "./cards.js?v=202611180818";
+import { matchReason, canPlay, sameFace, RULES } from "./engine.js?v=202611180818";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, rulesHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsToggle, lastLine } from "./ui.js?v=202611180818";
+import { Sound, fxOf } from "./sound.js?v=202611180818";
 
 const ORDER = Object.keys(CONS);
 const sortKey = i => {
@@ -126,7 +126,7 @@ export function Player(code, name, ctx) {
     if (V.phase === "end") { st.className = "status " + (V.winner === me ? "win" : "end"); st.innerHTML = V.winner === me ? "🏆 내가 이겼어요!" : `${esc(nm(V.winner))} 승리! 다음 판을 기다려요.`; }
     else if (V.quiz && V.quiz.target === me) { st.className = "status quiz"; st.innerHTML = `방어 문제! <b data-dl="${V.quiz.dl}"></b>`; }
     else if (V.quiz) { st.className = "status"; st.innerHTML = `🛡️ ${esc(nm(V.quiz.target))} 방어 문제 푸는 중… <b data-dl="${V.quiz.dl}"></b>`; }
-    else if (dl) { st.className = "status wait"; st.innerHTML = "카드를 받는 중…"; }
+    else if (dl) { st.className = "status wait"; st.innerHTML = Net.now() < deal.at ? `🔀 새 테이블 발표 중… <span class="muted">${hand.tid}번 테이블</span>` : "카드를 받는 중…"; }
     else if (mine && V.atk) { st.className = "status mine atk"; st.innerHTML = `⚔ +${V.atk.n} 공격! 받아칠까요? <b data-dl="${V.dl}"></b>`; }
     else if (mine) { st.className = "status mine"; st.innerHTML = `${hand.drawn != null ? "뽑은 카드를 낼까요?" : "내 차례!"} <b data-dl="${V.dl}"></b>`; }
     else { st.className = "status"; st.innerHTML = `${esc(nm(V.turn))} 차례 <b data-dl="${V.dl}"></b>`; }

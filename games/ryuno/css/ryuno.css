@@ -606,3 +606,27 @@ body.player{overflow:hidden}
 .many .ph{position:relative;z-index:2}
 .many .grid.r1{--pcw:170px;--pfs:30px}
 .many .grid.r1 .pb li b{font-size:36px}
+
+/* =====================================================================
+   새로 섞기: 모두 끝났을 때 버튼 · 새 테이블 발표 (2026-11)
+   ===================================================================== */
+.allend{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;background:rgba(14,14,14,.92);border:2px solid var(--y);
+  border-radius:24px;padding:22px 34px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:wpop .5s cubic-bezier(.2,1.5,.4,1) both}
+.allend b{font-size:26px}
+.allend span{font-size:14px;color:#aaa}
+.allend .pill{animation:canpulse 1.4s ease-in-out infinite;--cw:20px}
+.stage.reveal{background:radial-gradient(ellipse at 50% 30%,#2a2614 0,#141414 65%)}
+.rvt{position:absolute;left:0;right:0;top:70px;text-align:center;font-size:46px;font-weight:900;letter-spacing:-1px;animation:wpop .5s cubic-bezier(.2,1.6,.4,1) both}
+.rvd{display:inline-block;margin-right:12px;animation:rvspin .6s ease-in-out 3}
+@keyframes rvspin{50%{transform:rotate(180deg) scale(1.2)}to{transform:rotate(360deg)}}
+.rvg{position:absolute;left:60px;right:60px;top:150px;bottom:110px;display:grid;gap:16px}
+.rvg.g2{grid-template-columns:1fr 1fr;grid-auto-rows:1fr}.rvg.g3{grid-template-columns:1fr 1fr 1fr;grid-auto-rows:1fr}
+.rvb{background:rgba(255,255,255,.05);border:2px solid rgba(254,229,0,.35);border-radius:18px;padding:14px 18px;animation:wpop .4s both}
+.rvb>b{display:block;color:var(--y);font-size:22px;margin-bottom:10px}
+.rvb>div{display:flex;flex-wrap:wrap;gap:8px}
+.rvb span{background:#2f2f2f;border-radius:20px;padding:6px 16px;font-size:22px;font-weight:900;animation:rvin .45s cubic-bezier(.2,1.6,.4,1) both}
+.rvg.r1 .rvb span{font-size:28px;padding:8px 20px}
+@keyframes rvin{from{transform:translateY(-40px) scale(.3);opacity:0;background:var(--y);color:var(--ink)}60%{background:var(--y);color:var(--ink)}}
+.rvs{position:absolute;left:0;right:0;bottom:74px;text-align:center;font-size:18px;color:#bbb;font-weight:700}
+.rvb span{font-size:26px;padding:8px 20px}
+.rvb>div{gap:10px}

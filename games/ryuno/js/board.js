@@ -5,14 +5,14 @@
    - 전자칠판: 테이블 여러 개를 한꺼번에 / 모둠 태블릿: 테이블 하나
    - [선생님] 판: 멈춤 · 깜짝 문제 · 난이도 · 학생 관리 · 별 순위 · 소리
    ────────────────────────────────────────────────────────────── */
-import { Net, P, newCode } from "./net.js?v=202611180750";
-import { STALE_MS } from "./firebase-config.js?v=202611180750";
-import * as E from "./engine.js?v=202611180750";
-import { COLOR_INFO } from "./cards.js?v=202611180750";
-import { shuffle } from "./rng.js?v=202611180750";
-import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsOn, fsToggle } from "./ui.js?v=202611180750";
-import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611180750";
-import { Sound, fxOf } from "./sound.js?v=202611180750";
+import { Net, P, newCode } from "./net.js?v=202611180818";
+import { STALE_MS } from "./firebase-config.js?v=202611180818";
+import * as E from "./engine.js?v=202611180818";
+import { COLOR_INFO } from "./cards.js?v=202611180818";
+import { shuffle } from "./rng.js?v=202611180818";
+import { esc, cardHTML, backHTML, colorName, evText, toaster, secLeft, chartHTML, DEAL, dealLeave, dealCount, confettiHTML, fsOK, fsOn, fsToggle } from "./ui.js?v=202611180818";
+import { initBank, pickQuestion, openManager, LV_NAME } from "./qbank.js?v=202611180818";
+import { Sound, fxOf } from "./sound.js?v=202611180818";
 
 const LS = "ryuno-host-v1";
 const LEVELS = {
@@ -28,7 +28,7 @@ const ls = {
 
 let H = null, code = null, seats = {}, ctx = null;
 let $stage, $tp = null, toast, lastEv = {}, flash = {}, alertK = {}, won = {}, tpOpen = false, popLevel = 2;
-const TOUR_MS = 10000;
+const TOUR_MS = 10000, REVEAL_MS = 2600;      // 자동 순회 간격 · 새 테이블 발표 시간
 
 /* ================================================================ 시작 */
 export async function Board(context) {
@@ -225,18 +225,24 @@ function startRound() {
   ids.forEach((u, j) => groups[j % k].push(u));
   H.tables = {}; H.paused = null; won = {}; lastEv = {}; alertK = {};
   const now = Net.now();
-  groups.forEach((g, i) => { const id = String(i + 1); H.tables[id] = dealTable(E.newTable(id, g, now), 1, now); });
+  /* 테이블이 여러 개면 먼저 '새 테이블 발표' → 그다음 카드 나눠 주기 */
+  const reveal = k > 1 ? REVEAL_MS : 0;
+  H.revealUntil = now + reveal;
+  groups.forEach((g, i) => { const id = String(i + 1); H.tables[id] = dealTable(E.newTable(id, g, now), 1, now, now + reveal); });
   H.round++; H.phase = "play"; H.view = "grid"; H.tour = false;
   Sound.start();
-  dealSounds(Math.max(...groups.map(g => g.length)));
+  if (reveal) groups.forEach((g, i) => g.forEach((_, j) => setTimeout(() => Sound.fx("card"), 300 + (j * k + i) * revealStep(ids.length))));
+  setTimeout(() => dealSounds(Math.max(...groups.map(g => g.length))), reveal);
   afterChange();
 }
 /* 카드 나눠 주기: 그동안 첫 차례 시간이 줄지 않게 마감을 미룸 */
-function dealTable(T, rnd, now) {
-  T.rnd = rnd; T.dealAt = now; T.paused = null; T.logged = false; T.celebrate = false;
-  E.shiftTime(T, DEAL.ms);
+function dealTable(T, rnd, now, at = now) {
+  T.rnd = rnd; T.dealAt = at; T.paused = null; T.logged = false; T.celebrate = false;
+  E.shiftTime(T, at - now + DEAL.ms);                    // 발표·나눠 주기 동안 첫 차례 시간이 줄지 않게
   return T;
 }
+/* 발표 화면에서 이름이 한 명씩 들어오는 간격 (사람이 많으면 빠르게) */
+const revealStep = n => Math.min(140, (REVEAL_MS - 900) / Math.max(1, n));
 function dealSounds(N) {
   for (let r = 0; r < DEAL.hand; r++) setTimeout(() => Sound.fx("draw"), dealLeave(r * N, N) + DEAL.fly);
   setTimeout(() => Sound.fx("card"), DEAL.ms - 420);
@@ -392,6 +398,7 @@ function wire() {
     if (k === "pause") return togglePause();
     if (k === "start") { if (fsOK() && !fsOn()) fsToggle(true); return startRound(); }
     if (k === "next") { const V = viewTable(); if (fsOK() && !fsOn()) fsToggle(true); return V ? restartTable(V.id) : startRound(); }
+    if (k === "reshuffle") { if (fsOK() && !fsOn()) fsToggle(true); return startRound(); }
     if (k === "grid") { H.view = "grid"; H.tour = false; return afterChange(); }
     if (k === "tour") { H.tour = !H.tour; if (H.tour) tourNext(Net.now()); else { H.view = "grid"; afterChange(); } return; }
     if (k === "tpause") { const V = viewTable(); return V && togglePause(V.id); }
@@ -548,13 +555,28 @@ function renderWin(T) {
   wire();
   Sound.fx("win");
 }
+/* ---------- 새 테이블 발표: 이름이 한 명씩 테이블에 들어옴 (다시 그려도 처음부터 안 하게) ---------- */
+function renderReveal(ts) {
+  if ($stage.dataset.k === "reveal" + H.round) return;
+  $stage.className = "stage reveal"; $stage.dataset.k = "reveal" + H.round; delete $stage.dataset.tid;
+  const k = ts.length, n = ts.reduce((a, T) => a + T.players.length, 0), step = revealStep(n);
+  $stage.innerHTML = `${head(`<span class="bround">${H.round > 1 ? "새로 섞기" : "테이블 나누기"}</span>`)}
+    <div class="rvt"><span class="rvd">🔀</span>새 테이블 발표!</div>
+    <div class="rvg g${k <= 4 ? 2 : 3} ${k <= 2 ? "r1" : ""}">${ts.map((T, i) => `<div class="rvb" style="animation-delay:${i * 60}ms"><b>${T.id}번 테이블</b>
+      <div>${T.players.map((p, j) => `<span style="animation-delay:${(300 + (j * k + i) * step) | 0}ms">${esc(nm(p))}</span>`).join("")}</div></div>`).join("")}</div>
+    <div class="rvs">잠시 뒤 카드를 나눠 줄게요!</div>${bbar()}`;
+  wire();
+}
+
 /* ---------- 테이블 여러 개: 격자 ---------- */
 function renderMany(ts) {
+  if (Net.now() < (H.revealUntil || 0)) return renderReveal(ts);
   $stage.className = "stage many"; $stage.dataset.k = "grid"; delete $stage.dataset.tid;
   const waiting = online().filter(u => !tableOf(u)).length, done = ts.filter(T => T.phase === "end").length;
   let best = null;
   $stage.innerHTML = `${head(`<span class="bround">테이블 ${ts.length}개${done ? ` · 🏆 ${done}개 끝남` : ""}</span>${waiting ? `<span class="wait">대기 ${waiting}명</span>` : ""}`)}
     <div class="grid g${ts.length <= 4 ? 2 : 3} ${ts.length <= 2 ? "r1" : ""}">${ts.map(T => panelHTML(T, f => { if (!best || f === "uno" || f === "catch" || f === "win") best = f; })).join("")}</div>
+    ${done === ts.length ? `<div class="allend"><b>🏁 모든 테이블이 끝났어요</b><button class="pill y xl" data-b="reshuffle">🔀 새로 섞어서 다음 판</button><span>칸마다 [다음 판]을 누르면 같은 친구들끼리 한 판 더</span></div>` : ""}
     <div class="ghint">칸을 누르면 그 테이블을 크게 봐요</div>
     ${bbar(`<button class="pill sm" data-b="tour">⏵ 자동 순회</button><button class="pill sm" data-b="pause">${H.paused ? "▶ 모두 다시" : "⏸ 모두 멈춤"}</button>`)}`;
   $stage.querySelectorAll(".panel[data-tid]").forEach(el => el.onclick = e => {

@@ -10,9 +10,9 @@ const n = j => idx("n", CONS[j].c, j);
 let pass = 0; const ok = (cond, msg) => { assert.ok(cond, msg); pass++; };
 
 /* ---------- 1. 카드 구성 ---------- */
-ok(DECK.length === 112, "112장");
+ok(DECK.length === 114, "114장");
 for (const c of COLORS) ok(DECK.filter(x => x.c === c && x.k === "n").length === 18, c + " 자음 18장");
-ok(DECK.filter(x => x.k === "wild").length === 10 && DECK.filter(x => x.k === "w4").length === 4, "와일드 10 · +4 4");
+ok(DECK.filter(x => x.k === "wild").length === 10 && DECK.filter(x => x.k === "w4").length === 6, "와일드 10 · +4 6");
 
 /* ---------- 2. 연결 규칙 ---------- */
 const R = E.matchReason;

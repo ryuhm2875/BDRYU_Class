@@ -65,7 +65,7 @@ export function findCombo(topJ, playJ) {
   return COMBOS.find(c => c.from.includes(topJ) && c.to === playJ) || null;
 }
 
-/* ---------- 카드 112장 ----------
+/* ---------- 카드 114장 ----------
    k: n(자음) · skip · rev · d2(+2) · wild · w4(+4) · swap(맞바꿈)
    c: 색 (와일드는 null)   j: 카드에 적힌 글자 */
 const N_COPIES = {
@@ -81,7 +81,7 @@ export const DECK = (() => {
     for (const k of ["skip", "rev", "d2"]) for (let i = 0; i < 2; i++) d.push({ k, c, j: null });
   }
   for (const v of Object.keys(VOWELS)) d.push({ k: "wild", c: null, j: v });
-  for (let i = 0; i < 4; i++) d.push({ k: "w4", c: null, j: null });
+  for (let i = 0; i < 6; i++) d.push({ k: "w4", c: null, j: null });
   for (let i = 0; i < 2; i++) d.push({ k: "swap", c: null, j: null });
   d.forEach((x, i) => x.i = i);
   return Object.freeze(d.map(Object.freeze));

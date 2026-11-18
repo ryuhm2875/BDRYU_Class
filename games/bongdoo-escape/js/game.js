@@ -4,14 +4,14 @@
    대사·연출은 줄(queue)에 세워 하나씩 → 겹치지 않음.
    판정은 이 기기 안에서 (judge.js). 진행은 자동 저장.
    ────────────────────────────────────────────────────────────── */
-import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611182012";
-import { newTeam, handle, timeUp } from "./judge.js?v=202611182012";
-import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611182012";
-import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611182012";
-import { talk, talking, preloadPortraits } from "./dialog.js?v=202611182012";
+import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611182020";
+import { newTeam, handle, timeUp } from "./judge.js?v=202611182020";
+import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611182020";
+import { CHAPTERS, INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611182020";
+import { talk, talking, preloadPortraits, chapter } from "./dialog.js?v=202611182020";
 import { esc, modal, closeModal, showMemo, phoneApps, showNotebook, showClue, orderPuzzle, codePad, wordPad, cropPuzzle, showDiary,
-         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611182012";
-import { startAudio, itStep, myStep, sfx, setDusk, music, isMuted, setMuted } from "./sound.js?v=202611182012";
+         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611182020";
+import { startAudio, itStep, myStep, sfx, setDusk, music, isMuted, setMuted } from "./sound.js?v=202611182020";
 
 const SAVE = "escape-solo-v1";
 const SPEED = 2.5, NEAR = 1.5, FLASH_DRAIN = 10 / 60, FREEZE_MS = 20000;
@@ -73,6 +73,7 @@ export function Game(G, { onExit }) {
     if (L.shake) shake();
     if (L.sfx === "blackout" || L.sfx === "static") { W && W.flicker(1.5); st.fearBoost = 1; }
   };
+  const chap = c => new Promise(r => st.q.push(async () => { await chapter(c, G.name); r(); }));
   const say = lines => new Promise(r => st.q.push(async () => { await talk(lines, { name: G.name, party: G.party, onLine }); r(); }));
   const later = fn => st.q.push(fn);
   async function runQueue() {
@@ -82,7 +83,7 @@ export function Game(G, { onExit }) {
     st.busy = false; st.running = false; save();
   }
 
-  import("./world.js?v=202611182012").then(({ createWorld }) => {
+  import("./world.js?v=202611182020").then(({ createWorld }) => {
     try { W = createWorld($("cv"), { pixel: innerWidth > 1400 ? 3 : 2.5 }); }
     catch (e) { console.error(e); toast("3D 화면을 열지 못했어요. 크롬이나 사파리 최신 버전으로 열어 주세요.", "bad"); return; }
     W.setItemGone("phone", true);
@@ -91,6 +92,7 @@ export function Game(G, { onExit }) {
     startAudio();
     music(G.introDone ? "explore" : "calm");
     if (!G.introDone) later(async () => {
+      await chapter(CHAPTERS[0], G.name);
       await talk(INTRO, { name: G.name, onLine });
       G.introDone = true; music("explore");
       setTimeout(() => toast(NUDGE.start), 800);
@@ -296,7 +298,7 @@ export function Game(G, { onExit }) {
   function triggers(e) {
     const k = roomAt(G.x, G.z), F = G.flags;
     if (k >= 1 && !G.entered[k]) {
-      G.entered[k] = true; say(ENTER[k]);
+      G.entered[k] = true; chap(CHAPTERS[k]); say(ENTER[k]);
       if (k === 2) say(EVENTS.phone);
       if (k === 5) confessAfter("out");
     }
@@ -478,6 +480,7 @@ export function Game(G, { onExit }) {
       $app.innerHTML = `<div class="endstage"><div class="endart" id="endart"></div></div>`;
       const im = new Image(); im.onload = () => { const a = document.getElementById("endart"); if (a) { a.style.backgroundImage = `url(${im.src})`; a.classList.add("on"); } };
       im.src = `assets/art/end_${G.end || "night"}.webp`;
+      await chapter(CHAPTERS[G.end || "night"], G.name);
       await talk(ENDINGS[G.end || "night"], { name: G.name, party: G.party });
       Ending(G, { onExit });
     }, 2200);

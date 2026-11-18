@@ -372,3 +372,54 @@ svg.scene { width: 100%; display: block; background: #000; image-rendering: pixe
 .endstage::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(0,0,0,.85)); pointer-events: none; }
 .fearrow { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .fearrow > span { font-size: 14px; opacity: .7; letter-spacing: .05em; }
+
+/* ───────── 소설 지문: 책 한 쪽 ───────── */
+.talk.page { --paper: #ece2cc; --ink: #2b2219; }
+.talk.page .tb {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.35), transparent 60%),
+    radial-gradient(ellipse at 100% 100%, rgba(120,90,50,.22), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(90,70,40,.035) 0 1px, transparent 1px 3px),
+    var(--paper);
+  border: none; border-radius: 4px 10px 10px 4px; text-align: left;
+  padding: 22px 34px 26px 44px; min-height: 120px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.65), inset 14px 0 18px -12px rgba(80,55,25,.45), inset 0 0 0 1px rgba(80,55,25,.18);
+}
+.talk.page .tb::before { content: ""; position: absolute; left: 22px; top: 18px; bottom: 18px; width: 1px; background: rgba(150,60,40,.28); }
+.talk.page .tx {
+  font-family: "Nanum Myeongjo", "AppleMyungjo", "Batang", serif; font-style: normal;
+  color: var(--ink); font-size: 20px; line-height: 1.85; white-space: pre-line; letter-spacing: .01em;
+}
+.talk.page .more { color: #8a5a30; }
+.talk.voice .tx { white-space: pre-line; }
+/* 조작 안내: 소설 밖, 작게 */
+.talk.guide .tb { background: rgba(14,16,22,.88); border: 1px dashed #5a5a66; border-radius: 12px; min-height: 0; padding: 12px 18px 14px; }
+.talk.guide .tx { font-style: normal; font-size: 15px; color: #c8d2e0; white-space: pre-line; }
+.talk.guide .tx::before { content: "안내 · "; color: var(--y); font-weight: 800; }
+@media (max-width: 640px) { .talk.page .tb { padding: 16px 20px 18px 30px; } .talk.page .tb::before { left: 14px; } .talk.page .tx { font-size: 17px; } }
+
+/* ───────── 장 표지 ───────── */
+.chapter { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: rgba(4,4,6,0); perspective: 1600px; transition: background .6s; cursor: pointer; }
+.chapter.on { background: rgba(4,4,6,.86); }
+.chapter .cpage {
+  width: min(520px, 82vw); aspect-ratio: 3 / 4; display: grid; place-items: center; text-align: center;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.4), transparent 55%),
+    radial-gradient(ellipse at 90% 95%, rgba(110,80,40,.3), transparent 50%),
+    #e9dec6;
+  color: #2b2219; border-radius: 3px 8px 8px 3px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.8), inset 18px 0 26px -16px rgba(80,55,25,.55);
+  transform-origin: left center; transform: rotateY(-100deg); opacity: 0;
+  transition: transform .9s cubic-bezier(.2,.7,.2,1), opacity .5s;
+}
+.chapter.on .cpage { transform: rotateY(0); opacity: 1; }
+.chapter.out .cpage { transform: rotateY(85deg) translateX(-30px); opacity: 0; transition: transform .7s ease-in, opacity .6s; }
+.chapter.out { background: rgba(4,4,6,0); }
+.chapter .cin { padding: 0 12%; font-family: "Nanum Myeongjo", "AppleMyungjo", "Batang", serif; }
+.chapter .cno { font-size: 15px; letter-spacing: .5em; color: #8a3a2a; font-weight: 700; padding-left: .5em; }
+.chapter .crule { width: 46px; height: 1px; background: #8a3a2a; margin: 18px auto 20px; opacity: .6; }
+.chapter .cti { font-size: clamp(30px, 6vw, 44px); font-weight: 800; letter-spacing: .04em; word-break: keep-all; }
+.chapter .cline { white-space: pre-line; margin-top: 26px; font-size: 16px; line-height: 1.8; color: #5a4a38; word-break: keep-all; }
+.chapter .cti, .chapter .cline, .chapter .cno { opacity: 0; transform: translateY(6px); transition: opacity .8s .55s, transform .8s .55s; }
+.chapter .cline { transition-delay: .95s; }
+.chapter.on .cti, .chapter.on .cline, .chapter.on .cno { opacity: 1; transform: none; }

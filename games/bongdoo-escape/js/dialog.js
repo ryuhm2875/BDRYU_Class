@@ -4,8 +4,8 @@
    - 초상화 그림(수채화)은 나중에 assets/portraits/<아이디>_<표정>.webp 로 넣으면 자동으로 씀.
      없으면 색과 이름 첫 글자로 대신 그림
    ────────────────────────────────────────────────────────────── */
-import { NPCS } from "./data.js?v=202611181930";
-import { esc } from "./puzzles.js?v=202611181930";
+import { NPCS } from "./data.js?v=202611181933";
+import { esc } from "./puzzles.js?v=202611181933";
 
 const has = {};             // 그림 파일이 있는지 기억
 /* 친구가 아닌 사람들 */

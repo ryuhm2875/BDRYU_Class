@@ -4,14 +4,14 @@
    대사·연출은 줄(queue)에 세워 하나씩 → 겹치지 않음.
    판정은 이 기기 안에서 (judge.js). 진행은 자동 저장.
    ────────────────────────────────────────────────────────────── */
-import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181930";
-import { newTeam, handle, timeUp } from "./judge.js?v=202611181930";
-import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611181930";
-import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611181930";
-import { talk, talking, preloadPortraits } from "./dialog.js?v=202611181930";
+import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181933";
+import { newTeam, handle, timeUp } from "./judge.js?v=202611181933";
+import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611181933";
+import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611181933";
+import { talk, talking, preloadPortraits } from "./dialog.js?v=202611181933";
 import { esc, modal, closeModal, showMemo, phoneApps, showNotebook, showClue, orderPuzzle, codePad, wordPad, cropPuzzle, showDiary,
-         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611181930";
-import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181930";
+         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611181933";
+import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181933";
 
 const SAVE = "escape-solo-v1";
 const SPEED = 2.5, NEAR = 1.5, FLASH_DRAIN = 10 / 60, FREEZE_MS = 20000;
@@ -81,7 +81,7 @@ export function Game(G, { onExit }) {
     st.busy = false; st.running = false; save();
   }
 
-  import("./world.js?v=202611181930").then(({ createWorld }) => {
+  import("./world.js?v=202611181933").then(({ createWorld }) => {
     try { W = createWorld($("cv"), { pixel: innerWidth > 1400 ? 3 : 2.5 }); }
     catch (e) { console.error(e); toast("3D 화면을 열지 못했어요. 크롬이나 사파리 최신 버전으로 열어 주세요.", "bad"); return; }
     W.setItemGone("phone", true);
@@ -247,7 +247,7 @@ export function Game(G, { onExit }) {
         W.setTV(true);
         if (!G.seen.original) { G.seen.original = true; bubble("minjae", CHATTER.minjae.tv); }
         const p1 = G.part[1] || {};
-        const m = modal(`<h2>교실 TV</h2><p class="lead">민재의 카메라를 연결했다. 원본 영상이 들어 있다.</p>
+        const m = modal(`<h2>교실 TV</h2><p class="lead">승우의 카메라를 연결했다. 원본 영상이 들어 있다.</p>
           <div class="row"><button class="pill y" id="tv1">원본 영상 보기</button>
           <button class="pill ${p1.order ? "ghost done" : "ghost"}" id="tv2">${p1.order ? "✓ " : ""}장면 되돌리기</button>
           <button class="pill ${p1.edit ? "ghost done" : "ghost"}" id="tv3">${p1.edit ? "✓ " : ""}편집 노트</button></div>`);

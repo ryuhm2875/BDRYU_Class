@@ -3,8 +3,8 @@
    모든 시각은 ‘게임 시작부터 지난 ms’(el).
    who: 지금 일행에 있는 친구들 (환등기·잠긴 앱처럼 특정 친구가 있어야 하는 일)
    ────────────────────────────────────────────────────────────── */
-import { ANSWERS, HINTS } from "./answers.js?v=202611181930";
-import { ROOMS, isOpen, GAME_MS } from "./data.js?v=202611181930";
+import { ANSWERS, HINTS } from "./answers.js?v=202611181933";
+import { ROOMS, isOpen, GAME_MS } from "./data.js?v=202611181933";
 
 export const LOCK_MS = 60000, BLACKOUT_MS = 30000;
 
@@ -80,10 +80,10 @@ export function handle(team, req, el, cfg = {}, who = []) {
   }
   if (team.solved[room]) return "ignored";
 
-  /* ② 환등기: 민재(필름)가 있어야. 틀림으로 치지 않음 */
+  /* ② 환등기: 승우(필름)가 있어야. 틀림으로 치지 않음 */
   if (req.t === "project") {
     if (room !== 2) return "ignored";
-    if (!who.includes("minjae")) { say(team, el, "필름이 있어야 한다. 필름은 민재가 갖고 있다."); return "ignored"; }
+    if (!who.includes("minjae")) { say(team, el, "필름이 있어야 한다. 필름은 승우가 갖고 있다."); return "ignored"; }
     if (team.part[2] && team.part[2].proj) return "ignored";
     team.part[2] = Object.assign({}, team.part[2], { proj: true });
     say(team, el, "환등기에 필름을 끼웠다. 벽에 사진 전체가 비친다.", "good");

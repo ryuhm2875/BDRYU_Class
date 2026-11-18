@@ -5,7 +5,7 @@
 
 /* ---------- 사람들 (주인공은 학생이 넣은 이름) ---------- */
 export const NPCS = {
-  minjae: { name: "오민재", grade: "중3", color: "#6a9ae0", club: "사진부" },
+  minjae: { name: "오승우", grade: "중3", color: "#6a9ae0", club: "사진부" },
   sua:    { name: "이수아", grade: "중3", color: "#6ac08a", club: "도서부" },
   taeo:   { name: "김태오", grade: "중1", color: "#a88ad8", club: "할머니가 봉두섬 사람" },
   haeun:  { name: "박하은", grade: "중2", color: "#e8b85a", club: "방송부" },

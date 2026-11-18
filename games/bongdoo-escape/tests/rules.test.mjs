@@ -54,8 +54,8 @@ function solveAll(T, who = ALL) {
 {
   const T = newTeam([]); T.solved[1] = true;
   eq(handle(T, { t: "crop", room: 2, v: [0.6, 0.45, 0.17, 0.19] }, 0), "ignored", "투사 전엔 표시 못 함");
-  eq(handle(T, { t: "project", room: 2 }, 0, {}, ["sua"]), "ignored", "민재 없이 환등기 못 씀");
-  eq(handle(T, { t: "project", room: 2 }, 0, {}, ["minjae"]), "part", "민재가 필름 끼움");
+  eq(handle(T, { t: "project", room: 2 }, 0, {}, ["sua"]), "ignored", "승우 없이 환등기 못 씀");
+  eq(handle(T, { t: "project", room: 2 }, 0, {}, ["minjae"]), "part", "승우가 필름 끼움");
   eq(handle(T, { t: "crop", room: 2, v: [0.1, 0.1, 0.5, 0.6] }, 1000), "wrong", "재희 얼굴까지 감싸면 틀림");
   eq(handle(T, { t: "crop", room: 2, v: [0.58, 0.42, 0.22, 0.25] }, 62000), "part", "봉투 든 손");
   eq(handle(T, { t: "code", room: 2, v: " 해 송 " }, 62000), "right", "글자 자물쇠");

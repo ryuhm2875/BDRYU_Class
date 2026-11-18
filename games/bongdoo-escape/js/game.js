@@ -4,14 +4,14 @@
    대사·연출은 줄(queue)에 세워 하나씩 → 겹치지 않음.
    판정은 이 기기 안에서 (judge.js). 진행은 자동 저장.
    ────────────────────────────────────────────────────────────── */
-import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181937";
-import { newTeam, handle, timeUp } from "./judge.js?v=202611181937";
-import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611181937";
-import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611181937";
-import { talk, talking, preloadPortraits } from "./dialog.js?v=202611181937";
+import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181955";
+import { newTeam, handle, timeUp } from "./judge.js?v=202611181955";
+import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611181955";
+import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611181955";
+import { talk, talking, preloadPortraits } from "./dialog.js?v=202611181955";
 import { esc, modal, closeModal, showMemo, phoneApps, showNotebook, showClue, orderPuzzle, codePad, wordPad, cropPuzzle, showDiary,
-         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611181937";
-import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181937";
+         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611181955";
+import { startAudio, itStep, myStep, sfx, setDusk, music, isMuted, setMuted } from "./sound.js?v=202611181955";
 
 const SAVE = "escape-solo-v1";
 const SPEED = 2.5, NEAR = 1.5, FLASH_DRAIN = 10 / 60, FREEZE_MS = 20000;
@@ -50,6 +50,7 @@ export function Game(G, { onExit }) {
       <div class="edge" id="edge">👣</div>
       <div class="joy" id="joy"><i id="knob"></i></div>
       <div class="acts">
+        <button class="act" id="snd" aria-label="소리">${isMuted() ? "🔇" : "🔊"}</button>
         <button class="act" id="note">📓 수첩</button>
         <button class="act" id="hide" hidden>🚪 숨기</button>
         <button class="act y" id="use" hidden>살펴보기</button>
@@ -81,16 +82,17 @@ export function Game(G, { onExit }) {
     st.busy = false; st.running = false; save();
   }
 
-  import("./world.js?v=202611181937").then(({ createWorld }) => {
+  import("./world.js?v=202611181955").then(({ createWorld }) => {
     try { W = createWorld($("cv"), { pixel: innerWidth > 1400 ? 3 : 2.5 }); }
     catch (e) { console.error(e); toast("3D 화면을 열지 못했어요. 크롬이나 사파리 최신 버전으로 열어 주세요.", "bad"); return; }
     W.setItemGone("phone", true);
     bind(); hud(true);
     raf = requestAnimationFrame(loop);
     startAudio();
+    music(G.introDone ? "explore" : "calm");
     if (!G.introDone) later(async () => {
       await talk(INTRO, { name: G.name, onLine });
-      G.introDone = true;
+      G.introDone = true; music("explore");
       setTimeout(() => toast(NUDGE.start), 800);
     });
   }).catch(e => { console.error(e); toast("게임 파일을 받지 못했어요. 새로 고침해 주세요.", "bad"); });
@@ -112,7 +114,8 @@ export function Game(G, { onExit }) {
     onkeydown = e => { if (document.getElementById("modal") || talking()) return; st.keys.add(e.key.toLowerCase()); if (e.key === "e") useNear(); if (e.key.toLowerCase() === "f") toggleFlash(); };
     onkeyup = e => st.keys.delete(e.key.toLowerCase());
     $("fl").onclick = toggleFlash; $("use").onclick = useNear; $("hide").onclick = toggleHide;
-    $("note").onclick = () => showNotebook(notebook(), G.frags);
+    $("note").onclick = () => { sfx.page(); showNotebook(notebook(), G.frags); };
+    $("snd").onclick = () => { setMuted(!isMuted()); $("snd").textContent = isMuted() ? "🔇" : "🔊"; };
     $("phone").onclick = phone;
     document.addEventListener("visibilitychange", () => { last = performance.now(); save(); });
   }
@@ -191,6 +194,7 @@ export function Game(G, { onExit }) {
     return r;
   }
   function afterSolve(k) {
+    sfx.unlock();
     later(() => evidenceCard(k, ROOMS[k].name, ROOMS[k].evidence, LESSONS[k]));
     if (k === 1) later(async () => { W.setTV("static"); await talk(EVENTS.tv, { name: G.name, party: G.party, onLine }); W.setTV(true); });
     if (k === 3) say(EVENTS.tape);
@@ -232,7 +236,7 @@ export function Game(G, { onExit }) {
       case "battery": G.picked.push(it.id); G.fbat = Math.min(100, G.fbat + 40); sfx.pick(); return toast(`건전지를 넣었다. 손전등 ${Math.round(G.fbat)}%`, "good");
       case "diary":
         if (!litDiaries().includes(it.id)) return toast("뭔가 있는 것 같은데… 손전등으로 비춰 보세요.");
-        judge({ t: "diary", room: it.room }); return showDiary(it.room);
+        judge({ t: "diary", room: it.room }); sfx.page(); return showDiary(it.room);
       case "jam":
         toast(NUDGE.door3); if (has("taeo")) bubble("taeo", "교무실 쪽문으로 돌아가요!"); return;
       case "short":
@@ -334,6 +338,8 @@ export function Game(G, { onExit }) {
         vx /= Math.max(1, l); vz /= Math.max(1, l);
         const p = W.move(G.x, G.z, vx * SPEED * dt, vz * SPEED * dt);
         speed = Math.hypot(p.x - G.x, p.z - G.z) / dt;
+        st.footT = (st.footT || 0) - dt * speed;
+        if (st.footT <= 0 && speed > 0.5) { st.footT = 1.15; myStep(); }
         G.x = p.x; G.z = p.z; G.a = Math.atan2(vz, vx);
         const L = st.trail[st.trail.length - 1];
         if (!L || Math.hypot(L.x - G.x, L.z - G.z) > 0.2) { st.trail.push({ x: G.x, z: G.z }); if (st.trail.length > 80) st.trail.shift(); }
@@ -372,7 +378,16 @@ export function Game(G, { onExit }) {
       }
     }
     st.stepT -= dt;
-    if (!G.itOff && st.stepT <= 0 && playing) { st.stepT = 0.85; itStep(Math.hypot(G.x - itp.x, G.z - itp.z), G.party.includes("haeun") ? 1.4 : 1); }
+    if (!G.itOff && st.stepT <= 0 && playing) { st.stepT = 0.85; itStep(Math.hypot(G.x - itp.x, G.z - itp.z), G.party.includes("haeun") ? 1.4 : 1, Math.max(-1, Math.min(1, (itp.x - G.x) / 8))); }
+    /* 배경음악: 그것이 가깝거나 20분이 넘으면 긴장 곡 */
+    if (playing && G.introDone) {
+      const tense = (!G.itOff && fear > 0.35) || st.fearBoost > 0.5 || (e >= 20 * 60000 && !G.itOff);
+      st.musT = (st.musT || 0) - dt;
+      if (tense !== st.tense && st.musT <= 0) { st.tense = tense; st.musT = tense ? 1 : 8; music(tense ? "tension" : "explore"); }
+      /* 가끔 어디선가 삐걱 */
+      st.creakT = (st.creakT ?? 15) - dt;
+      if (st.creakT <= 0) { st.creakT = 18 + Math.random() * 30; sfx.creak(); }
+    }
     st.heartT -= dt;
     if (fear > 0.6 && st.heartT <= 0) { st.heartT = 0.9 - fear * 0.4; sfx.heart(); }
     if (fear > 0.55 && G.party.length && st.chatT < 0) { const id = pickOne(G.party); if (CHATTER[id] && CHATTER[id].near_it) { bubble(id, CHATTER[id].near_it); st.chatT = 18; } }
@@ -380,7 +395,7 @@ export function Game(G, { onExit }) {
     st.fearBoost = Math.max(0, st.fearBoost - dt * 0.4);
 
     /* 아직 못 찾은 친구 근처: 덜컹 */
-    for (const it of MAP.items) if (it.kind === "npc" && !G.found[it.npc] && Math.hypot(it.x - G.x, it.z - G.z) < 3.2 && tnow - st.nearRattle > 4000) { st.nearRattle = tnow; sfx.pick(); }
+    for (const it of MAP.items) if (it.kind === "npc" && !G.found[it.npc] && Math.hypot(it.x - G.x, it.z - G.z) < 3.2 && tnow - st.nearRattle > 4000) { st.nearRattle = tnow; sfx.rattle(); }
 
     /* 그리기 */
     const inRoom4 = roomAt(G.x, G.z) === 4;
@@ -457,6 +472,7 @@ export function Game(G, { onExit }) {
     if (G.end === "true" && !allKind) G.end = "escape";
     save();
     $("fade").classList.add("on");
+    music("calm");
     setTimeout(async () => {
       stop();
       $app.innerHTML = `<div class="endstage"><div class="endart" id="endart"></div></div>`;

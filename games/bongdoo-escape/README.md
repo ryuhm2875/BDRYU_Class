@@ -58,3 +58,11 @@ games/bongdoo-escape/
 
 - `node games/bongdoo-escape/tests/rules.test.mjs`
 - 고친 뒤 `python3 games/bongdoo-escape/tools/bump-version.py` → 커밋 → `main`
+
+## 쓴 자료 (모두 무료)
+
+- 효과음: Kenney 「Impact Sounds」「RPG Audio」 (CC0) — kenney.nl
+- 사람 몸·동작: Quaternius 「Universal Animation Library 1·2」 (CC0) — quaternius.com
+  - `tools/pack_people.py`로 필요한 동작만 골라 `assets/models/people_m.glb`, `people_f.glb`로 줄였습니다.
+- 배경음악: Pixabay (Pixabay 라이선스, 출처 표기 없이 무료) — atlasaudio, leberch, alex-morgan
+- 그림: 캔바로 만든 수채화

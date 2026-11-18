@@ -5,17 +5,17 @@
    모델은 +z 쪽을 봅니다.
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611181937";
+import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611181955";
 
 /* 어둠 속에서도 형태가 읽히게 자기 색을 조금 스스로 냄 */
-const lam = (o) => {
+export const lam = (o) => {
   const m = new THREE.MeshLambertMaterial(Object.assign({ flatShading: true }, o));
   if (!o.emissive) { m.emissive = (o.color ? new THREE.Color(o.color) : new THREE.Color(0x888888)).multiplyScalar(0.16); }
   return m;
 };
 const OUT = new THREE.MeshBasicMaterial({ color: 0x050507, side: THREE.BackSide });
 /* 바깥선: 뒷면만 검게, 살짝 크게 */
-function outline(root, k = 0.022) {
+export function outline(root, k = 0.022) {
   const list = []; root.traverse(o => { if (o.isMesh && !o.userData.noOutline) list.push(o); });
   for (const o of list) {
     const h = new THREE.Mesh(o.geometry, OUT); h.userData.noOutline = true; h.userData.hull = true;
@@ -25,7 +25,7 @@ function outline(root, k = 0.022) {
   }
 }
 const cap = (r, len, seg = 6) => new THREE.CapsuleGeometry(r, len, 2, seg);
-const hexc = a => new THREE.Color(`rgb(${a[0]},${a[1]},${a[2]})`);
+export const hexc = a => new THREE.Color(`rgb(${a[0]},${a[1]},${a[2]})`);
 
 /* 인물 생김새 */
 export const LOOKS = {
@@ -155,7 +155,7 @@ export function makeRig(id, { jacket = null } = {}) {
   return { group: root, update, height: 1.5 * S, head };
 }
 
-function addHair(neck, L, hairM, cloth) {
+export function addHair(neck, L, hairM, cloth) {
   const add = (geo, x, y, z, sx = 1, sy = 1, sz = 1, m = hairM) => { const h = new THREE.Mesh(geo, m); h.position.set(x, y, z); h.scale.set(sx, sy, sz); neck.add(h); return h; };
   /* 정수리부터 덮는 껍질. 앞(+z)은 비워 얼굴이 보이게 */
   const shell = (r, down, open = 1.1) => new THREE.SphereGeometry(r, 12, 8, Math.PI / 2 + open, Math.PI * 2 - open * 2, 0, Math.PI * down);
@@ -180,7 +180,7 @@ function addHair(neck, L, hairM, cloth) {
   if (L.hair === "pony") { const p = add(new THREE.CapsuleGeometry(0.07, 0.22, 2, 6), 0, 0.12, -0.3); p.rotation.x = 0.5; }
 }
 
-function addProp(p, { torso, neck, arms }) {
+export function addProp(p, { torso, neck, arms }) {
   const dark = lam({ color: 0x1a1a1c }), metal = lam({ color: 0x8a8a88 });
   if (p === "camera") {
     const g = new THREE.Group(); g.position.set(0, 0.26, 0.2); torso.add(g);

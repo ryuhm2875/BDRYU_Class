@@ -6,10 +6,11 @@
    - 방향 a: (cos a, sin a) 가 x·z 로 향하는 쪽 (0 = 동쪽)
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { MAP, IT } from "./data.js?v=202611181937";
-import { photoSVG } from "./puzzles.js?v=202611181937";
-import * as TX from "./textures.js?v=202611181937";
-import { makeRig, makeMannequin } from "./rig.js?v=202611181937";
+import { MAP, IT } from "./data.js?v=202611181955";
+import { photoSVG } from "./puzzles.js?v=202611181955";
+import * as TX from "./textures.js?v=202611181955";
+import { makeRig, makeMannequin } from "./rig.js?v=202611181955";
+import { loadPeople, makePerson, makeThing } from "./people.js?v=202611181955";
 
 const H = 2.4, T = 0.2;
 const SNAP = { value: new THREE.Vector2(320, 200) };          // 꼭짓점이 붙는 격자
@@ -17,7 +18,9 @@ const SNAP = { value: new THREE.Vector2(320, 200) };          // 꼭짓점이 �
 /* 옛 게임기처럼 꼭짓점을 화면 격자에 붙임 */
 function ps1(m) {
   if (!m || m.userData.ps1) return m; m.userData.ps1 = true;
-  m.onBeforeCompile = sh => {
+  const prev = m.onBeforeCompile;
+  m.onBeforeCompile = (sh, r) => {
+    if (prev) prev.call(m, sh, r);
     sh.uniforms.uSnap = SNAP;
     sh.vertexShader = "uniform vec2 uSnap;\n" + sh.vertexShader.replace("#include <project_vertex>",
       "#include <project_vertex>\n vec4 sn = gl_Position; sn.xyz /= sn.w; sn.xy = floor(sn.xy * uSnap) / uSnap; sn.xyz *= sn.w; gl_Position = sn;");
@@ -296,11 +299,25 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
 
   /* ---------- 인물 ---------- */
   const rigs = {};
+  let P = null, disposed = false;
   function rigFor(id, opts) {
+    if (P && rigs[id] && !rigs[id].glb) {             // 사람 모델이 도착하면 예전 인형과 바꿈
+      const old = rigs[id]; scene.remove(old.group);
+      try { rigs[id] = makePerson(P, id, Object.assign({}, opts, { ps1 })); rigs[id].a = old.a; scene.add(rigs[id].group); }
+      catch (e) { console.warn(e); rigs[id] = old; scene.add(old.group); old.glb = true; }
+    }
     if (!rigs[id]) { rigs[id] = makeRig(id, opts); rigs[id].group.traverse(o => { if (o.isMesh && !o.userData.hull) ps1(o.material); }); scene.add(rigs[id].group); rigs[id].a = 0; }
     return rigs[id];
   }
-  const it = makeMannequin(); it.group.traverse(o => { if (o.isMesh) ps1(o.material); }); scene.add(it.group);
+  let it = makeMannequin(); it.group.traverse(o => { if (o.isMesh) ps1(o.material); }); scene.add(it.group);
+  loadPeople().then(p => {
+    if (!p || disposed) return;
+    P = p;
+    try {
+      const n = makeThing(P, { ps1 }); scene.remove(it.group); it = n; scene.add(it.group);
+      if (decoy) { const d = makeThing(P, { ps1, decoy: true }); d.group.position.copy(decoy.group.position); d.group.rotation.copy(decoy.group.rotation); scene.remove(decoy.group); decoy = d; scene.add(d.group); }
+    } catch (e) { console.warn(e); }
+  });
   const fan = new THREE.Mesh(new THREE.CircleGeometry(IT.sight, 18, -IT.fov, IT.fov * 2),
     new THREE.MeshBasicMaterial({ color: 0xff2a2a, transparent: true, opacity: 0.08, depthWrite: false, fog: false }));
   fan.geometry.rotateX(-Math.PI / 2); scene.add(fan);
@@ -430,7 +447,8 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
     if (flickT > 0) { flickT -= dt; const f = Math.random() < 0.5 ? 0.15 : 1; amb.intensity *= f; hemi.intensity *= f; }
     if (S.it && S.it.off) {
       it.group.visible = true; fan.visible = false;
-      it.group.position.set(S.it.x, 0.18, S.it.z); it.group.rotation.set(-Math.PI / 2, 0, 0.4);
+      if (it.lies) { it.group.position.set(S.it.x, 0, S.it.z); it.group.rotation.set(0, 0.4, 0); it.update(dt, { off: true }); }
+      else { it.group.position.set(S.it.x, 0.18, S.it.z); it.group.rotation.set(-Math.PI / 2, 0, 0.4); }
     } else if (S.it) {
       it.group.rotation.x = 0;
       it.group.visible = fan.visible = !S.it.hide;
@@ -459,7 +477,7 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
     setTV: v => { tvOn = v; },
     flicker: sec => { flickT = sec; },
     setItemGone: (id, v) => { if (items[id]) items[id].gone = v; },
-    dispose: () => { removeEventListener("resize", resize); renderer.dispose(); }
+    dispose: () => { disposed = true; removeEventListener("resize", resize); renderer.dispose(); }
   };
 }
 

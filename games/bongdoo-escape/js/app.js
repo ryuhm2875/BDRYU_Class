@@ -3,9 +3,9 @@
    이름 · 점퍼 색 · 공포 강도를 고르고 시작. 저장된 게임이 있으면 이어 하기.
    ?debug=1 → 개발 확인용 (window.__G)
    ────────────────────────────────────────────────────────────── */
-import { JACKETS } from "./data.js?v=202611181933";
-import { esc } from "./puzzles.js?v=202611181933";
-import { Game, Ending, newGame, loadSave, clearSave } from "./game.js?v=202611181933";
+import { JACKETS } from "./data.js?v=202611181937";
+import { esc } from "./puzzles.js?v=202611181937";
+import { Game, Ending, newGame, loadSave, clearSave } from "./game.js?v=202611181937";
 
 const $app = document.getElementById("app");
 Title();

@@ -2,8 +2,8 @@
    마지막 배는 6시 · 판정 (칠판만 실행, 순수 함수)
    모든 시각은 ‘게임 시작부터 지난 ms’(el)로 적어, 기기마다 시계가 달라도 같게 보입니다.
    ────────────────────────────────────────────────────────────── */
-import { ANSWERS, HINTS } from "./answers.js?v=202611181710";
-import { ROOMS, isOpen, GAME_MS } from "./data.js?v=202611181710";
+import { ANSWERS, HINTS } from "./answers.js?v=202611181804";
+import { ROOMS, isOpen, GAME_MS } from "./data.js?v=202611181804";
 
 export const LOCK_MS = 60000, BLACKOUT_MS = 30000;
 

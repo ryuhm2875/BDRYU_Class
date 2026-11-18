@@ -3,35 +3,16 @@
    정답과 단서 내용은 여기 두지 않습니다 → answers.js (칠판만)
    ────────────────────────────────────────────────────────────── */
 
-/* ---------- 캐릭터 5명 (고정) ---------- */
-export const CHARS = {
-  seoyul: { name: "한서율", grade: "중2", color: "#d9485f", prop: "phone",
-    intro: "서진의 동생. 무서워하면서도 맨 앞에 선다.",
-    sees: "언니의 휴대폰 (메신저, 메모, 사진첩)",
-    ability: "잠금 풀기 · 언니 패턴으로 폰 속 잠긴 앱을 연다",
-    secret: "언니와 마지막으로 싸운 채 헤어졌다." },
-  minjae: { name: "오민재", grade: "중3", color: "#3f7fd6", prop: "camera",
-    intro: "사진부. 필름 카메라를 늘 목에 건다.",
-    sees: "옛 필름, 서진 영상의 원본",
-    ability: "확대 · 사진과 영상의 가장자리를 들여다본다",
-    secret: "쇼츠 속 사진에 처음 ‘좋아요’를 누른 게 자기였다." },
-  haeun:  { name: "박하은", grade: "중2", color: "#e0a63a", prop: "headphones",
-    intro: "방송부. 귀가 유난히 밝다.",
-    sees: "녹음테이프, 영상 속 소리",
-    ability: "귀 기울이기 · 소리의 방향을 가려낸다. ‘그것’의 위치도 소리로 안다",
-    secret: "밤에 혼자 있는 걸 제일 무서워한다." },
-  sua:    { name: "이수아", grade: "중3", color: "#4aa36b", prop: "books",
-    intro: "도서부. 날짜와 숫자를 외우는 애.",
-    sees: "1999년 신문 스크랩, 학교 일지",
-    ability: "대조 · 두 기록을 나란히 놓고 다른 점을 표시한다",
-    secret: "지난주 단톡방에 그 쇼츠를 퍼 날랐다." },
-  taeo:   { name: "김태오", grade: "중1", color: "#8a5cc7", prop: "cap",
-    intro: "할머니가 봉두섬 사람. 섬 지리를 안다.",
-    sees: "섬 지도, 배 시간표, 마을 CCTV",
-    ability: "지름길 · 잠긴 복도를 돌아가는 길과 숨을 곳을 안다",
-    secret: "할머니가 1999년 테이프 속 증언자 중 한 명이다." }
+/* ---------- 사람들 (주인공은 학생이 넣은 이름) ---------- */
+export const NPCS = {
+  minjae: { name: "오민재", grade: "중3", color: "#6a9ae0", club: "사진부" },
+  sua:    { name: "이수아", grade: "중3", color: "#6ac08a", club: "도서부" },
+  taeo:   { name: "김태오", grade: "중1", color: "#a88ad8", club: "할머니가 봉두섬 사람" },
+  haeun:  { name: "박하은", grade: "중2", color: "#e8b85a", club: "방송부" },
+  seoyul: { name: "한서율", grade: "중2", color: "#e87080", club: "서진의 동생" }
 };
-export const CHAR_IDS = ["seoyul", "minjae", "haeun", "sua", "taeo"];
+/* 점퍼 색 (주인공) */
+export const JACKETS = { 남색: [66, 98, 164], 자주: [150, 58, 86], 초록: [52, 124, 90], 회색: [124, 124, 134] };
 
 /* ---------- 방 5개 ---------- */
 export const ROOMS = {
@@ -75,7 +56,8 @@ export const MAP = {
   spawn: { x: 2.2, z: 1.5 },
   /* 부딪히는 가구: [x, z, 가로, 세로, 높이, 종류] */
   furniture: [
-    // ① 교실: 책상 6개 (가운데 통로) + 교탁
+    // ① 교실: 뒤쪽(서쪽 벽) 사물함 셋 · 책상 6개 (가운데 통로) · 교탁
+    [0.4, -1.3, .5, .8, 1.8, "locker"], [0.4, -2.2, .5, .8, 1.8, "locker"], [0.4, -3.1, .5, .8, 1.8, "locker"],
     [2, -4.2, .9, .6, .75, "desk"], [3.4, -4.2, .9, .6, .75, "desk"], [6.6, -4.2, .9, .6, .75, "desk"],
     [8, -4.2, .9, .6, .75, "desk"], [2, -2.2, .9, .6, .75, "desk"], [8, -2.2, .9, .6, .75, "desk"],
     [4.4, -6.0, 1.6, .7, .95, "teacher"],
@@ -100,7 +82,9 @@ export const MAP = {
     { id: "phone",  room: 1, x: 4.4,  z: -6.0, kind: "memo",  label: "서진의 휴대폰" },
     { id: "tv",     room: 1, x: 6.8,  z: -7.6, kind: "order", label: "교실 TV" },
     { id: "box1",   room: 1, x: 8.7,  z: -7.2, kind: "code",  label: "증거 상자 (4자리)" },
-    { id: "d1",     room: 1, x: 1.2,  z: -1.0, kind: "diary", label: "재희의 일기장 1" },
+    { id: "d1",     room: 1, x: 2.6,  z: -6.9, kind: "diary", label: "재희의 일기장 1" },
+    { id: "npc_minjae", room: 1, x: 1.1, z: -2.2, kind: "npc", npc: "minjae", label: "덜컹거리는 사물함" },
+    { id: "npc_sua",    room: 2, x: 12.6, z: -1.5, kind: "npc", npc: "sua",    label: "책상 밑 인기척" },
     { id: "proj",   room: 2, x: 12.6, z: -5.2, kind: "project", label: "환등기" },
     { id: "wall2",  room: 2, x: 15,   z: -7.3, kind: "photo", label: "벽에 비친 사진" },
     { id: "box2",   room: 2, x: 18.9, z: -6.0, kind: "word",  label: "교무실 금고 (글자 자물쇠)" },
@@ -138,7 +122,7 @@ export function itPos(elapsed, threat) {
     const d = MAP.rooms[threat.room].door;              // 틀린 방 앞으로 다가와 문 쪽을 본다
     return { x: d, z: 0.9, dir: -Math.PI / 2, near: threat.room };
   }
-  const L = IT.x1 - IT.x0, s = (elapsed / 1000 * IT.speed) % (2 * L);
+  const L = IT.x1 - IT.x0, s = (L + elapsed / 1000 * IT.speed) % (2 * L);    // 복도 동쪽 끝에서 출발
   const fwd = s < L;
   return { x: fwd ? IT.x0 + s : IT.x1 - (s - L), z: IT.z, dir: fwd ? 0 : Math.PI };
 }

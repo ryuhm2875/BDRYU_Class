@@ -1,6 +1,5 @@
 /* node games/bongdoo-escape/tests/rules.test.mjs */
-import { splitSizes, makeTeams, allocate, ALLOC, pickTeamForLate, removeFrom, ownersSplit } from "../js/split.js";
-import { ROOMS, CHAR_IDS, itPos, clockText, roomAt } from "../js/data.js";
+import { ROOMS, itPos, clockText, roomAt, MAP } from "../js/data.js";
 import { newTeam, handle, timeUp, cropOK } from "../js/judge.js";
 import { ANSWERS } from "../js/answers.js";
 
@@ -8,40 +7,12 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log("✗", m); } };
 const eq = (a, b, m) => ok(JSON.stringify(a) === JSON.stringify(b), `${m}: ${JSON.stringify(a)} ≠ ${JSON.stringify(b)}`);
 
-/* 방 나누기 */
-eq(splitSizes(6), [3, 3], "6명"); eq(splitSizes(7), [4, 3], "7명");
-eq(splitSizes(10), [5, 5], "10명"); eq(splitSizes(11), [4, 4, 3], "11명");
-eq(splitSizes(25), [5, 5, 5, 5, 5], "25명"); eq(splitSizes(1), [1], "1명(시험)");
-for (let n = 2; n <= 40; n++) {
-  const s = splitSizes(n);
-  ok(s.reduce((a, b) => a + b, 0) === n && s.every(x => x >= 2 && x <= 5), `${n}명 → ${s}`);
-  const t = makeTeams(Array.from({ length: n }, (_, i) => "u" + i));
-  ok(Object.values(t).reduce((a, x) => a + x.m.length, 0) === n, `${n}명 모두 배정`);
+/* 지도: 살펴볼 것과 숨은 친구가 벽·가구 안에 박혀 있지 않은지 (사람이 설 수 있는 자리) */
+for (const it of MAP.items) {
+  if (["diary", "battery", "code", "word", "memo", "order", "photo"].includes(it.kind)) continue;
+  const inside = MAP.furniture.some(([x, z, w, d]) => Math.abs(it.x - x) < w / 2 && Math.abs(it.z - z) < d / 2);
+  ok(!inside, `${it.id} 자리가 가구 안`);
 }
-
-/* 캐릭터: 인원마다 5명 모두 한 번씩, 단서 둘은 다른 학생에게 (2명일 때 ②만 예외) */
-for (let n = 1; n <= 5; n++) {
-  const flat = ALLOC[n].flat().sort();
-  eq(flat, CHAR_IDS.slice().sort(), `${n}명 캐릭터 빠짐없음`);
-  const c = allocate(Array.from({ length: n }, (_, i) => "u" + i));
-  for (const k of [1, 2, 3, 4, 5]) {
-    const split = ownersSplit(c, ROOMS[k].owners);
-    if (n === 1 || (n === 2 && k === 2)) ok(!split, `${n}명 방${k} 혼자`);
-    else ok(split, `${n}명 방${k} 두 사람이 나눠 듦`);
-  }
-}
-
-/* 늦게 온 / 나간 학생 */
-{
-  const t = makeTeams(["a", "b", "c", "d", "e", "f", "g"]);    // 4 + 3
-  eq(pickTeamForLate(t), "T2", "늦게 온 학생은 적은 방");
-  t.T2.m.push("h");
-  const full = { T1: { m: ["1", "2", "3", "4", "5"] } };
-  eq(pickTeamForLate(full), null, "다 찼으면 새 방");
-  const t2 = { T1: { m: ["a", "b"] }, T2: { m: ["c", "d", "e"] } };
-  eq(removeFrom(t2, "a"), { tid: "T1", mergeInto: "T2" }, "1명 남으면 합치기");
-}
-
 /* 판정: ① 교실 */
 {
   const T = newTeam(["a"]);
@@ -93,7 +64,7 @@ for (let n = 1; n <= 5; n++) {
 
 /* 시계 · 그것 · 방 위치 */
 eq(clockText(0), "5:30", "시작"); eq(clockText(29 * 60000 + 59000), "5:59", "끝 직전"); eq(clockText(30 * 60000), "6:00", "끝");
-ok(itPos(0).x === 2.5 && Math.abs(itPos(1e6).x - itPos(1e6).x) < 1e-9, "그것 위치 같음");
+ok(itPos(0).x === 37.5 && Math.abs(itPos(1e6).x - itPos(1e6).x) < 1e-9, "그것 위치 같음");
 eq(itPos(5000, { room: 3, t: 1000 }).near, 3, "틀리면 그 방 앞");
 eq(roomAt(5, -3), 1, "교실"); eq(roomAt(20.5, 1), 0, "복도"); eq(roomAt(-5, 0), 5, "바깥");
 

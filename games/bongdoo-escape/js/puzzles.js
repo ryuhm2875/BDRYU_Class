@@ -2,7 +2,7 @@
    마지막 배는 6시 · 2D 화면 (3D 방에서 물건을 누르면 위에 뜨는 것)
    단서 보기 · 장면 카드 줄 세우기 · 자물쇠 · 일기장 · 캐릭터 소개
    ────────────────────────────────────────────────────────────── */
-import { CHARS, ROOMS } from "./data.js?v=202611181710";
+import { ROOMS } from "./data.js?v=202611181804";
 
 export const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const br = s => esc(s).replace(/\n/g, "<br>");
@@ -61,33 +61,36 @@ export function sceneSVG(id, { clock = null, crop = null } = {}) {
 }
 
 /* ---------- 서진의 휴대폰 (모두 볼 수 있음) ---------- */
-export function showMemo(bat) {
+export function showMemo(bat, text) {
   modal(`<div class="phone"><div class="pbar"><span>메모</span><span>🔋 ${bat}%</span></div>
-    <div class="memo">27년 전 재희처럼 되기 싫어.<br>이걸 찾았으면,<br>끝까지 이어 줘.</div>
+    <div class="memo">${br(text)}</div>
     <p class="muted small">서진 언니의 휴대폰. 힌트를 쓸 때마다 배터리가 2%씩 줄어요.</p></div>`);
 }
-
-/* ---------- 혼자만 보는 단서 ---------- */
-export function showClues(charId, clues) {
-  const C = CHARS[charId];
-  const list = [];
-  for (const [room, v] of Object.entries(clues || {})) {
-    if (!v) continue;
-    if (v[charId]) list.push([room, v[charId], ROOMS[room].name]);
-    if (v["*"]) list.push([room, v["*"], "모두 · 확대"]);
-  }
-  if (!list.length) return modal(`<h2>${esc(C.name)}만 보는 것</h2><p class="lead">${esc(C.sees)}</p>
-    <p class="muted">아직 이 캐릭터에게 온 단서가 없어요. 방이 열리면 칠판이 보내 줍니다.</p>`);
-  const tabs = list.map(([room, , nm], i) => `<button class="pill sm ${i === list.length - 1 ? "y" : "ghost"}" data-i="${i}">${room}. ${esc(nm)}</button>`).join("");
-  const m = modal(`<h2>${esc(C.name)}만 보는 것</h2><div class="row ctabs">${tabs}</div><div id="clueBody"></div>
-    <p class="muted small">이 화면은 나만 봅니다. 친구들에게 <b>말로</b> 알려 주세요.</p>`, { cls: "wide" });
-  const show = i => {
-    m.querySelectorAll(".ctabs button").forEach((b, j) => b.className = `pill sm ${i === j ? "y" : "ghost"}`);
-    renderClue(m.querySelector("#clueBody"), list[i][1]);
-  };
-  m.querySelectorAll(".ctabs button").forEach(b => b.onclick = () => show(+b.dataset.i));
-  show(list.length - 1);
+export function phoneApps(bat, apps) {
+  const m = modal(`<div class="phone"><div class="pbar"><span>서진의 폰</span><span>🔋 ${bat}%</span></div>
+    <div class="apps">${apps.map((a, i) => `<button class="app" data-i="${i}"><i>${a.icon}</i><span>${esc(a.name)}</span></button>`).join("")}</div></div>`);
+  m.querySelectorAll(".app").forEach(b => b.onclick = () => { const a = apps[+b.dataset.i]; m.close(); a.open(); });
+  return m;
 }
+
+/* ---------- 단서 수첩: 모은 단서를 탭으로 ----------
+   entries: [{ label, clue }], frags: 친구에게 들은 증거 조각 */
+export function showNotebook(entries, frags = [], pick = null) {
+  if (!entries.length && !frags.length) return modal(`<h2>단서 수첩</h2><p class="muted">아직 모은 단서가 없어요. 교실부터 둘러보세요.</p>`);
+  const tabs = entries.map((e, i) => `<button class="pill sm ghost" data-i="${i}">${esc(e.label)}</button>`).join("")
+    + (frags.length ? `<button class="pill sm ghost" data-i="f">친구에게 들은 것</button>` : "");
+  const m = modal(`<h2>단서 수첩</h2><div class="row ctabs">${tabs}</div><div id="clueBody"></div>`, { cls: "wide" });
+  const show = i => {
+    m.querySelectorAll(".ctabs button").forEach(b => b.className = `pill sm ${b.dataset.i === String(i) ? "y" : "ghost"}`);
+    const body = m.querySelector("#clueBody");
+    if (i === "f") { body.innerHTML = `<ul class="frags">${frags.map(f => `<li>${esc(f)}</li>`).join("")}</ul>`; return; }
+    renderClue(body, entries[i].clue);
+  };
+  m.querySelectorAll(".ctabs button").forEach(b => b.onclick = () => show(b.dataset.i === "f" ? "f" : +b.dataset.i));
+  show(pick != null ? pick : entries.length ? entries.length - 1 : "f");
+  return m;
+}
+export function showClue(clue) { const m = modal(`<div id="clueBody"></div>`, { cls: "wide" }); renderClue(m.querySelector("#clueBody"), clue); return m; }
 
 function renderClue(el, c) {
   clearInterval(el._t);
@@ -262,13 +265,3 @@ export function showDiary(room) {
   modal(`<div class="diary"><div class="dh">재희의 일기장 · ${room}/5</div><p>${br(DIARY[room])}</p></div>`);
 }
 
-/* ---------- 캐릭터 소개 ---------- */
-export function charCardHTML(id) {
-  const C = CHARS[id];
-  return `<div class="ccard" style="--c:${C.color}">
-    <div class="cface"><i></i></div>
-    <div><div class="cname">${esc(C.name)} <small>${esc(C.grade)}</small></div>
-    <p>${esc(C.intro)}</p>
-    <dl><dt>혼자만 보는 것</dt><dd>${esc(C.sees)}</dd><dt>고유 능력</dt><dd>${esc(C.ability)}</dd>
-    <dt>마음속 이야기</dt><dd class="secret">게임 중 털어놓을 때가 올지도 몰라요.</dd></dl></div></div>`;
-}

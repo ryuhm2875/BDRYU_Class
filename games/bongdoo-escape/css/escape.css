@@ -322,12 +322,12 @@ svg.scene { width: 100%; display: block; background: #000; image-rendering: pixe
 @keyframes tflick { 0%, 96%, 100% { opacity: 1 } 97% { opacity: .4 } 98% { opacity: 1 } 98.6% { opacity: .2 } }
 @keyframes glitch { 0%, 96%, 100% { opacity: 0 } 97%, 98.5% { opacity: .55 } }
 .tbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; animation: tin 1.2s 1.6s ease-out both; }
-.tb { border: 1px solid rgba(239,228,207,.35); background: rgba(10,10,14,.55); color: #efe4cf; font: inherit; font-weight: 800; font-size: 19px; letter-spacing: .2em;
+.tbtn { border: 1px solid rgba(239,228,207,.35); background: rgba(10,10,14,.55); color: #efe4cf; font: inherit; font-weight: 800; font-size: 19px; letter-spacing: .2em;
   padding: 14px 34px; border-radius: 999px; backdrop-filter: blur(4px); cursor: pointer; transition: .25s; }
-.tb:hover { border-color: #ffd27a; color: #ffd27a; box-shadow: 0 0 24px rgba(255,190,90,.25); }
-.tb.y { background: rgba(255,210,122,.92); color: #1b1408; border-color: transparent; }
-.tb.y:hover { color: #1b1408; box-shadow: 0 0 34px rgba(255,190,90,.55); }
-.tb.ghost { opacity: .7; font-size: 15px; } .tb.wide { width: 100%; margin-top: 6px; }
+.tbtn:hover { border-color: #ffd27a; color: #ffd27a; box-shadow: 0 0 24px rgba(255,190,90,.25); }
+.tbtn.y { background: rgba(255,210,122,.92); color: #1b1408; border-color: transparent; }
+.tbtn.y:hover { color: #1b1408; box-shadow: 0 0 34px rgba(255,190,90,.55); }
+.tbtn.ghost { opacity: .7; font-size: 15px; } .tbtn.wide { width: 100%; margin-top: 6px; }
 .setup { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); animation: tin .4s both; }
 .sbox { position: relative; width: min(380px, 88vw); display: flex; flex-direction: column; gap: 16px; align-items: center; background: rgba(12,12,16,.88); border: 1px solid #2c2c34; border-radius: 22px; padding: 30px 24px 24px; }
 .sbox .inp { text-align: center; font-size: 22px; font-weight: 800; letter-spacing: .1em; }
@@ -348,10 +348,10 @@ svg.scene { width: 100%; display: block; background: #000; image-rendering: pixe
 .hline { width: min(560px, 70vw); height: 1px; margin-top: -3.5vh; background: linear-gradient(90deg, transparent, rgba(239,228,207,.55), transparent); position: relative; animation: tin 1.6s 1s both; }
 .hline i { position: absolute; top: -3px; left: 0; width: 7px; height: 7px; border-radius: 50%; background: #ffd27a; box-shadow: 0 0 14px 4px rgba(255,190,90,.7); animation: boat 14s linear infinite; }
 @keyframes boat { from { left: 0; opacity: 0 } 8% { opacity: 1 } 92% { opacity: 1 } to { left: 100%; opacity: 0 } }
-.tb { letter-spacing: .35em; padding: 13px 30px 13px 38px; }
-.tb.y { background: transparent; color: #ffd27a; border: 1px solid rgba(255,210,122,.75); box-shadow: inset 0 0 18px rgba(255,190,90,.12); }
-.tb.y:hover { background: rgba(255,210,122,.95); color: #1b1408; }
-.sbox .tb.y { background: rgba(255,210,122,.95); color: #1b1408; }
+.tbtn { letter-spacing: .35em; padding: 13px 30px 13px 38px; }
+.tbtn.y { background: transparent; color: #ffd27a; border: 1px solid rgba(255,210,122,.75); box-shadow: inset 0 0 18px rgba(255,190,90,.12); }
+.tbtn.y:hover { background: rgba(255,210,122,.95); color: #1b1408; }
+.sbox .tbtn.y { background: rgba(255,210,122,.95); color: #1b1408; }
 .ttl::before, .ttl::after { display: none !important; content: none; }
 .ttl { animation: tin 2.4s ease-out both, tjit 9s 3s infinite; }
 @keyframes tjit { 0%, 95.5%, 100% { transform: none; opacity: 1 } 96% { transform: translate(-4px, 1px) skewX(-6deg); opacity: .55 } 96.6% { transform: translate(3px, -1px); opacity: 1 } 97.2% { transform: translate(-2px, 0) skewX(4deg); opacity: .3 } 97.8% { transform: none; opacity: 1 } }
@@ -360,3 +360,13 @@ svg.scene { width: 100%; display: block; background: #000; image-rendering: pixe
 .ttl em { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #ff9a5a; filter: none; display: inline;
   text-shadow: 0 2px 0 #7a2a14, 0 0 22px rgba(255,120,60,.75), 0 0 48px rgba(255,90,40,.45); animation: ember2 3.2s ease-in-out infinite; }
 @keyframes ember2 { 0%, 100% { color: #ff9a5a; } 50% { color: #ffb070; } }
+/* ===== 수채화 초상화 · 엔딩 그림 ===== */
+.talk .pf.art { position: relative; width: 168px; height: 210px; border-radius: 16px; overflow: hidden; border: 1px solid #3a3a44; box-shadow: 0 10px 30px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.05); background: #111; }
+.talk .pf.art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; filter: brightness(.86) saturate(.85) contrast(1.05); transition: filter .4s, transform .4s; }
+.talk .pf.art::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0,0,0,.55)); box-shadow: inset 0 -30px 30px -10px var(--c); opacity: .9; }
+.talk .pf.art.scared img { transform: scale(1.08); filter: brightness(.8) saturate(.6) contrast(1.15); animation: tremble .12s infinite; }
+.talk .pf.art.sad img { filter: brightness(.75) saturate(.45) contrast(1.05); }
+@media (max-width: 640px) { .talk .pf.art { width: 96px; height: 124px; } }
+.endart { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transform: scale(1.06); transition: opacity 3s, transform 30s linear; filter: brightness(.7) saturate(.9); }
+.endart.on { opacity: 1; transform: scale(1.0); }
+.endstage::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(0,0,0,.85)); pointer-events: none; }

@@ -4,14 +4,14 @@
    대사·연출은 줄(queue)에 세워 하나씩 → 겹치지 않음.
    판정은 이 기기 안에서 (judge.js). 진행은 자동 저장.
    ────────────────────────────────────────────────────────────── */
-import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181922";
-import { newTeam, handle, timeUp } from "./judge.js?v=202611181922";
-import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611181922";
-import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611181922";
-import { talk, talking } from "./dialog.js?v=202611181922";
+import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181930";
+import { newTeam, handle, timeUp } from "./judge.js?v=202611181930";
+import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611181930";
+import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611181930";
+import { talk, talking, preloadPortraits } from "./dialog.js?v=202611181930";
 import { esc, modal, closeModal, showMemo, phoneApps, showNotebook, showClue, orderPuzzle, codePad, wordPad, cropPuzzle, showDiary,
-         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611181922";
-import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181922";
+         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611181930";
+import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181930";
 
 const SAVE = "escape-solo-v1";
 const SPEED = 2.5, NEAR = 1.5, FLASH_DRAIN = 10 / 60, FREEZE_MS = 20000;
@@ -36,6 +36,7 @@ export function Game(G, { onExit }) {
   const cfg = { fear: G.fear };
   if (QS.has("debug")) window.__G = G;
   const save = () => { try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} };
+  preloadPortraits();
   const saver = setInterval(save, 2000);
 
   $app.innerHTML = `<div class="game">
@@ -80,7 +81,7 @@ export function Game(G, { onExit }) {
     st.busy = false; st.running = false; save();
   }
 
-  import("./world.js?v=202611181922").then(({ createWorld }) => {
+  import("./world.js?v=202611181930").then(({ createWorld }) => {
     try { W = createWorld($("cv"), { pixel: innerWidth > 1400 ? 3 : 2.5 }); }
     catch (e) { console.error(e); toast("3D 화면을 열지 못했어요. 크롬이나 사파리 최신 버전으로 열어 주세요.", "bad"); return; }
     W.setItemGone("phone", true);
@@ -458,7 +459,9 @@ export function Game(G, { onExit }) {
     $("fade").classList.add("on");
     setTimeout(async () => {
       stop();
-      $app.innerHTML = `<div class="endstage"></div>`;
+      $app.innerHTML = `<div class="endstage"><div class="endart" id="endart"></div></div>`;
+      const im = new Image(); im.onload = () => { const a = document.getElementById("endart"); if (a) { a.style.backgroundImage = `url(${im.src})`; a.classList.add("on"); } };
+      im.src = `assets/art/end_${G.end || "night"}.webp`;
       await talk(ENDINGS[G.end || "night"], { name: G.name, party: G.party });
       Ending(G, { onExit });
     }, 2200);

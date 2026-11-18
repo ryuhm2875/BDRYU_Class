@@ -6,10 +6,10 @@
    - 방향 a: (cos a, sin a) 가 x·z 로 향하는 쪽 (0 = 동쪽)
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { MAP, IT } from "./data.js?v=202611181922";
-import { photoSVG } from "./puzzles.js?v=202611181922";
-import * as TX from "./textures.js?v=202611181922";
-import { makeRig, makeMannequin } from "./rig.js?v=202611181922";
+import { MAP, IT } from "./data.js?v=202611181930";
+import { photoSVG } from "./puzzles.js?v=202611181930";
+import * as TX from "./textures.js?v=202611181930";
+import { makeRig, makeMannequin } from "./rig.js?v=202611181930";
 
 const H = 2.4, T = 0.2;
 const SNAP = { value: new THREE.Vector2(320, 200) };          // 꼭짓점이 붙는 격자

@@ -3,9 +3,9 @@
    이름 · 점퍼 색 · 공포 강도를 고르고 시작. 저장된 게임이 있으면 이어 하기.
    ?debug=1 → 개발 확인용 (window.__G)
    ────────────────────────────────────────────────────────────── */
-import { JACKETS } from "./data.js?v=202611181922";
-import { esc } from "./puzzles.js?v=202611181922";
-import { Game, Ending, newGame, loadSave, clearSave } from "./game.js?v=202611181922";
+import { JACKETS } from "./data.js?v=202611181930";
+import { esc } from "./puzzles.js?v=202611181930";
+import { Game, Ending, newGame, loadSave, clearSave } from "./game.js?v=202611181930";
 
 const $app = document.getElementById("app");
 Title();
@@ -26,8 +26,8 @@ function Title() {
       <h1 class="ttl" data-t="마지막 배는 6시">마지막 배는 <em>6시</em></h1>
       <div class="hline"><i></i></div>
       <div class="tbtns">
-        ${live ? `<button class="tb y" id="cont">이어 하기</button><button class="tb" id="newb">새로 시작</button>` : `<button class="tb y" id="newb">시작</button>`}
-        ${S && S.end ? `<button class="tb ghost" id="last">지난 결과</button>` : ""}
+        ${live ? `<button class="tbtn y" id="cont">이어 하기</button><button class="tbtn" id="newb">새로 시작</button>` : `<button class="tbtn y" id="newb">시작</button>`}
+        ${S && S.end ? `<button class="tbtn ghost" id="last">지난 결과</button>` : ""}
       </div>
     </div>
     <div class="setup" id="setup" hidden>
@@ -35,7 +35,7 @@ function Title() {
         <input class="inp" id="nm" maxlength="8" placeholder="이름" value="${esc(last)}" autocomplete="off">
         <div class="sw">${Object.entries(JACKETS).map(([k, c]) => `<button data-j="${k}" style="--c:rgb(${c})" class="${k === jacket ? "on" : ""}" aria-label="점퍼 ${k}"></button>`).join("")}</div>
         <div class="seg"><button data-f="weak" class="on">약함</button><button data-f="normal">보통</button></div>
-        <button class="tb y wide" id="go">들어가기</button>
+        <button class="tbtn y wide" id="go">들어가기</button>
         <button class="sx" id="sx" aria-label="닫기">✕</button>
         <div id="m"></div>
       </div>

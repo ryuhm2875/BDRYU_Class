@@ -289,3 +289,74 @@ svg.scene { width: 100%; display: block; background: #000; image-rendering: pixe
 .talk.voice .tx { color: #ffb8a8; font-style: normal; font-weight: 700; }
 .endstage { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 80%, #2a2030, #050508 70%); }
 [hidden] { display: none !important; }
+
+/* ===== 처음 화면 (제목만) ===== */
+.title2 { position: fixed; inset: 0; overflow: hidden; background: #05060a; }
+.title2 .bg { position: absolute; inset: -4%; background:
+  radial-gradient(ellipse 60% 30% at 50% 62%, rgba(255,140,80,.55), transparent 70%),
+  linear-gradient(#0d0e18 0%, #2a1d2c 40%, #7a3a30 58%, #141826 61%, #070a12 100%);
+  animation: drift 40s ease-in-out infinite alternate; }
+.title2 .bg.art { background-size: cover; background-position: center 60%; filter: saturate(.85) contrast(1.05) brightness(.8); }
+@keyframes drift { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.1) translate(-1.5%, -1%); } }
+.title2 .bg:not(.art)::after { content: ""; position: absolute; left: 12%; bottom: 36%; width: 40%; height: 14%; background: #06060a;
+  clip-path: polygon(0 100%, 0 40%, 14% 40%, 14% 0, 24% 0, 24% 40%, 100% 40%, 100% 100%); }
+.title2 .fog { position: absolute; left: -50%; right: -50%; height: 60%; bottom: -10%; opacity: .35; pointer-events: none;
+  background: radial-gradient(ellipse 30% 40% at 30% 60%, rgba(200,210,230,.5), transparent 70%), radial-gradient(ellipse 25% 35% at 70% 50%, rgba(200,210,230,.4), transparent 70%); filter: blur(18px); }
+.title2 .f1 { animation: fog 60s linear infinite; } .title2 .f2 { animation: fog 90s linear infinite reverse; bottom: 10%; opacity: .2; }
+@keyframes fog { from { transform: translateX(-12%); } to { transform: translateX(12%); } }
+.title2 .glow { position: absolute; left: 31%; top: 55%; width: 10px; height: 14px; background: #ffd27a; box-shadow: 0 0 30px 12px rgba(255,190,90,.35); border-radius: 2px; animation: wflick 5s infinite; opacity: 0; }
+.title2 .bg.art ~ .glow { display: none; }
+@keyframes wflick { 0%, 40%, 44%, 100% { opacity: .9 } 42% { opacity: .1 } 70% { opacity: .75 } 71% { opacity: .2 } 72% { opacity: .85 } }
+.title2 .grain { position: absolute; inset: -50%; pointer-events: none; opacity: .13; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation: grain .6s steps(4) infinite; }
+@keyframes grain { 25% { transform: translate(-3%, 2%) } 50% { transform: translate(2%, -3%) } 75% { transform: translate(-2%, -1%) } }
+.title2 .vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(0,0,0,.85) 100%); }
+.tcenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6vh; z-index: 2; padding-bottom: 6vh; }
+.ttl { position: relative; margin: 0; font-weight: 900; font-size: clamp(54px, 11vw, 132px); letter-spacing: -.02em; white-space: nowrap; color: #efe4cf;
+  text-shadow: 0 0 24px rgba(255,150,90,.35), 0 6px 30px rgba(0,0,0,.9); animation: tin 2.4s ease-out both, tflick 9s 3s infinite; }
+.ttl::before, .ttl::after { content: attr(data-t); position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+.ttl::before { color: #ff3a3a; transform: translate(-3px, 0); mix-blend-mode: screen; animation: glitch 9s 3s infinite; }
+.ttl::after { color: #3ad8ff; transform: translate(3px, 0); mix-blend-mode: screen; animation: glitch 9s 3.05s infinite; }
+@keyframes tin { from { opacity: 0; letter-spacing: .25em; filter: blur(8px); } to { opacity: 1; letter-spacing: -.02em; filter: blur(0); } }
+@keyframes tflick { 0%, 96%, 100% { opacity: 1 } 97% { opacity: .4 } 98% { opacity: 1 } 98.6% { opacity: .2 } }
+@keyframes glitch { 0%, 96%, 100% { opacity: 0 } 97%, 98.5% { opacity: .55 } }
+.tbtns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; animation: tin 1.2s 1.6s ease-out both; }
+.tb { border: 1px solid rgba(239,228,207,.35); background: rgba(10,10,14,.55); color: #efe4cf; font: inherit; font-weight: 800; font-size: 19px; letter-spacing: .2em;
+  padding: 14px 34px; border-radius: 999px; backdrop-filter: blur(4px); cursor: pointer; transition: .25s; }
+.tb:hover { border-color: #ffd27a; color: #ffd27a; box-shadow: 0 0 24px rgba(255,190,90,.25); }
+.tb.y { background: rgba(255,210,122,.92); color: #1b1408; border-color: transparent; }
+.tb.y:hover { color: #1b1408; box-shadow: 0 0 34px rgba(255,190,90,.55); }
+.tb.ghost { opacity: .7; font-size: 15px; } .tb.wide { width: 100%; margin-top: 6px; }
+.setup { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); animation: tin .4s both; }
+.sbox { position: relative; width: min(380px, 88vw); display: flex; flex-direction: column; gap: 16px; align-items: center; background: rgba(12,12,16,.88); border: 1px solid #2c2c34; border-radius: 22px; padding: 30px 24px 24px; }
+.sbox .inp { text-align: center; font-size: 22px; font-weight: 800; letter-spacing: .1em; }
+.sbox .inp.bad { border-color: var(--bad); animation: tremble .15s 3; }
+.sbox .sw { margin: 0; } .sbox .seg { margin: 0; }
+.sx { position: absolute; right: 12px; top: 12px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #22222a; color: var(--ink); }
+/* 처음 화면 다듬기 */
+.title2 .bg.art { background-size: 118% auto; background-position: 35% 38%; }
+.title2 .bg:not(.art)::after { bottom: 30%; left: 6%; width: 30%; height: 10%; }
+.title2 .bg:not(.art) ~ .glow { left: 20%; top: 63%; }
+.ttl { font-size: clamp(50px, 10vw, 124px); font-weight: 900; letter-spacing: -.035em;
+  background: linear-gradient(180deg, #fbf3e2 0%, #e6d6b8 55%, #b9a888 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 4px 22px rgba(0,0,0,.95)) drop-shadow(0 0 2px rgba(0,0,0,.6)); text-shadow: none; }
+.ttl em { font-style: normal; background: linear-gradient(180deg, #ffd9a0, #ff8a4a 60%, #e0482e); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 18px rgba(255,120,60,.65)); animation: ember 3.2s ease-in-out infinite; display: inline-block; }
+@keyframes ember { 0%, 100% { filter: drop-shadow(0 0 14px rgba(255,120,60,.55)); } 50% { filter: drop-shadow(0 0 30px rgba(255,140,70,.95)); } }
+.ttl::before, .ttl::after { -webkit-text-fill-color: currentColor; }
+.hline { width: min(560px, 70vw); height: 1px; margin-top: -3.5vh; background: linear-gradient(90deg, transparent, rgba(239,228,207,.55), transparent); position: relative; animation: tin 1.6s 1s both; }
+.hline i { position: absolute; top: -3px; left: 0; width: 7px; height: 7px; border-radius: 50%; background: #ffd27a; box-shadow: 0 0 14px 4px rgba(255,190,90,.7); animation: boat 14s linear infinite; }
+@keyframes boat { from { left: 0; opacity: 0 } 8% { opacity: 1 } 92% { opacity: 1 } to { left: 100%; opacity: 0 } }
+.tb { letter-spacing: .35em; padding: 13px 30px 13px 38px; }
+.tb.y { background: transparent; color: #ffd27a; border: 1px solid rgba(255,210,122,.75); box-shadow: inset 0 0 18px rgba(255,190,90,.12); }
+.tb.y:hover { background: rgba(255,210,122,.95); color: #1b1408; }
+.sbox .tb.y { background: rgba(255,210,122,.95); color: #1b1408; }
+.ttl::before, .ttl::after { display: none !important; content: none; }
+.ttl { animation: tin 2.4s ease-out both, tjit 9s 3s infinite; }
+@keyframes tjit { 0%, 95.5%, 100% { transform: none; opacity: 1 } 96% { transform: translate(-4px, 1px) skewX(-6deg); opacity: .55 } 96.6% { transform: translate(3px, -1px); opacity: 1 } 97.2% { transform: translate(-2px, 0) skewX(4deg); opacity: .3 } 97.8% { transform: none; opacity: 1 } }
+.ttl { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #f1e6cf; filter: none;
+  text-shadow: 0 2px 0 #6b5a44, 0 6px 26px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.8); }
+.ttl em { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #ff9a5a; filter: none; display: inline;
+  text-shadow: 0 2px 0 #7a2a14, 0 0 22px rgba(255,120,60,.75), 0 0 48px rgba(255,90,40,.45); animation: ember2 3.2s ease-in-out infinite; }
+@keyframes ember2 { 0%, 100% { color: #ff9a5a; } 50% { color: #ffb070; } }

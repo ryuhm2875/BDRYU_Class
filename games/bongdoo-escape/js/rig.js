@@ -5,7 +5,7 @@
    모델은 +z 쪽을 봅니다.
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611181913";
+import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611181922";
 
 /* 어둠 속에서도 형태가 읽히게 자기 색을 조금 스스로 냄 */
 const lam = (o) => {

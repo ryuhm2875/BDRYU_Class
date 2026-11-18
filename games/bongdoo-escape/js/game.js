@@ -4,14 +4,14 @@
    대사·연출은 줄(queue)에 세워 하나씩 → 겹치지 않음.
    판정은 이 기기 안에서 (judge.js). 진행은 자동 저장.
    ────────────────────────────────────────────────────────────── */
-import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181913";
-import { newTeam, handle, timeUp } from "./judge.js?v=202611181913";
-import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611181913";
-import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611181913";
-import { talk, talking } from "./dialog.js?v=202611181913";
+import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181922";
+import { newTeam, handle, timeUp } from "./judge.js?v=202611181922";
+import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611181922";
+import { INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611181922";
+import { talk, talking } from "./dialog.js?v=202611181922";
 import { esc, modal, closeModal, showMemo, phoneApps, showNotebook, showClue, orderPuzzle, codePad, wordPad, cropPuzzle, showDiary,
-         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611181913";
-import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181913";
+         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611181922";
+import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181922";
 
 const SAVE = "escape-solo-v1";
 const SPEED = 2.5, NEAR = 1.5, FLASH_DRAIN = 10 / 60, FREEZE_MS = 20000;
@@ -80,7 +80,7 @@ export function Game(G, { onExit }) {
     st.busy = false; st.running = false; save();
   }
 
-  import("./world.js?v=202611181913").then(({ createWorld }) => {
+  import("./world.js?v=202611181922").then(({ createWorld }) => {
     try { W = createWorld($("cv"), { pixel: innerWidth > 1400 ? 3 : 2.5 }); }
     catch (e) { console.error(e); toast("3D 화면을 열지 못했어요. 크롬이나 사파리 최신 버전으로 열어 주세요.", "bad"); return; }
     W.setItemGone("phone", true);

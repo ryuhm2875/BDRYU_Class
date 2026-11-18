@@ -136,3 +136,6 @@ function fade(t, to, sec) {
   if (to === 0) { clearTimeout(t.stop); t.stop = setTimeout(() => { if (t.g.gain.value < 0.01) t.el.pause(); }, sec * 1000 + 200); }
   else clearTimeout(t.stop);
 }
+
+/* 영상이 소리를 낼 때 배경음악을 잠깐 줄임 */
+export function duck(on) { if (musBus) musBus.gain.setTargetAtTime(on ? 0.06 : 0.55, ac.currentTime, 0.3); }

@@ -66,3 +66,4 @@ games/bongdoo-escape/
   - `tools/pack_people.py`로 필요한 동작만 골라 `assets/models/people_m.glb`, `people_f.glb`로 줄였습니다.
 - 배경음악: Pixabay (Pixabay 라이선스, 출처 표기 없이 무료) — atlasaudio, leberch, alex-morgan
 - 그림: 캔바로 만든 수채화
+- 1번 방 영상: 캔바 AI 영상(Create a video clip)으로 만든 장면 4개를 `tools/make_video.py`로 원본(가로, 카메라 시각 표시)과 쇼츠(세로, 자막·음악)로 편집

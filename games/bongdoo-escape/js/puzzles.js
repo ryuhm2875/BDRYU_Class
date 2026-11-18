@@ -2,7 +2,8 @@
    마지막 배는 6시 · 2D 화면 (3D 방에서 물건을 누르면 위에 뜨는 것)
    단서 보기 · 장면 카드 줄 세우기 · 자물쇠 · 일기장 · 캐릭터 소개
    ────────────────────────────────────────────────────────────── */
-import { ROOMS } from "./data.js?v=202611182020";
+import { ROOMS } from "./data.js?v=202611182044";
+import { duck } from "./sound.js?v=202611182044";
 
 export const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const br = s => esc(s).replace(/\n/g, "<br>");
@@ -23,6 +24,13 @@ export const closeModal = () => { const m = document.getElementById("modal"); if
 
 /* ---------- 장면 그림 (서진 영상의 한 장면) ----------
    160×100 작은 그림. clock 이 있으면 오른쪽 위 벽시계가 그 시각을 가리킴 */
+/* ① 실제 영상에서 뽑은 장면 사진 (assets/video) */
+export const sceneImg = id => `<img class="scene shot" src="assets/video/scene_${id}.jpg" alt="" draggable="false">`;
+/* 영상이 재생되는 동안 배경음악을 줄이고, 창이 닫히면 되돌림 */
+function hookVideo(el, v) {
+  v.addEventListener("play", () => duck(true)); v.addEventListener("pause", () => duck(false)); v.addEventListener("ended", () => duck(false));
+  el._t = setInterval(() => { if (!document.body.contains(v)) { clearInterval(el._t); duck(false); } }, 400);
+}
 export function sceneSVG(id, { clock = null, crop = null } = {}) {
   const fig = (x, y, s = 1, arm = false) => `<g transform="translate(${x} ${y}) scale(${s})">
     <circle cx="0" cy="-26" r="6" fill="#e8c09a"/><path d="M-6,-30 q6,-8 12,0 v-2 q-6,-6 -12,2z" fill="#2a1d18"/>
@@ -95,27 +103,33 @@ export function showClue(clue) { const m = modal(`<div id="clueBody"></div>`, { 
 function renderClue(el, c) {
   clearInterval(el._t);
   if (c.kind === "shorts") {
-    let i = 0;
-    el.innerHTML = `<div class="shorts"><div class="sframe"></div><div class="sinfo">▶ ${esc(c.views)} · ${esc(c.music)}</div>
+    el.innerHTML = `<div class="shorts real"><div class="phonev"><video src="assets/video/shorts.mp4" poster="assets/video/shorts_poster.jpg" playsinline loop autoplay></video>
+        <div class="sside"><span>♥<b>3.1만</b></span><span>💬<b>2,184</b></span><span>↗<b>공유</b></span></div>
+        <div class="sbar"><i></i></div><div class="stap">▶ 눌러서 재생</div></div>
+      <div class="sinfo">▶ ${esc(c.views)} · ♪ ${esc(c.music)}</div>
       <div class="comments">${c.comments.map(t => `<div>💬 ${esc(t)}</div>`).join("")}</div></div>`;
-    const f = el.querySelector(".sframe");
-    const draw = () => { const fr = c.frames[i % c.frames.length];
-      f.innerHTML = sceneSVG(fr.s) + `<div class="cap">${esc(fr.cap)}</div><div class="dots">${c.frames.map((_, j) => `<i class="${j === i % c.frames.length ? "on" : ""}"></i>`).join("")}</div>`; };
-    draw(); el._t = setInterval(() => { i++; if (!document.body.contains(el)) return clearInterval(el._t); draw(); }, 1800);
-    f.onclick = () => { i++; draw(); };
+    const v = el.querySelector("video"), bar = el.querySelector(".sbar i"), tap = el.querySelector(".stap");
+    hookVideo(el, v);
+    v.play().then(() => tap.hidden = true).catch(() => {});
+    v.addEventListener("timeupdate", () => { bar.style.width = (v.currentTime / (v.duration || 1) * 100) + "%"; });
+    el.querySelector(".phonev").onclick = () => { if (v.paused) { v.play(); tap.hidden = true; } else { v.pause(); tap.hidden = false; tap.textContent = "❚❚ 멈춤"; } };
     return;
   }
   if (c.kind === "original") {
-    el.innerHTML = `<div class="frames">${c.frames.map((fr, i) => `<button class="frame" data-i="${i}">${sceneSVG(fr.s, { clock: fr.clock })}<span>${esc(fr.t)}</span></button>`).join("")}</div>
+    el.innerHTML = `<div class="origv"><video src="assets/video/original.mp4" poster="assets/video/orig_a.jpg" playsinline controls preload="auto"></video></div>
+      <div class="frames">${c.frames.map((fr, i) => `<button class="frame" data-i="${i}">${sceneImg(fr.s)}<span>${esc(fr.t)}</span></button>`).join("")}</div>
       <div id="big" class="big"></div><p class="muted small">${esc(c.note)}</p>`;
+    const v = el.querySelector("video"); hookVideo(el, v);
     const big = el.querySelector("#big");
-    const CROPS = [["왼쪽 위", "0 0 40 25"], ["오른쪽 위", "120 0 40 25"], ["왼쪽 아래", "0 75 40 25"], ["오른쪽 아래", "120 75 40 25"]];
+    const CROPS = [["왼쪽 위", "0% 0%"], ["오른쪽 위", "100% 0%"], ["왼쪽 아래", "0% 100%"], ["오른쪽 아래", "100% 100%"]];
+    const START = { a: 0, b: 5.5, c: 11.5, d: 17.5 };
     el.querySelectorAll(".frame").forEach(b => b.onclick = () => {
-      const fr = c.frames[+b.dataset.i];
-      big.innerHTML = `<div class="bigimg">${sceneSVG(fr.s, { clock: fr.clock })}</div>
+      const fr = c.frames[+b.dataset.i], src = `assets/video/orig_${fr.s}.jpg`;
+      v.pause(); v.currentTime = START[fr.s] + 3.3;
+      big.innerHTML = `<div class="bigimg"><img src="${src}" alt=""></div>
         <div class="row">${CROPS.map(([n], j) => `<button class="pill sm ghost" data-z="${j}">🔍 ${n}</button>`).join("")}</div><div class="zoom"></div>`;
       big.querySelectorAll("[data-z]").forEach(z => z.onclick = () => {
-        big.querySelector(".zoom").innerHTML = `<div class="bigimg zoomed">${sceneSVG(fr.s, { clock: fr.clock, crop: CROPS[+z.dataset.z][1] })}</div>`;
+        big.querySelector(".zoom").innerHTML = `<div class="bigimg zoomed" style="background-image:url(${src});background-position:${CROPS[+z.dataset.z][1]}"></div>`;
       });
     });
     return;
@@ -227,8 +241,8 @@ export function orderPuzzle(names, onSubmit, lockedText) {
     <div class="row"><button class="pill ghost" id="rs">다시</button><button class="pill y" id="go" disabled>이 순서로 맞추기</button></div>
     <div id="om">${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}</div>`, { cls: "wide" });
   const draw = () => {
-    m.querySelector(".slots4").innerHTML = slots.map((s, i) => `<button class="slot" data-i="${i}"><b>${i + 1}</b>${s ? sceneSVG(s) + `<span>${esc(names[s])}</span>` : "<span>비어 있음</span>"}</button>`).join("");
-    m.querySelector(".pool").innerHTML = ids.filter(x => !slots.includes(x)).map(x => `<button class="card" data-id="${x}">${sceneSVG(x)}<span>${esc(names[x])}</span></button>`).join("");
+    m.querySelector(".slots4").innerHTML = slots.map((s, i) => `<button class="slot" data-i="${i}"><b>${i + 1}</b>${s ? sceneImg(s) + `<span>${esc(names[s])}</span>` : "<span>비어 있음</span>"}</button>`).join("");
+    m.querySelector(".pool").innerHTML = ids.filter(x => !slots.includes(x)).map(x => `<button class="card" data-id="${x}">${sceneImg(x)}<span>${esc(names[x])}</span></button>`).join("");
     m.querySelectorAll(".card").forEach(b => b.onclick = () => { const i = slots.indexOf(null); if (i >= 0) { slots[i] = b.dataset.id; draw(); } });
     m.querySelectorAll(".slot").forEach(b => b.onclick = () => { slots[+b.dataset.i] = null; draw(); });
     m.querySelector("#go").disabled = slots.includes(null) || !!lockedText;
@@ -382,7 +396,7 @@ export function deducePuzzle(cards, onSubmit, lockedText) {
 
 /* ⑤ 반론에 답하기 */
 export function rebutPick(list, party, onSubmit, lockedText) {
-  const m = modal(`<h2>경찰의 반론</h2><p class="lead">“벽시계가 고장 났을 수도 있잖아?”<br>시계 말고 <b>다른 종류의 증거</b>로 답하자.</p>
+  const m = modal(`<h2>경찰의 반론</h2><p class="lead">“카메라 시계가 틀렸을 수도 있잖아?”<br>시계 말고 <b>다른 종류의 증거</b>로 답하자.</p>
     <div class="rebs">${list.map(r => { const off = r.need && !r.need.every(n => party.includes(n));
       return `<button class="reb" data-r="${r.id}" ${off || lockedText ? "disabled" : ""}>${esc(off ? "(하은이와 태오가 함께 있어야 떠올릴 수 있다)" : r.text)}</button>`; }).join("")}</div>
     ${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}`);

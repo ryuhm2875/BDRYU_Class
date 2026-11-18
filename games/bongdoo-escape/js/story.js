@@ -217,7 +217,7 @@ export const POLICE = {
     { who: "me", text: "서진 언니는 불을 안 냈어요. 증거가 있어요." },
     { who: "police", face: "normal", text: "증거? 인터넷에 영상까지 다 돌았는데. …좋아, 말해 봐. 논리가 맞으면 배 세워 줄게." }
   ],
-  rebutAsk: [{ who: "police", face: "normal", text: "그 벽시계가 고장 났을 수도 있잖아? 그 말 하나로 시각을 믿으라고?" }],
+  rebutAsk: [{ who: "police", face: "normal", text: "카메라 시계가 틀렸을 수도 있잖아? 화면에 찍힌 숫자 하나로 시각을 믿으라고?" }],
   win: [
     { who: "police", face: "normal", text: "…백고동 두 번. 4시 10분 배 맞네. 그 배, 내가 직접 띄웠어." },
     { who: "police", face: "normal", text: "그럼 불은 그 전에 났다는 거고. 알겠다. 배 기다리라고 무전 넣을게." },

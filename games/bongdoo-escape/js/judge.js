@@ -3,8 +3,8 @@
    모든 시각은 ‘게임 시작부터 지난 ms’(el).
    who: 지금 일행에 있는 친구들 (환등기·잠긴 앱처럼 특정 친구가 있어야 하는 일)
    ────────────────────────────────────────────────────────────── */
-import { ANSWERS, HINTS } from "./answers.js?v=202611182020";
-import { ROOMS, isOpen, GAME_MS } from "./data.js?v=202611182020";
+import { ANSWERS, HINTS } from "./answers.js?v=202611182044";
+import { ROOMS, isOpen, GAME_MS } from "./data.js?v=202611182044";
 
 export const LOCK_MS = 60000, BLACKOUT_MS = 30000;
 
@@ -116,10 +116,10 @@ export function handle(team, req, el, cfg = {}, who = []) {
   const PART = {
     1: { code: "번호는 맞았다. 그런데 상자가 안 열린다… TV 쪽에 할 일이 남았다.",
          order: "TV 화면이 원래 순서로 돌아왔다. 쇼츠가 무엇을 바꿨는지 편집 노트도 적어 보자.",
-         edit: "편집 노트를 다 적었다. 이제 원본 속 벽시계가 몇 시였는지만 알면 된다." },
+         edit: "편집 노트를 다 적었다. 이제 원본에 찍힌 시각만 알면 된다." },
     2: { crop: "기사가 잘라 낸 곳에 다른 어른이 있었다. 돈봉투를 든 손… 손목시계에 글자가 보인다. (수첩에 확대 사진)",
          code: "글자는 맞았다. 그런데 금고가 덜 열린다… 사진 속에서 찾을 것이 더 있다." },
-    5: { deduce: "경찰이 팔짱을 낀다. “좋아, 논리는 맞아. 그런데 벽시계가 고장 났을 수도 있잖아?”" }
+    5: { deduce: "경찰이 팔짱을 낀다. “좋아, 논리는 맞아. 그런데 카메라 시계가 틀렸을 수도 있잖아?”" }
   };
   say(team, el, (PART[room] && PART[room][req.t]) || "맞았다.", "good");
   return "part";

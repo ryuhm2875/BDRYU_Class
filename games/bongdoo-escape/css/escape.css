@@ -370,3 +370,5 @@ svg.scene { width: 100%; display: block; background: #000; image-rendering: pixe
 .endart { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transform: scale(1.06); transition: opacity 3s, transform 30s linear; filter: brightness(.7) saturate(.9); }
 .endart.on { opacity: 1; transform: scale(1.0); }
 .endstage::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(0,0,0,.85)); pointer-events: none; }
+.fearrow { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.fearrow > span { font-size: 14px; opacity: .7; letter-spacing: .05em; }

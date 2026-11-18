@@ -5,7 +5,7 @@
    모델은 +z 쪽을 봅니다.
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611181955";
+import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611182012";
 
 /* 어둠 속에서도 형태가 읽히게 자기 색을 조금 스스로 냄 */
 export const lam = (o) => {
@@ -76,14 +76,13 @@ export function makeRig(id, { jacket = null } = {}) {
   /* 머리 */
   const neck = new THREE.Group(); neck.position.y = 0.44; torso.add(neck);
   const faces = {
-    open: toTex(bakeFace(L.skin, L.hood ? "hood" : "open")),
-    closed: toTex(bakeFace(L.skin, L.hood ? "hood" : "closed")),
-    wide: toTex(bakeFace(L.skin, L.hood ? "hood" : "wide"))
+    open: toTex(bakeFace(L.skin, "open")),
+    closed: toTex(bakeFace(L.skin, "closed")),
+    wide: toTex(bakeFace(L.skin, "wide"))
   };
   const faceM = lam({ map: faces.open, flatShading: false, emissive: 0x000000 });
   faceM.emissiveMap = faces.open; faceM.emissive = new THREE.Color(0.22, 0.22, 0.22);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 9), faceM); head.position.y = 0.2; neck.add(head);
-  if (L.hood) faceM.color = new THREE.Color(0.18, 0.15, 0.14);          // 후드 그늘 속 얼굴
   addHair(neck, L, hairM, cloth);
 
   /* 팔 */
@@ -162,7 +161,7 @@ export function addHair(neck, L, hairM, cloth) {
   const top = (r, down) => new THREE.SphereGeometry(r, 12, 6, 0, Math.PI * 2, 0, Math.PI * down);
   if (L.hair === "hood") {
     add(shell(0.31, 0.72, 0.85), 0, 0.21, -0.01, 1, 1.05, 1, cloth);
-    add(new THREE.TorusGeometry(0.2, 0.04, 4, 12), 0, 0.17, 0.12, 1, 1.15, 1, cloth).rotation.x = 0.25;
+    add(new THREE.TorusGeometry(0.235, 0.035, 4, 14), 0, 0.2, 0.1, 1, 1.12, 1, cloth).rotation.x = 0.2;
     return;
   }
   if (L.hair === "short" || L.hair === "cap") {

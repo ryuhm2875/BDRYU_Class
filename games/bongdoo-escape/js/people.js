@@ -8,8 +8,8 @@
 import * as THREE from "../vendor/three.module.min.js";
 import { GLTFLoader } from "../vendor/GLTFLoader.js";
 import * as SkeletonUtils from "../vendor/SkeletonUtils.js";
-import { LOOKS, lam, hexc, addHair, addProp } from "./rig.js?v=202611181955";
-import { bakeFace, toTex } from "./textures.js?v=202611181955";
+import { LOOKS, lam, hexc, addHair, addProp } from "./rig.js?v=202611182012";
+import { bakeFace, toTex } from "./textures.js?v=202611182012";
 
 const BASE = new URL("../assets/models/", import.meta.url).href;
 const FEMALE = new Set(["sua", "haeun", "seoyul"]);
@@ -123,9 +123,8 @@ export function makePerson(P, id, { jacket = null, ps1 } = {}) {
   const R = 0.2 * (HEIGHT[id] / 1.5);                         // 얼굴 공 반지름
   const kk = R / 0.26;
   const neck = new THREE.Group(); neck.position.set(hp.x, hp.y + R * 0.15 - 0.2 * kk, hp.z); neck.scale.setScalar(kk); root.add(neck);
-  const faces = { open: toTex(bakeFace(L.skin, L.hood ? "hood" : "open")), closed: toTex(bakeFace(L.skin, L.hood ? "hood" : "closed")), wide: toTex(bakeFace(L.skin, L.hood ? "hood" : "wide")) };
+  const faces = { open: toTex(bakeFace(L.skin, "open")), closed: toTex(bakeFace(L.skin, "closed")), wide: toTex(bakeFace(L.skin, "wide")) };
   const faceM = lam({ map: faces.open, flatShading: false }); faceM.emissiveMap = faces.open; faceM.emissive = new THREE.Color(0.22, 0.22, 0.22);
-  if (L.hood) faceM.color = new THREE.Color(0.18, 0.15, 0.14);
   const ball = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 9), faceM); ball.position.y = 0.2; neck.add(ball);
   const hairM = lam({ color: 0x2a1d18 }), cloth = lam({ color: hexc(L.jacket) });
   addHair(neck, L, hairM, cloth);

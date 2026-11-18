@@ -5,7 +5,7 @@
 칠판(선생님 PC)이 심판, 학생은 태블릿 1대씩.
 
 > 지금은 **뼈대 단계**입니다.
-> ① 교실 퍼즐은 실제로 돌아가고, ②~⑤는 임시 자물쇠(두 사람이 두 자리씩 나눠 든 번호)로 흐름만 이어 둡니다.
+> ① 교실 · ② 교무실 퍼즐은 실제로 돌아가고, ③~⑤는 임시 자물쇠(두 사람이 두 자리씩 나눠 든 번호)로 흐름만 이어 둡니다.
 
 ## 폴더
 
@@ -48,7 +48,7 @@ rooms/escape-방번호/
 ├─ seats/기기        { name, on, at }                ← 학생
 ├─ priv/기기         { tid, clues:{ 방:{ 캐릭터: 단서 } } }  ← 칠판이 그 학생에게만
 ├─ pos/모둠/캐릭터   { x, z, a, f(손전등), h(숨음), fr(굳음), bat, emo, by }  ← 학생이 직접 (움직일 때 1초 5번)
-└─ inbox/기기/요청   { t: order|code|diary|hint, room, v }  ← 학생이 쓰고 칠판이 지움
+└─ inbox/기기/요청   { t: order|code|project|crop|diary|hint, room, v }  ← 학생이 쓰고 칠판이 지움
 ```
 
 - 모든 시각은 ‘게임 시작부터 지난 ms’로 적어서, 기기마다 시계가 달라도 같게 보입니다.
@@ -56,7 +56,7 @@ rooms/escape-방번호/
 
 ## 시험
 
-- `node games/bongdoo-escape/tests/rules.test.mjs` (방 나누기 · 캐릭터 · 판정 137가지)
+- `node games/bongdoo-escape/tests/rules.test.mjs` (방 나누기 · 캐릭터 · 판정 149가지)
 - 화면: `?local=1` 로 칠판 탭 1개 + 학생 탭 여러 개
 
 ## 배포

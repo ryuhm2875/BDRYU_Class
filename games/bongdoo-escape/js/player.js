@@ -4,10 +4,10 @@
    판정은 칠판이 합니다. 여기서는 ‘이렇게 풀었어요’ 요청만 보냅니다.
    캐릭터 위치만은 빠르게 오가야 해서 pos/모둠 에 직접 씁니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P } from "./net.js?v=202611181648";
-import { CHARS, ROOMS, MAP, GAME_MS, IT, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181648";
-import { esc, modal, closeModal, showMemo, showClues, orderPuzzle, codePad, showDiary, charCardHTML } from "./puzzles.js?v=202611181648";
-import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181648";
+import { Net, P } from "./net.js?v=202611181710";
+import { CHARS, ROOMS, MAP, GAME_MS, IT, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611181710";
+import { esc, modal, closeModal, showMemo, showClues, orderPuzzle, codePad, wordPad, cropPuzzle, showDiary, charCardHTML } from "./puzzles.js?v=202611181710";
+import { startAudio, itStep, sfx, setDusk } from "./sound.js?v=202611181710";
 
 const $app = () => document.getElementById("app");
 const SPEED = 2.6, FOLLOW = 1.1, NEAR = 1.6;
@@ -134,9 +134,9 @@ export function Player(code, name, ctx) {
       </div>
       <div class="blackout" id="bo">정전</div>
     </div>`;
-    import("./world.js?v=202611181648").then(({ createWorld }) => {
+    import("./world.js?v=202611181710").then(({ createWorld }) => {
       try { S.world = createWorld(document.getElementById("cv"), { pixel: innerWidth > 1400 ? 3 : 2.5 }); }
-      catch (e) { toast("3D 화면을 열지 못했어요. 다른 브라우저로 열어 주세요.", "bad"); return; }
+      catch (e) { console.error(e); toast("3D 화면을 열지 못했어요. 다른 브라우저로 열어 주세요.", "bad"); return; }
       bindInput(); drawHUD(true);
       let last = performance.now();
       const loop = now => { raf = requestAnimationFrame(loop); const dt = Math.min(0.1, (now - last) / 1000); last = now; tick(dt); };
@@ -149,7 +149,7 @@ export function Player(code, name, ctx) {
   function bindInput() {
     const joy = document.getElementById("joy"), knob = document.getElementById("knob");
     let id = null, ox = 0, oy = 0;
-    joy.addEventListener("pointerdown", e => { id = e.pointerId; ox = e.clientX; oy = e.clientY; joy.setPointerCapture(id); joy.classList.add("on"); joy.style.setProperty("--x", ox + "px"); joy.style.setProperty("--y", oy + "px"); });
+    joy.addEventListener("pointerdown", e => { id = e.pointerId; ox = e.clientX; oy = e.clientY; try { joy.setPointerCapture(id); } catch (er) {} joy.classList.add("on"); joy.style.setProperty("--x", ox + "px"); joy.style.setProperty("--y", oy + "px"); });
     joy.addEventListener("pointermove", e => {
       if (e.pointerId !== id) return;
       let dx = e.clientX - ox, dy = e.clientY - oy; const d = Math.hypot(dx, dy), R = 55;
@@ -233,6 +233,18 @@ export function Player(code, name, ctx) {
       return orderPuzzle(SCENE_NAMES, v => send("order", { room: it.room, v }), lockedText);
     }
     if (it.kind === "code") return codePad(it.label, v => send("code", { room: it.room, v }), lockedText);
+    if (it.kind === "word") return wordPad(it.label, v => send("code", { room: it.room, v }), lockedText);
+    const p2 = (T.part && T.part[2]) || {};
+    if (it.kind === "project") {
+      if (p2.proj) return toast("환등기가 벽에 사진을 비추고 있다.");
+      if (!S.mine.includes("minjae")) return toast("필름이 있어야 해요. 필름은 민재가 갖고 있어요. 민재를 불러 주세요!");
+      return send("project", { room: 2 });
+    }
+    if (it.kind === "photo") {
+      if (!p2.proj) return toast("벽이 비어 있다. 환등기를 켜면 뭔가 비칠 것 같다.");
+      if (p2.crop) return showClues(S.active, S.priv && S.priv.clues);
+      return cropPuzzle(v => send("crop", { room: 2, v }), lockedText);
+    }
   }
 
   /* ---------- 매 장면 ---------- */
@@ -246,6 +258,7 @@ export function Player(code, name, ctx) {
     /* 문: 앞 방을 풀면 열림. 정문은 ④ 다음 */
     [2, 3, 4].forEach(k => S.world.setDoor(k, isOpen(T, k)));
     S.world.setDoor("front", !!(T.solved && T.solved[4]));
+    S.world.setProjection(!!(T.part && T.part[2] && T.part[2].proj));
     MAP.items.forEach(it => { if (it.kind === "battery") S.world.setItemGone(it.id, S.picked.has(it.id)); if (it.kind === "diary") S.world.setItemGone(it.id, !!(T.diary && T.diary[it.room])); });
 
     /* 움직이기 */

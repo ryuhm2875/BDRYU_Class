@@ -2,7 +2,7 @@
    마지막 배는 6시 · 2D 화면 (3D 방에서 물건을 누르면 위에 뜨는 것)
    단서 보기 · 장면 카드 줄 세우기 · 자물쇠 · 일기장 · 캐릭터 소개
    ────────────────────────────────────────────────────────────── */
-import { CHARS, ROOMS } from "./data.js?v=202611181648";
+import { CHARS, ROOMS } from "./data.js?v=202611181710";
 
 export const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const br = s => esc(s).replace(/\n/g, "<br>");
@@ -70,10 +70,15 @@ export function showMemo(bat) {
 /* ---------- 혼자만 보는 단서 ---------- */
 export function showClues(charId, clues) {
   const C = CHARS[charId];
-  const list = Object.entries(clues || {}).filter(([, v]) => v && v[charId]).map(([room, v]) => [room, v[charId]]);
+  const list = [];
+  for (const [room, v] of Object.entries(clues || {})) {
+    if (!v) continue;
+    if (v[charId]) list.push([room, v[charId], ROOMS[room].name]);
+    if (v["*"]) list.push([room, v["*"], "모두 · 확대"]);
+  }
   if (!list.length) return modal(`<h2>${esc(C.name)}만 보는 것</h2><p class="lead">${esc(C.sees)}</p>
     <p class="muted">아직 이 캐릭터에게 온 단서가 없어요. 방이 열리면 칠판이 보내 줍니다.</p>`);
-  const tabs = list.map(([room], i) => `<button class="pill sm ${i === list.length - 1 ? "y" : "ghost"}" data-i="${i}">${room}. ${esc(ROOMS[room].name)}</button>`).join("");
+  const tabs = list.map(([room, , nm], i) => `<button class="pill sm ${i === list.length - 1 ? "y" : "ghost"}" data-i="${i}">${room}. ${esc(nm)}</button>`).join("");
   const m = modal(`<h2>${esc(C.name)}만 보는 것</h2><div class="row ctabs">${tabs}</div><div id="clueBody"></div>
     <p class="muted small">이 화면은 나만 봅니다. 친구들에게 <b>말로</b> 알려 주세요.</p>`, { cls: "wide" });
   const show = i => {
@@ -112,7 +117,98 @@ function renderClue(el, c) {
     });
     return;
   }
+  if (c.kind === "article") {
+    el.innerHTML = `<div class="paper"><div class="pm"><b>${esc(c.paper)}</b><span>${esc(c.date)}</span></div>
+      <h3>${esc(c.head)}</h3><div class="pcols"><figure>${photoSVG({ crop: ARTICLE_CROP })}<figcaption>${esc(c.cap)}</figcaption></figure>
+      <p>${esc(c.body)}</p></div></div>`;
+    return;
+  }
+  if (c.kind === "film") {
+    el.innerHTML = `<div class="film"><i></i><div class="neg">${photoSVG()}</div><div class="neg blank"></div><div class="neg blank"></div><i></i></div>
+      <p class="lead">${br(c.note)}</p>`;
+    return;
+  }
+  if (c.kind === "zoom") {
+    el.innerHTML = `<div class="bigimg zoomed">${watchSVG(c.word)}</div><p class="lead">${esc(c.note)}</p>`;
+    return;
+  }
   el.innerHTML = `<h3>${esc(c.title)}</h3><p class="lead">${br(c.body)}</p>`;
+}
+
+/* ---------- ② 1999년 사진 (240×160) ----------
+   기사는 재희만 남기고 잘랐다. 오른쪽 바깥에 봉투를 든 어른의 손.
+   손목시계 글자는 여기 그리지 않음 → 잘린 곳을 맞게 표시해야 칠판이 확대 사진(글자)을 보내 줌 */
+export const ARTICLE_CROP = "60 18 72 124";
+export function photoSVG({ crop = null } = {}) {
+  return `<svg class="scene photo" viewBox="${crop || "0 0 240 160"}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="160" fill="#d9c9a3"/><rect y="62" width="240" height="30" fill="#ab9b78"/>
+    <rect y="92" width="240" height="68" fill="#8c7858"/>
+    <rect x="0" y="20" width="58" height="80" fill="#bba98a"/><rect x="10" y="34" width="16" height="20" fill="#7d6d55"/><rect x="34" y="34" width="16" height="20" fill="#7d6d55"/>
+    <text x="29" y="28" font-size="6" text-anchor="middle" fill="#5a4a38" font-family="sans-serif">봉두분교</text>
+    <!-- 재희 -->
+    <rect x="86" y="66" width="18" height="46" rx="4" fill="#6b5a47"/>
+    <rect x="88" y="112" width="5" height="24" fill="#4a3d30"/><rect x="97" y="112" width="5" height="24" fill="#4a3d30"/>
+    <circle cx="95" cy="58" r="9" fill="#e6c9a2"/><path d="M85,57 q10,-16 20,0 v-4 q-10,-10 -20,0z" fill="#3a2c22"/>
+    <rect x="86" y="58" width="7" height="6" rx="2" fill="#e6c9a2"/><rect x="97" y="58" width="7" height="6" rx="2" fill="#e6c9a2"/>
+    <line x1="92" y1="64" x2="91" y2="70" stroke="#9ab" stroke-width=".8"/>
+    <!-- 다른 어른 (기사에서 잘림) -->
+    <rect x="196" y="52" width="44" height="90" rx="6" fill="#4a4036"/>
+    <circle cx="224" cy="38" r="13" fill="#d7b994"/><path d="M211,36 q13,-14 26,0 v-6 q-13,-8 -26,0z" fill="#2a221c"/>
+    <line x1="200" y1="76" x2="172" y2="88" stroke="#4a4036" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="172" cy="88" r="3.6" fill="#c8b070" stroke="#6a5a30" stroke-width=".8"/>
+    <rect x="160" y="83" width="10" height="10" rx="3" fill="#d7b994"/>
+    <g transform="rotate(-8 155 89)"><rect x="146" y="81" width="18" height="16" fill="#f4eee0" stroke="#999" stroke-width=".6"/>
+      <line x1="149" y1="86" x2="161" y2="86" stroke="#bbb" stroke-width=".6"/><line x1="149" y1="90" x2="158" y2="90" stroke="#bbb" stroke-width=".6"/></g>
+  </svg>`;
+}
+function watchSVG(word) {
+  return `<svg class="scene photo" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="160" height="100" fill="#cdbd98"/>
+    <line x1="170" y1="30" x2="60" y2="58" stroke="#4a4036" stroke-width="40" stroke-linecap="round"/>
+    <rect x="18" y="44" width="40" height="34" rx="10" fill="#d7b994"/>
+    <g transform="rotate(-8 30 70)"><rect x="-6" y="52" width="40" height="38" fill="#f4eee0" stroke="#999"/><text x="14" y="76" font-size="9" text-anchor="middle" fill="#a33" font-family="sans-serif">현금</text></g>
+    <circle cx="80" cy="54" r="19" fill="#c8b070" stroke="#6a5a30" stroke-width="3"/><circle cx="80" cy="54" r="14" fill="#efe6cc"/>
+    <line x1="80" y1="54" x2="80" y2="43" stroke="#222" stroke-width="1"/><line x1="80" y1="54" x2="86" y2="50" stroke="#222" stroke-width="1"/>
+    <text x="80" y="64" font-size="7" font-weight="bold" text-anchor="middle" fill="#3a3020" font-family="serif">${esc(word)}</text>
+  </svg>`;
+}
+
+/* ---------- ② 벽에 비친 사진: 기사가 잘라 낸 곳에서 찾은 것을 네모로 ---------- */
+export function cropPuzzle(onSubmit, lockedText) {
+  const m = modal(`<h2>벽에 비친 사진</h2>
+    <p class="lead">기사 사진과 견주어 보세요. <b>기사가 잘라 낸 곳</b>에서 수상한 것을 찾아 손가락으로 끌어 네모로 감싸세요.</p>
+    <div class="cropbox" id="cb">${photoSVG()}<div class="sel" id="sel"></div></div>
+    <div class="row"><button class="pill ghost" id="rs">다시</button><button class="pill y" id="go" disabled>여기를 표시</button></div>
+    <div>${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}</div>`, { cls: "wide" });
+  const cb = m.querySelector("#cb"), sel = m.querySelector("#sel"), go = m.querySelector("#go");
+  let a = null, r = null, pid = null;
+  const at = e => { const b = cb.getBoundingClientRect(); return [Math.max(0, Math.min(1, (e.clientX - b.left) / b.width)), Math.max(0, Math.min(1, (e.clientY - b.top) / b.height))]; };
+  const draw = () => {
+    if (!r) { sel.style.display = "none"; go.disabled = true; return; }
+    Object.assign(sel.style, { display: "block", left: r[0] * 100 + "%", top: r[1] * 100 + "%", width: r[2] * 100 + "%", height: r[3] * 100 + "%" });
+    go.disabled = !!lockedText || r[2] < 0.03 || r[3] < 0.03;
+  };
+  cb.addEventListener("pointerdown", e => { pid = e.pointerId; try { cb.setPointerCapture(pid); } catch (er) {} a = at(e); r = [a[0], a[1], 0, 0]; draw(); e.preventDefault(); });
+  cb.addEventListener("pointermove", e => { if (e.pointerId !== pid || !a) return; const b = at(e); r = [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])]; draw(); });
+  const up = e => { if (e.pointerId === pid) { pid = null; a = null; } };
+  cb.addEventListener("pointerup", up); cb.addEventListener("pointercancel", up);
+  m.querySelector("#rs").onclick = () => { r = null; draw(); };
+  go.onclick = () => { onSubmit(r.map(v => +v.toFixed(3))); m.close(); };
+  draw();
+  return m;
+}
+
+/* ---------- 글자 자물쇠 ---------- */
+export function wordPad(label, onSubmit, lockedText) {
+  const m = modal(`<h2>🔒 ${esc(label)}</h2><p class="lead">글자 두 칸짜리 자물쇠다.</p>
+    <input class="inp word" id="wd" maxlength="6" autocomplete="off" placeholder="글자 입력" ${lockedText ? "disabled" : ""}>
+    <div class="row"><button class="pill y" id="go" ${lockedText ? "disabled" : ""}>열어 보기</button></div>
+    <div>${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}</div>`);
+  const wd = m.querySelector("#wd"), go = () => { const v = wd.value.trim(); if (v) { onSubmit(v); m.close(); } };
+  m.querySelector("#go").onclick = go;
+  wd.onkeydown = e => { if (e.key === "Enter" && !e.isComposing) go(); };
+  setTimeout(() => wd.focus(), 50);
+  return m;
 }
 
 /* ---------- 장면 카드 줄 세우기 (교실 TV) ---------- */

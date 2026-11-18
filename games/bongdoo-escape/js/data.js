@@ -94,13 +94,16 @@ export const MAP = {
   ],
   /* 숨는 곳: 사물함 앞에서 [숨기] */
   hides: [[7.5, 2.2], [18.5, 2.2], [27.5, 2.2], [36.5, 2.2]],
-  /* 살펴볼 것. kind: memo(서진의 휴대폰) · order(장면 맞추기) · code(자물쇠) · diary(일기장) · battery(건전지) */
+  /* 살펴볼 것. kind: memo(서진의 휴대폰) · order(장면 맞추기) · code(숫자 자물쇠) · word(글자 자물쇠)
+     · project(환등기) · photo(벽에 비친 사진) · diary(일기장) · battery(건전지) */
   items: [
     { id: "phone",  room: 1, x: 4.4,  z: -6.0, kind: "memo",  label: "서진의 휴대폰" },
     { id: "tv",     room: 1, x: 6.8,  z: -7.6, kind: "order", label: "교실 TV" },
     { id: "box1",   room: 1, x: 8.7,  z: -7.2, kind: "code",  label: "증거 상자 (4자리)" },
     { id: "d1",     room: 1, x: 1.2,  z: -1.0, kind: "diary", label: "재희의 일기장 1" },
-    { id: "box2",   room: 2, x: 15,   z: -7.3, kind: "code",  label: "교무실 금고 (4자리)" },
+    { id: "proj",   room: 2, x: 12.6, z: -5.2, kind: "project", label: "환등기" },
+    { id: "wall2",  room: 2, x: 15,   z: -7.3, kind: "photo", label: "벽에 비친 사진" },
+    { id: "box2",   room: 2, x: 18.9, z: -6.0, kind: "word",  label: "교무실 금고 (글자 자물쇠)" },
     { id: "d2",     room: 2, x: 19.2, z: -7.2, kind: "diary", label: "재희의 일기장 2" },
     { id: "box3",   room: 3, x: 25,   z: -7.3, kind: "code",  label: "숙직실 서랍 (4자리)" },
     { id: "d3",     room: 3, x: 29.2, z: -1.0, kind: "diary", label: "재희의 일기장 3" },

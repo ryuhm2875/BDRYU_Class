@@ -6,8 +6,8 @@
    ?local=1        → 인터넷 없이 한 브라우저 탭끼리 시험
    ?tab=1          → 탭마다 다른 사람
    ────────────────────────────────────────────────────────────── */
-import { Net, P, CODE_RE } from "./net.js?v=202611181648";
-import { esc } from "./puzzles.js?v=202611181648";
+import { Net, P, CODE_RE } from "./net.js?v=202611181710";
+import { esc } from "./puzzles.js?v=202611181710";
 
 const QS = new URLSearchParams(location.search);
 const $app = document.getElementById("app");
@@ -26,7 +26,7 @@ async function boot() {
   }
   const code = (QS.get("join") || "").toUpperCase();
   if (code) return Join(code);
-  if (QS.has("board")) return import("./board.js?v=202611181648").then(m => m.Board(ctx));   // 정답 파일은 칠판에서만 불러옴
+  if (QS.has("board")) return import("./board.js?v=202611181710").then(m => m.Board(ctx));   // 정답 파일은 칠판에서만 불러옴
   Home();
 }
 
@@ -88,6 +88,6 @@ async function enter(code, name) {
   Net.onConn(ok => { if (ok && !out) sit().catch(() => {}); });
   Net.on(P.meta(code), m => { if (!m && !out) { out = true; msg("선생님이 방을 닫았어요."); } });
   Net.on(seatPath, v => { if (v) had = true; else if (had && !out) { out = true; msg("선생님이 방에서 내보냈어요."); } });
-  const { Player } = await import("./player.js?v=202611181648");
+  const { Player } = await import("./player.js?v=202611181710");
   Player(code, name, ctx);
 }

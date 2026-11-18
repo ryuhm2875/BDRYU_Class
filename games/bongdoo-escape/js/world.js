@@ -5,7 +5,8 @@
    - 방향 a: (cos a, sin a) 가 x·z 로 향하는 쪽 (0 = 동쪽)
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { MAP, CHARS, IT } from "./data.js?v=202611181648";
+import { MAP, CHARS, IT } from "./data.js?v=202611181710";
+import { photoSVG } from "./puzzles.js?v=202611181710";
 
 const H = 2.4, T = 0.2;                          // 벽 높이 · 두께
 const matCache = {};
@@ -137,6 +138,24 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
   const blackboard = box(4, 1.2, 0.05, mat(0x1d2a22)); blackboard.position.set(3, 1.5, -7.88); scene.add(blackboard);
   const soot = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.6), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.55 }));
   soot.position.set(7.5, 1.7, -0.12); soot.rotation.y = Math.PI; scene.add(soot);
+
+  /* ---------- ② 환등기와 벽에 비친 사진 ---------- */
+  const projector = box(0.4, 0.25, 0.35, mat(0x2b2b2e)); projector.position.set(12.6, 0.88, -4.5); projector.castShadow = true; scene.add(projector);
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.12, 8), mat(0x111111, { emissive: 0x332a10 }));
+  lens.rotation.x = Math.PI / 2; lens.position.set(12.6, 0.9, -4.72); scene.add(lens);
+  const pc = document.createElement("canvas"); pc.width = 480; pc.height = 320;
+  const ptex = new THREE.CanvasTexture(pc); ptex.colorSpace = THREE.SRGBColorSpace;
+  { const im = new Image(); im.onload = () => { pc.getContext("2d").drawImage(im, 0, 0, 480, 320); ptex.needsUpdate = true; };
+    im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(photoSVG().replace('class="scene photo" ', 'width="480" height="320" ')); }
+  const pic = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.4), new THREE.MeshBasicMaterial({ map: ptex, transparent: true, opacity: 0, fog: false }));
+  pic.position.set(15, 1.45, -7.88); scene.add(pic);
+  const beamGeo = new THREE.ConeGeometry(1.7, 1, 4, 1, true); beamGeo.rotateY(Math.PI / 4); beamGeo.rotateX(-Math.PI / 2); beamGeo.translate(0, 0, 0);
+  const beam = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color: 0xfff2c0, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false }));
+  { const a = new THREE.Vector3(12.6, 0.9, -4.75), b = new THREE.Vector3(15, 1.45, -7.86), L = a.distanceTo(b);
+    beam.scale.set(1, 1, L); beam.position.copy(a).add(b).multiplyScalar(0.5); beam.lookAt(b); }
+  scene.add(beam);
+  const projLight = new THREE.PointLight(0xfff0c0, 0, 5, 1.5); projLight.position.set(15, 1.4, -7.3); scene.add(projLight);
+  let projOn = false, projK = 0;
 
   /* ---------- 살펴볼 것 ---------- */
   const items = {};
@@ -272,6 +291,11 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
     amb.intensity = 0.9 - p * 0.55; hemi.intensity = 0.5 - p * 0.35;
     scene.fog.density = 0.04 + p * 0.03;
 
+    /* 환등기: 켜지면 천천히 밝아짐, 가끔 깜빡 */
+    projK += ((projOn ? 1 : 0) - projK) * Math.min(1, dt * 1.5);
+    const flick = projOn && Math.random() < 0.03 ? 0.6 : 1;
+    pic.material.opacity = 0.92 * projK * flick; beam.material.opacity = 0.09 * projK * flick; projLight.intensity = 2.5 * projK;
+
     /* 문 */
     for (const k in doors) { const D = doors[k]; if (D.goal != null) D.pivot.rotation.y += (D.goal - D.pivot.rotation.y) * Math.min(1, dt * 6); }
 
@@ -343,6 +367,7 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
 
   return {
     frame, move, setDoor, resize,
+    setProjection: v => { projOn = !!v; },
     setItemGone: (id, v) => { if (items[id]) items[id].gone = v; },
     dispose: () => { removeEventListener("resize", resize); renderer.dispose(); }
   };

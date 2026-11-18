@@ -3,12 +3,12 @@
    방 만들기 → QR → 대기실 → 자동 방 나누기 → 판정 → 단면도 중계 → 결과
    정답(answers.js)은 이 기기에만 실립니다.
    ────────────────────────────────────────────────────────────── */
-import { Net, P, newCode } from "./net.js?v=202611181648";
-import { CHARS, ROOMS, MAP, GAME_MS, IT, clockText, leftText, isOpen, itPos } from "./data.js?v=202611181648";
-import { makeTeams, allocate, pickTeamForLate, removeFrom } from "./split.js?v=202611181648";
-import { newTeam, handle, timeUp } from "./judge.js?v=202611181648";
-import { CLUES } from "./answers.js?v=202611181648";
-import { esc } from "./puzzles.js?v=202611181648";
+import { Net, P, newCode } from "./net.js?v=202611181710";
+import { CHARS, ROOMS, MAP, GAME_MS, IT, clockText, leftText, isOpen, itPos } from "./data.js?v=202611181710";
+import { makeTeams, allocate, pickTeamForLate, removeFrom } from "./split.js?v=202611181710";
+import { newTeam, handle, timeUp } from "./judge.js?v=202611181710";
+import { CLUES, ZOOM2 } from "./answers.js?v=202611181710";
+import { esc } from "./puzzles.js?v=202611181710";
 
 const LS = "escape-board";
 const GONE_MS = 30000;                    // 이만큼 끊겨 있으면 ‘나간 학생’
@@ -48,6 +48,7 @@ export async function Board(ctx) {
         if (!isOpen(T, k)) continue;
         for (const ch of ROOMS[k].owners) if ((T.c[u] || []).includes(ch) && CLUES[k] && CLUES[k][ch]) (clues[k] = clues[k] || {})[ch] = CLUES[k][ch];
       }
+      if (T.part[2] && T.part[2].crop) (clues[2] = clues[2] || {})["*"] = ZOOM2;      // 모둠 모두에게
       Net.set(P.priv(code, u), { tid, clues }).catch(() => {});
     }
   }
@@ -77,10 +78,10 @@ export async function Board(ctx) {
         Net.remove(`${P.mail(code, u)}/${k}`).catch(() => {});
         const tid = Object.keys(pub.teams).find(t => pub.teams[t].m.includes(u));
         if (!tid) continue;
-        const T = pub.teams[tid], before = JSON.stringify(T.solved);
-        const r = handle(T, req, el(), pub.cfg);
-        if (r !== "ignored") changed = true;
-        if (JSON.stringify(T.solved) !== before) syncPriv(tid);     // 다음 방 단서
+        const T = pub.teams[tid], before = JSON.stringify([T.solved, T.part]);
+        const r = handle(T, req, el(), pub.cfg, T.c[u] || []);
+        if (r !== "ignored" || T.msg) changed = true;
+        if (JSON.stringify([T.solved, T.part]) !== before) syncPriv(tid);     // 다음 방 단서 · 확대 사진
       }
     }
     if (changed) { checkEnd(); write(); }

@@ -6,11 +6,11 @@
    - 방향 a: (cos a, sin a) 가 x·z 로 향하는 쪽 (0 = 동쪽)
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { MAP, IT } from "./data.js?v=202611182044";
-import { photoSVG } from "./puzzles.js?v=202611182044";
-import * as TX from "./textures.js?v=202611182044";
-import { makeRig, makeMannequin } from "./rig.js?v=202611182044";
-import { loadPeople, makePerson, makeThing } from "./people.js?v=202611182044";
+import { MAP, IT } from "./data.js?v=202611182111";
+import { photoSVG } from "./puzzles.js?v=202611182111";
+import * as TX from "./textures.js?v=202611182111";
+import { makeRig, makeMannequin } from "./rig.js?v=202611182111";
+import { loadPeople, makePerson, makeThing } from "./people.js?v=202611182111";
 
 const H = 2.4, T = 0.2;
 const SNAP = { value: new THREE.Vector2(320, 200) };          // 꼭짓점이 붙는 격자
@@ -357,7 +357,11 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
     const rw = Math.max(200, Math.ceil(w / pixel)), rh = Math.max(120, Math.ceil(h / pixel));
     renderer.setSize(rw, rh, false); rt.setSize(rw, rh);
     post.uniforms.uRes.value.set(rw, rh); SNAP.value.set(rw / 2, rh / 2);
-    camera.aspect = rw / rh; camera.updateProjectionMatrix();
+    camera.aspect = rw / rh;
+    /* 세로 화면(폰·태블릿 세로)에서는 옆이 너무 좁지 않게 시야를 넓힘 */
+    const asp = rw / rh;
+    camera.fov = asp >= 1.3 ? 42 : Math.min(66, 2 * Math.atan(Math.tan(25 * Math.PI / 180) / asp) * 180 / Math.PI);
+    camera.updateProjectionMatrix();
   }
   addEventListener("resize", resize); resize();
 

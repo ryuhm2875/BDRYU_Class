@@ -4,8 +4,8 @@
    - 초상화 그림(수채화)은 나중에 assets/portraits/<아이디>_<표정>.webp 로 넣으면 자동으로 씀.
      없으면 색과 이름 첫 글자로 대신 그림
    ────────────────────────────────────────────────────────────── */
-import { NPCS } from "./data.js?v=202611182044";
-import { esc } from "./puzzles.js?v=202611182044";
+import { NPCS } from "./data.js?v=202611182111";
+import { esc } from "./puzzles.js?v=202611182111";
 
 const has = {};             // 그림 파일이 있는지 기억
 /* 친구가 아닌 사람들 */
@@ -39,7 +39,7 @@ export function chapter({ no, title, line }, name = "") {
   return new Promise(resolve => {
     const el = document.createElement("div"); el.className = "chapter";
     el.innerHTML = `<div class="cpage"><div class="cin">
-      <div class="cno">${esc(no)}</div><div class="crule"></div>
+      ${no ? `<div class="cno">${esc(no)}</div><div class="crule"></div>` : ""}
       <div class="cti">${esc(title)}</div>
       ${line ? `<div class="cline">${esc(withName(line, name))}</div>` : ""}</div></div>`;
     document.body.appendChild(el);
@@ -48,6 +48,45 @@ export function chapter({ no, title, line }, name = "") {
     const end = () => { if (done) return; done = true; el.classList.add("out"); setTimeout(() => { el.remove(); resolve(); }, 700); };
     const t = setTimeout(end, 3400);
     setTimeout(() => el.addEventListener("click", () => { clearTimeout(t); end(); }), 600);
+  });
+}
+
+/* 사전 이야기: 화면 가득 책 한 쪽씩. 문단이 차례로 떠오름. 누르기·Space·Enter 로 넘김 */
+export function book(pages, name = "") {
+  return new Promise(resolve => {
+    const el = document.createElement("div"); el.className = "book";
+    el.innerHTML = `<button class="bskip">건너뛰기 ›</button><div class="bstage"></div><div class="bnum"></div>`;
+    document.body.appendChild(el);
+    const stage = el.querySelector(".bstage"), num = el.querySelector(".bnum");
+    let i = -1, paras = [], shown = 0, timer = null, busy = false;
+    const finish = () => { clearInterval(timer); removeEventListener("keydown", key); el.classList.add("out"); setTimeout(() => { el.remove(); resolve(); }, 700); };
+    const reveal = () => { if (shown < paras.length) { paras[shown++].classList.add("on"); } else { clearInterval(timer); timer = null; el.classList.add("ready"); } };
+    const show = () => {
+      i++; if (i >= pages.length) return finish();
+      const P = pages[i]; el.classList.remove("ready");
+      const old = stage.querySelector(".bpage"); if (old) { old.classList.add("turn"); setTimeout(() => old.remove(), 700); }
+      const pg = document.createElement("div"); pg.className = "bpage" + (P.msg ? " msg" : "");
+      if (P.msg) {
+        pg.innerHTML = `<div class="phone"><div class="pfrom">${esc(P.from || "")}</div><div class="bubble"></div><div class="ptime">${esc(P.time || "")}</div></div>`;
+        pg.querySelector(".bubble").innerHTML = withName(P.msg, name).split("\n\n").map(t => `<p class="bp">${esc(t)}</p>`).join("");
+      } else {
+        pg.innerHTML = withName(P.text, name).split("\n\n").map(t => `<p class="bp">${esc(t)}</p>`).join("");
+      }
+      stage.appendChild(pg); requestAnimationFrame(() => pg.classList.add("in"));
+      paras = [...pg.querySelectorAll(".bp")]; shown = 0;
+      num.textContent = `${i + 1} / ${pages.length}`;
+      clearInterval(timer); setTimeout(() => { reveal(); timer = setInterval(reveal, 900); }, 450);
+    };
+    const next = () => {
+      if (busy) return;
+      if (timer || shown < paras.length) { clearInterval(timer); timer = null; paras.forEach(p => p.classList.add("on")); shown = paras.length; el.classList.add("ready"); return; }
+      busy = true; setTimeout(() => busy = false, 350); show();
+    };
+    const key = e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); next(); } };
+    addEventListener("keydown", key);
+    el.addEventListener("click", e => { if (e.target.closest(".bskip")) { finish(); return; } next(); });
+    requestAnimationFrame(() => el.classList.add("on"));
+    show();
   });
 }
 

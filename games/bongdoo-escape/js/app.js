@@ -3,10 +3,10 @@
    이름 · 점퍼 색 · 공포 강도를 고르고 시작. 저장된 게임이 있으면 이어 하기.
    ?debug=1 → 개발 확인용 (window.__G)
    ────────────────────────────────────────────────────────────── */
-import { JACKETS } from "./data.js?v=202611182044";
-import { esc } from "./puzzles.js?v=202611182044";
-import { startAudio, music } from "./sound.js?v=202611182044";
-import { Game, Ending, newGame, loadSave, clearSave } from "./game.js?v=202611182044";
+import { JACKETS } from "./data.js?v=202611182111";
+import { esc } from "./puzzles.js?v=202611182111";
+import { startAudio, music } from "./sound.js?v=202611182111";
+import { Game, Ending, newGame, loadSave, clearSave } from "./game.js?v=202611182111";
 
 const $app = document.getElementById("app");
 Title();
@@ -45,7 +45,7 @@ function Title() {
   const im = new Image(); im.onload = () => { q("#tbg") && (q("#tbg").style.backgroundImage = `url(${im.src})`, q("#tbg").classList.add("art")); }; im.src = "assets/art/title.webp";
   $app.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { fear = b.dataset.f; $app.querySelectorAll("[data-f]").forEach(x => x.classList.toggle("on", x === b)); });
   $app.addEventListener("pointerdown", () => { startAudio(); music("calm"); }, { once: true });
-  const openSetup = () => { q("#setup").hidden = false; setTimeout(() => q("#nm").focus(), 50); };
+  const openSetup = () => { q("#setup").hidden = false; setTimeout(() => q("#nm") && q("#nm").focus(), 50); };
   q("#newb").onclick = () => {
     if (live && !q("#newb").dataset.sure) { q("#newb").dataset.sure = 1; q("#newb").textContent = "지난 판이 지워져요"; return; }
     openSetup();

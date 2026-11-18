@@ -4,14 +4,14 @@
    대사·연출은 줄(queue)에 세워 하나씩 → 겹치지 않음.
    판정은 이 기기 안에서 (judge.js). 진행은 자동 저장.
    ────────────────────────────────────────────────────────────── */
-import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611182044";
-import { newTeam, handle, timeUp } from "./judge.js?v=202611182044";
-import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611182044";
-import { CHAPTERS, INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611182044";
-import { talk, talking, preloadPortraits, chapter } from "./dialog.js?v=202611182044";
+import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611182111";
+import { newTeam, handle, timeUp } from "./judge.js?v=202611182111";
+import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611182111";
+import { CHAPTERS, PROLOGUE, INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611182111";
+import { talk, talking, preloadPortraits, chapter, book } from "./dialog.js?v=202611182111";
 import { esc, modal, closeModal, showMemo, phoneApps, showNotebook, showClue, orderPuzzle, codePad, wordPad, cropPuzzle, showDiary,
-         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611182044";
-import { startAudio, itStep, myStep, sfx, setDusk, music, isMuted, setMuted } from "./sound.js?v=202611182044";
+         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611182111";
+import { startAudio, itStep, myStep, sfx, setDusk, music, isMuted, setMuted } from "./sound.js?v=202611182111";
 
 const SAVE = "escape-solo-v1";
 const SPEED = 2.5, NEAR = 1.5, FLASH_DRAIN = 10 / 60, FREEZE_MS = 20000;
@@ -48,6 +48,7 @@ export function Game(G, { onExit }) {
       <div class="toasts" id="toasts"></div>
       <div class="bubbles" id="bub"></div>
       <div class="edge" id="edge">👣</div>
+      <div class="marks" id="marks"></div>
       <div class="joy" id="joy"><i id="knob"></i></div>
       <div class="acts">
         <button class="act" id="snd" aria-label="소리">${isMuted() ? "🔇" : "🔊"}</button>
@@ -63,7 +64,7 @@ export function Game(G, { onExit }) {
   const $ = id => document.getElementById(id);
 
   let W = null, raf = 0, last = performance.now();
-  const st = { keys: new Set(), joy: { x: 0, z: 0 }, frozenUntil: 0, immuneUntil: 0, staticUntil: 0, stepT: 0, heartT: 0, trail: [], npc: {}, bubbles: [],
+  const st = window.__st = { keys: new Set(), joy: { x: 0, z: 0 }, frozenUntil: 0, immuneUntil: 0, staticUntil: 0, stepT: 0, heartT: 0, trail: [], npc: {}, bubbles: [],
                chatT: 8, ended: false, busy: false, hidden: false, nearRattle: 0, q: [], fearBoost: 0 };
   for (const id of G.party) st.npc[id] = { x: G.x, z: G.z, a: G.a, sp: 0 };
 
@@ -83,7 +84,7 @@ export function Game(G, { onExit }) {
     st.busy = false; st.running = false; save();
   }
 
-  import("./world.js?v=202611182044").then(({ createWorld }) => {
+  import("./world.js?v=202611182111").then(({ createWorld }) => {
     try { W = createWorld($("cv"), { pixel: innerWidth > 1400 ? 3 : 2.5 }); }
     catch (e) { console.error(e); toast("3D 화면을 열지 못했어요. 크롬이나 사파리 최신 버전으로 열어 주세요.", "bad"); return; }
     W.setItemGone("phone", true);
@@ -93,6 +94,8 @@ export function Game(G, { onExit }) {
     music(G.introDone ? "explore" : "calm");
     if (!G.introDone) later(async () => {
       await chapter(CHAPTERS[0], G.name);
+      await book(PROLOGUE, G.name);
+      await chapter(CHAPTERS.school, G.name);
       await talk(INTRO, { name: G.name, onLine });
       G.introDone = true; music("explore");
       setTimeout(() => toast(NUDGE.start), 800);
@@ -113,7 +116,21 @@ export function Game(G, { onExit }) {
     });
     const up = e => { if (e.pointerId !== id) return; id = null; st.joy = { x: 0, z: 0 }; knob.style.transform = ""; };
     joy.addEventListener("pointerup", up); joy.addEventListener("pointercancel", up);
-    onkeydown = e => { if (document.getElementById("modal") || talking()) return; st.keys.add(e.key.toLowerCase()); if (e.key === "e") useNear(); if (e.key.toLowerCase() === "f") toggleFlash(); };
+    onkeydown = e => {
+      if (document.getElementById("modal") || talking() || document.querySelector(".chapter, .book")) return;
+      const key = e.key.toLowerCase();
+      if (key === " " || key === "enter" || key === "e") { e.preventDefault(); if (!e.repeat) useNear(); return; }
+      st.keys.add(key); st.go = null;
+      if (key === "f") toggleFlash();
+    };
+    /* 물건을 직접 누르기 (마우스·터치): 가까우면 바로, 멀면 걸어가서 살펴봄 */
+    const cv = $("cv"); let downAt = null;
+    cv.addEventListener("pointerdown", e => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+    cv.addEventListener("pointerup", e => {
+      if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 12 || performance.now() - downAt.t > 600) return;
+      const it = pickAt(e.clientX, e.clientY); if (it) goUse(it);
+    });
+    $("marks").addEventListener("click", e => { const b = e.target.closest("[data-it]"); if (!b) return; const it = MAP.items.find(x => x.id === b.dataset.it); if (it) goUse(it); });
     onkeyup = e => st.keys.delete(e.key.toLowerCase());
     $("fl").onclick = toggleFlash; $("use").onclick = useNear; $("hide").onclick = toggleHide;
     $("note").onclick = () => { sfx.page(); showNotebook(notebook(), G.frags); };
@@ -220,8 +237,73 @@ export function Game(G, { onExit }) {
     }
   }
 
-  async function useNear() {
-    const it = nearItem(); if (!it || st.busy) return;
+  /* 지금 살펴볼 수 있는 물건들 (거리는 따지지 않음) */
+  function usable(it) {
+    if (it.kind === "memo") return false;
+    if (it.kind === "battery" && G.picked.includes(it.id)) return false;
+    if (it.kind === "diary" && G.diary[it.room]) return false;
+    if (it.kind === "npc" && G.found[it.npc]) return false;
+    if (it.kind === "short" && G.short) return false;
+    if (it.kind === "jam" && roomAt(G.x, G.z) !== 0) return false;
+    return true;
+  }
+  const reachOf = it => it.kind === "police" ? 2.6 : NEAR;
+  function pickAt(cx, cy) {
+    if (!W || st.hidden || st.busy) return null;
+    const r = cv0().getBoundingClientRect(); let best = null, bd = 56;
+    const lit = litDiaries();
+    for (const it of MAP.items) {
+      if (!usable(it) || (it.kind === "diary" && !lit.includes(it.id))) continue;
+      if (Math.hypot(it.x - G.x, it.z - G.z) > 9) continue;
+      const p = W.project(it.x, 0.7, it.z); if (!p.on) continue;
+      const d = Math.hypot(p.x + r.left - cx, p.y + r.top - cy);
+      if (d < bd) { bd = d; best = it; }
+    }
+    return best;
+  }
+  const cv0 = () => $("cv");
+  function goUse(it) {
+    if (st.busy || talking() || document.getElementById("modal")) return;
+    if (Math.hypot(it.x - G.x, it.z - G.z) < reachOf(it)) { st.go = null; return useNear(it); }
+    const path = findPath(it.x, it.z, reachOf(it));
+    if (!path) return toast("그쪽으로는 지금 갈 수 없어요.");
+    st.go = { it, path, until: performance.now() + 12000, stuck: 0 };
+  }
+  /* 길 찾기: 0.3m 칸으로 나눠 너비 우선 탐색 (책상·벽·닫힌 문을 돌아감) */
+  function findPath(tx, tz, reach) {
+    const S = 0.3, R = 0.28;
+    const x0 = Math.min(G.x, tx) - 10, x1 = Math.max(G.x, tx) + 10, z0 = Math.min(G.z, tz) - 8, z1 = Math.max(G.z, tz) + 8;
+    const W_ = Math.ceil((x1 - x0) / S), H_ = Math.ceil((z1 - z0) / S);
+    const cx = i => x0 + (i % W_ + 0.5) * S, cz = i => z0 + (Math.floor(i / W_) + 0.5) * S;
+    const at = (x, z) => Math.floor((z - z0) / S) * W_ + Math.floor((x - x0) / S);
+    const start = at(G.x, G.z), prev = new Int32Array(W_ * H_).fill(-1), seen = new Uint8Array(W_ * H_);
+    const q = [start]; seen[start] = 1; let goal = -1;
+    const free = i => !W.hits(cx(i), cz(i), R);
+    for (let h = 0; h < q.length && q.length < 40000; h++) {
+      const i = q[h];
+      if (Math.hypot(cx(i) - tx, cz(i) - tz) < reach - 0.35 && (i === start || free(i))) { goal = i; break; }
+      const gx = i % W_, gz = Math.floor(i / W_);
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        const nx = gx + dx, nz = gz + dz; if (nx < 0 || nz < 0 || nx >= W_ || nz >= H_) continue;
+        const j = nz * W_ + nx; if (seen[j]) continue; seen[j] = 1;
+        if (!free(j)) continue;
+        if (dx && dz && (!free(gz * W_ + nx) || !free(nz * W_ + gx))) continue;   // 모서리 끼임 방지
+        prev[j] = i; q.push(j);
+      }
+    }
+    if (goal < 0) return null;
+    const pts = []; for (let i = goal; i !== start && i >= 0; i = prev[i]) pts.push({ x: cx(i), z: cz(i) });
+    pts.reverse();
+    /* 일직선으로 갈 수 있는 점은 건너뜀 */
+    const clear = (a, b) => { const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.1); for (let k = 1; k <= n; k++) { const t = k / n; if (W.hits(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, R)) return false; } return true; };
+    const out = []; let cur = { x: G.x, z: G.z };
+    for (let k = 0; k < pts.length; k++) {
+      if (k === pts.length - 1 || !clear(cur, pts[k + 1])) { out.push(pts[k]); cur = pts[k]; }
+    }
+    return out;
+  }
+  async function useNear(pick) {
+    const it = pick && pick.id ? pick : nearItem(); if (!it || st.busy) return;
     const lockLeft = G.lock[it.room] > G.el ? Math.ceil((G.lock[it.room] - G.el) / 1000) : 0;
     const lockedText = lockLeft ? `잠겨 있어요. ${lockLeft}초 뒤에 다시.` : "";
     const has = id => G.party.includes(id);
@@ -334,12 +416,21 @@ export function Game(G, { onExit }) {
       let vx = st.joy.x, vz = st.joy.z; const k = st.keys;
       if (k.has("a") || k.has("arrowleft")) vx -= 1; if (k.has("d") || k.has("arrowright")) vx += 1;
       if (k.has("w") || k.has("arrowup")) vz -= 1; if (k.has("s") || k.has("arrowdown")) vz += 1;
+      if (Math.hypot(vx, vz) > 0.15) st.go = null;
+      else if (st.go) {                                         // 누른 물건 쪽으로 걸어감
+        const g = st.go, d = Math.hypot(g.it.x - G.x, g.it.z - G.z);
+        while (g.path.length && Math.hypot(g.path[0].x - G.x, g.path[0].z - G.z) < 0.18) g.path.shift();
+        if (d < reachOf(g.it) - 0.2 && !g.path.length) { st.go = null; useNear(g.it); }
+        else if (tnow > g.until || g.stuck > 0.8) { st.go = null; }
+        else { const w = g.path[0] || g.it, dx = w.x - G.x, dz = w.z - G.z, l = Math.hypot(dx, dz) || 1; vx = dx / l; vz = dz / l; }
+      }
       const l = Math.hypot(vx, vz);
       if (l > 0.15) {
         if (st.hidden) st.hidden = false;
         vx /= Math.max(1, l); vz /= Math.max(1, l);
         const p = W.move(G.x, G.z, vx * SPEED * dt, vz * SPEED * dt);
         speed = Math.hypot(p.x - G.x, p.z - G.z) / dt;
+        if (st.go) st.go.stuck = speed < 0.4 ? st.go.stuck + dt : 0;
         st.footT = (st.footT || 0) - dt * speed;
         if (st.footT <= 0 && speed > 0.5) { st.footT = 1.15; myStep(); }
         G.x = p.x; G.z = p.z; G.a = Math.atan2(vz, vx);
@@ -416,6 +507,7 @@ export function Game(G, { onExit }) {
     });
     setDusk(e / GAME_MS);
     drawBubbles();
+    drawMarks(near, playing && !ui);
     st.hudT = (st.hudT || 0) - dt;
     if (st.hudT <= 0) { st.hudT = 0.2; hud(false, { e, near, itp, bo }); }
 
@@ -428,6 +520,29 @@ export function Game(G, { onExit }) {
     st.frozenUntil = tnow + FREEZE_MS; st.immuneUntil = tnow + FREEZE_MS + 6000;
     G.fbat = Math.max(0, G.fbat - 10);
     toast("들켰다…! 20초 동안 몸이 굳는다. 손전등 배터리 −10%", "bad");
+  }
+
+  /* ---------- 살펴볼 수 있는 곳 표시 (작은 점) ---------- */
+  function drawMarks(near, on) {
+    const box = $("marks"); if (!box) return;
+    if (!on || st.hidden) { if (box.childElementCount) box.innerHTML = ""; return; }
+    const here = roomAt(G.x, G.z), lit = litDiaries(), want = [];
+    for (const it of MAP.items) {
+      if (!usable(it) || (it.kind === "diary" && !lit.includes(it.id))) continue;
+      const d = Math.hypot(it.x - G.x, it.z - G.z);
+      if (d > 7 || (it.room !== here && d > 2.5)) continue;
+      const p = W.project(it.x, 0.7, it.z); if (!p.on) continue;
+      want.push({ id: it.id, x: p.x, y: p.y, near: near && near.id === it.id, go: st.go && st.go.it.id === it.id });
+    }
+    const have = new Map([...box.children].map(c => [c.dataset.it, c]));
+    for (const w of want) {
+      let el = have.get(w.id);
+      if (!el) { el = document.createElement("button"); el.className = "mark"; el.dataset.it = w.id; el.setAttribute("aria-label", "살펴보기"); box.appendChild(el); }
+      have.delete(w.id);
+      el.style.transform = `translate(${w.x}px, ${w.y}px)`;
+      el.classList.toggle("near", !!w.near); el.classList.toggle("go", !!w.go);
+    }
+    for (const el of have.values()) el.remove();
   }
 
   /* ---------- 말풍선 ---------- */
@@ -451,7 +566,7 @@ export function Game(G, { onExit }) {
     $("bat").textContent = G.bat; $("flb").style.width = Math.round(G.fbat) + "%"; $("fl").classList.toggle("off", !G.flash);
     const near = x.near;
     $("use").hidden = !near;
-    if (near) $("use").textContent = near.kind === "npc" ? `다가가기 · ${near.label}` : near.kind === "police" ? `말 걸기 · ${near.label}` : `살펴보기 · ${near.label}`;
+    if (near) $("use").innerHTML = (near.kind === "police" ? "말 걸기" : "살펴보기") + `<kbd>Space</kbd>`;
     $("hide").hidden = !(nearHide() || st.hidden); $("hide").textContent = st.hidden ? "🚪 나오기" : "🚪 숨기";
     $("bo").classList.toggle("on", !!x.bo);
     const edge = $("edge");
@@ -499,7 +614,7 @@ export function Game(G, { onExit }) {
 export function Ending(G, { onExit }) {
   document.body.classList.remove("player");
   const E = {
-    true: ["진엔딩", "재희의 집. 서진과 재희가 함께 화면을 본다.", `“${G.name}, 이어 줘서 고마워.”`],
+    true: ["진엔딩", "재희의 집. 서진과 재희가 함께 화면을 본다.", `“${G.name}, 끝까지 맞춰 줘서 고마워.”`],
     escape: ["탈출 엔딩", "6시 배에 올랐다. 서진의 누명은 벗겨졌다.", "재희의 이야기는 아직 반쯤 남아 있다."],
     night: ["밤샘 엔딩", "배는 떠났다. 다음 날 아침 구조됐다.", "쇼츠는 하루 더 퍼졌다."]
   }[G.end || "night"];

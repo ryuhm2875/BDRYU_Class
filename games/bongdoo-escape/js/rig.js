@@ -5,7 +5,7 @@
    모델은 +z 쪽을 봅니다.
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611181804";
+import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611181913";
 
 /* 어둠 속에서도 형태가 읽히게 자기 색을 조금 스스로 냄 */
 const lam = (o) => {
@@ -34,6 +34,7 @@ export const LOOKS = {
   sua:    { skin: [240, 206, 172], jacket: [38, 48, 78], tie: [70, 150, 100], hair: "long", skirt: true, legs: [30, 30, 38], prop: "books" },
   haeun:  { skin: [232, 196, 158], jacket: [38, 48, 78], tie: [210, 160, 60], hair: "bob", skirt: true, legs: [30, 30, 38], prop: "headphones" },
   taeo:   { skin: [226, 186, 146], jacket: [38, 48, 78], tie: [140, 90, 190], hair: "cap", legs: [42, 44, 56], prop: "cap", small: true },
+  police: { skin: [220, 184, 150], jacket: [34, 48, 88], tie: [40, 40, 60], hair: "cap", legs: [28, 32, 48], prop: "cap" },
   seoyul: { skin: [242, 210, 178], jacket: [38, 48, 78], tie: [210, 70, 90], hair: "pony", skirt: true, legs: [30, 30, 38], prop: "phone" }
 };
 

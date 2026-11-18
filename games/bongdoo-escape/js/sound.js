@@ -52,6 +52,12 @@ export const sfx = {
   good: () => { blip(660, 0.15, "sine", 0.15); setTimeout(() => blip(880, 0.25, "sine", 0.15), 120); },
   bad: () => blip(140, 0.4, "sawtooth", 0.15, 90),
   pick: () => blip(990, 0.1, "square", 0.08),
-  blackout: () => { blip(120, 1.2, "sawtooth", 0.2, 30); burst(1.2, 0.2, 600); }
+  blackout: () => { blip(120, 1.2, "sawtooth", 0.2, 30); burst(1.2, 0.2, 600); },
+  whisper: () => { for (let i = 0; i < 4; i++) setTimeout(() => burst(0.35, 0.18, 3200 + Math.random() * 1500), i * 260); },
+  static: () => burst(1.4, 0.28, 1800),
+  vibrate: () => { for (let i = 0; i < 3; i++) setTimeout(() => blip(170, 0.18, "square", 0.07), i * 260); },
+  horn: () => { blip(98, 2.2, "sawtooth", 0.18, 92); setTimeout(() => blip(98, 2.2, "sawtooth", 0.18, 92), 2600); },
+  heart: () => { blip(60, 0.12, "sine", 0.35, 40); setTimeout(() => blip(55, 0.14, "sine", 0.28, 35), 180); },
+  door: () => { blip(200, 0.5, "triangle", 0.12, 80); burst(0.3, 0.12, 900); }
 };
 export function setDusk(p) { if (wave) wave.gain.value = 0.12 + p * 0.06; }

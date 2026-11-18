@@ -71,34 +71,57 @@ export const MAP = {
     // 복도 사물함 (숨는 곳)
     [7.5, 2.65, .8, .5, 1.8, "locker"], [18.5, 2.65, .8, .5, 1.8, "locker"],
     [27.5, 2.65, .8, .5, 1.8, "locker"], [36.5, 2.65, .8, .5, 1.8, "locker"],
+    // ④ 방송실: 미끼 마네킹
+    [32.5, -3.6, .5, .45, 1.9, "decoy"],
     // 바깥: 주재소
     [-9, -3.4, 3, 2, 2.4, "police"]
   ],
   /* 숨는 곳: 사물함 앞에서 [숨기] */
-  hides: [[7.5, 2.2], [18.5, 2.2], [27.5, 2.2], [36.5, 2.2]],
-  /* 살펴볼 것. kind: memo(서진의 휴대폰) · order(장면 맞추기) · code(숫자 자물쇠) · word(글자 자물쇠)
-     · project(환등기) · photo(벽에 비친 사진) · diary(일기장) · battery(건전지) */
+  hides: [[7.5, 2.2], [18.5, 2.2], [27.5, 2.2]],
+  shortcut: { x: 20, z: -6.6 },                      // 교무실 ↔ 숙직실 창고 쪽문 (태오가 엶)
+  /* 살펴볼 것. kind: order(교실 TV) · code · word(자물쇠) · project(환등기) · photo(벽 사진) · npc(숨은 친구)
+     · look(이야기 소품) · short(쪽문) · jam(막힌 문) · tapes · accounts · police · diary · battery */
   items: [
+    /* ① 교실 */
     { id: "phone",  room: 1, x: 4.4,  z: -6.0, kind: "memo",  label: "서진의 휴대폰" },
     { id: "tv",     room: 1, x: 6.8,  z: -7.6, kind: "order", label: "교실 TV" },
     { id: "box1",   room: 1, x: 8.7,  z: -7.2, kind: "code",  label: "증거 상자 (4자리)" },
     { id: "d1",     room: 1, x: 2.6,  z: -6.9, kind: "diary", label: "재희의 일기장 1" },
     { id: "npc_minjae", room: 1, x: 1.1, z: -2.2, kind: "npc", npc: "minjae", label: "덜컹거리는 사물함" },
+    { id: "lk_board", room: 1, x: 3.0, z: -7.3, kind: "look", look: "board", label: "칠판" },
+    { id: "lk_cal",   room: 1, x: 9.5, z: -7.4, kind: "look", look: "calendar", label: "1999년 달력" },
+    { id: "lk_shelf", room: 1, x: 0.95, z: -6.2, kind: "look", look: "shelf", label: "학급문고" },
+    /* ② 교무실 */
     { id: "npc_sua",    room: 2, x: 12.6, z: -1.5, kind: "npc", npc: "sua",    label: "책상 밑 인기척" },
     { id: "proj",   room: 2, x: 12.6, z: -5.2, kind: "project", label: "환등기" },
     { id: "wall2",  room: 2, x: 15,   z: -7.3, kind: "photo", label: "벽에 비친 사진" },
     { id: "box2",   room: 2, x: 18.9, z: -6.0, kind: "word",  label: "교무실 금고 (글자 자물쇠)" },
-    { id: "d2",     room: 2, x: 19.2, z: -7.2, kind: "diary", label: "재희의 일기장 2" },
-    { id: "box3",   room: 3, x: 25,   z: -7.3, kind: "code",  label: "숙직실 서랍 (4자리)" },
+    { id: "d2",     room: 2, x: 18.8, z: -0.9, kind: "diary", label: "재희의 일기장 2" },
+    { id: "lk_cab", room: 2, x: 11.7, z: -6.5, kind: "look", look: "cabinet", label: "철제 캐비닛" },
+    { id: "short",  room: 2, x: 19.4, z: -6.6, kind: "short", label: "창고 쪽문" },
+    /* 복도 */
+    { id: "jam3",   room: 0, x: 25,   z: 0.6,  kind: "jam",  label: "숙직실 문" },
+    { id: "npc_taeo",   room: 0, x: 36.5, z: 2.05, kind: "npc", npc: "taeo",   label: "사물함 안 훌쩍임" },
+    /* ③ 숙직실 */
+    { id: "npc_haeun",  room: 3, x: 22.2, z: -5.5, kind: "npc", npc: "haeun",  label: "이불 속 움직임" },
+    { id: "tapes",  room: 3, x: 27.5, z: -6.6, kind: "tapes", label: "녹음기와 테이프 상자" },
     { id: "d3",     room: 3, x: 29.2, z: -1.0, kind: "diary", label: "재희의 일기장 3" },
-    { id: "box4",   room: 4, x: 38.5, z: -5.5, kind: "code",  label: "방송실 제어함 (4자리)" },
+    /* ④ 방송실 */
+    { id: "npc_seoyul", room: 4, x: 38.8, z: -1.2, kind: "npc", npc: "seoyul", label: "커튼 뒤 운동화" },
+    { id: "pc4",    room: 4, x: 35,   z: -6.5, kind: "accounts", label: "방송실 컴퓨터" },
+    { id: "lk_decoy", room: 4, x: 32.5, z: -2.9, kind: "look", look: "decoy", label: "마네킹" },
+    { id: "lk_poster", room: 4, x: 38.2, z: -7.4, kind: "look", look: "poster", label: "벽 포스터" },
     { id: "d4",     room: 4, x: 31,   z: -7.2, kind: "diary", label: "재희의 일기장 4" },
-    { id: "box5",   room: 5, x: -9,   z: -2,   kind: "code",  label: "주재소 경찰" },
+    /* ⑤ 바깥 */
+    { id: "police", room: 5, x: -9,   z: -1.4, kind: "police", label: "주재소 경찰" },
+    { id: "lk_notice", room: 5, x: -11.2, z: -2.2, kind: "look", look: "notice", label: "주재소 게시판" },
     { id: "d5",     room: 5, x: -14,  z: 6.5,  kind: "diary", label: "재희의 일기장 5" },
+    /* 건전지 */
     { id: "b1", room: 0, x: 12,   z: 2.5, kind: "battery", label: "건전지" },
     { id: "b2", room: 0, x: 31,   z: 2.5, kind: "battery", label: "건전지" },
     { id: "b3", room: 1, x: 9.3,  z: -0.6, kind: "battery", label: "건전지" },
-    { id: "b4", room: 3, x: 21,   z: -1,   kind: "battery", label: "건전지" }
+    { id: "b4", room: 3, x: 21,   z: -1,   kind: "battery", label: "건전지" },
+    { id: "b5", room: 4, x: 33.5, z: -0.8, kind: "battery", label: "건전지" }
   ]
 };
 

@@ -6,10 +6,10 @@
    - 방향 a: (cos a, sin a) 가 x·z 로 향하는 쪽 (0 = 동쪽)
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { MAP, IT } from "./data.js?v=202611181804";
-import { photoSVG } from "./puzzles.js?v=202611181804";
-import * as TX from "./textures.js?v=202611181804";
-import { makeRig, makeMannequin } from "./rig.js?v=202611181804";
+import { MAP, IT } from "./data.js?v=202611181913";
+import { photoSVG } from "./puzzles.js?v=202611181913";
+import * as TX from "./textures.js?v=202611181913";
+import { makeRig, makeMannequin } from "./rig.js?v=202611181913";
 
 const H = 2.4, T = 0.2;
 const SNAP = { value: new THREE.Vector2(320, 200) };          // 꼭짓점이 붙는 격자
@@ -112,7 +112,7 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
   wallX(0, 0, 40, [1, 2, 3, 4].map(k => [R[k].door, 1.4]), H, 13, 0);
   wallX(3, 0, 40, [], 1.0);
   wallZ(0, -8, 3, [[MAP.frontDoor.z, 1.6]]);
-  [10, 20, 30].forEach((x, i) => wallZ(x, -8, 0, [], H, 20 + i));
+  wallZ(10, -8, 0, [], H, 20); wallZ(20, -8, 0, [[MAP.shortcut.z, 1.0]], H, 21); wallZ(30, -8, 0, [], H, 22);
   wallZ(40, -8, 3);
   solid(-16.6, -16, -5, 8); solid(-16, 0, -5.6, -5); solid(-16, 40, 8.6, 9.2); solid(-0.1, 0.1, 3, 8.6);
   wallX(8.6, -16, 0, [], 0.6); wallX(-5, -16, 0, [], 0.6);
@@ -171,6 +171,16 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
   door(1, R[1].door, 0, "x", 1.4, true);
   [2, 3, 4].forEach(k => door(k, R[k].door, 0, "x", 1.4, false));
   door("front", 0, MAP.frontDoor.z, "z", 1.6, false);
+  door("short", MAP.shortcut.x, MAP.shortcut.z, "z", 1.0, false);
+  /* 숙직실 문 안쪽: 쓰러진 책장 (문이 안 열리는 이유) */
+  { const bs = box(1.8, 0.45, 0.9, lam({ map: TX.toTex(TX.bakeWood(31, [86, 60, 38], 32, 32, true)) })); bs.position.set(25, 0.24, -0.75); bs.rotation.y = 0.15; bs.castShadow = true; scene.add(bs); solid(24.1, 25.9, -1.2, -0.3); }
+  /* 선착장 6시 배 */
+  const boat = new THREE.Group(); boat.position.set(-19.5, -0.1, 1.5); scene.add(boat);
+  { const hull = box(2.4, 0.7, 5.5, lam({ color: 0xd8d8d0 })); hull.position.y = 0.2; boat.add(hull);
+    const stripe = box(2.42, 0.12, 5.52, lam({ color: 0x2a4a8a })); stripe.position.y = 0.45; boat.add(stripe);
+    const cab = box(1.8, 1.2, 2.2, lam({ color: 0xeeeeea })); cab.position.set(0, 1.1, -0.6); boat.add(cab);
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.4), new THREE.MeshBasicMaterial({ color: 0xffe0a0 })); win.position.set(0.91, 1.3, -0.6); win.rotation.y = Math.PI / 2; boat.add(win); }
+  const boatLamp = new THREE.PointLight(0xffd8a0, 3, 9, 1.5); boatLamp.position.set(-18.5, 2.2, 1.5); scene.add(boatLamp);
 
   /* ---------- 가구 ---------- */
   const deskTop = lam({ map: TX.toTex(TX.bakeWood(6, [150, 112, 70])) });
@@ -178,6 +188,7 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
   const darkWood = lam({ map: TX.toTex(TX.bakeWood(8, [92, 64, 40], 32, 32, true)) });
   const lockerM = lam({ map: TX.toTex(TX.bakeLocker()) });
   const R_ = TX.rng(77);
+  let decoy = null;
   function desk(x, z, w, d, h) {
     const g = new THREE.Group(); g.position.set(x, 0, z);
     const top = box(w, 0.05, d, deskTop); top.position.y = h; g.add(top);
@@ -200,6 +211,7 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
     else if (kind === "locker") { o = box(w, h, d, lockerM); o.position.set(x, h / 2, z); }
     else if (kind === "bed") { o = new THREE.Group(); o.position.set(x, 0, z); const fr = box(w, 0.3, d, darkWood); fr.position.y = 0.15; o.add(fr); const mt = box(w - 0.1, 0.16, d - 0.1, lam({ color: 0x8a8a96 })); mt.position.y = 0.38; o.add(mt); const bl = box(w * 0.7, 0.08, d, lam({ color: 0x5a4a6a })); bl.position.set(0.2, 0.48, 0); o.add(bl); }
     else if (kind === "console") { o = new THREE.Group(); o.position.set(x, 0, z); const b = box(w, h, d, lam({ color: 0x2c3036 })); b.position.y = h / 2; o.add(b); for (let i = 0; i < 10; i++) { const k = box(0.08, 0.04, 0.08, lam({ color: i % 3 ? 0x888888 : 0xaa4433 })); k.position.set(-w / 2 + 0.3 + i * 0.28, h + 0.02, 0); o.add(k); } }
+    else if (kind === "decoy") { decoy = makeMannequin(); decoy.group.traverse(m => { if (m.isMesh && !m.userData.hull) ps1(m.material); }); decoy.group.position.set(x, 0, z); decoy.group.rotation.y = 0.6; scene.add(decoy.group); solid(x - w / 2, x + w / 2, z - d / 2, z + d / 2, kind); continue; }
     else if (kind === "police") {
       o = new THREE.Group(); o.position.set(x, 0, z);
       const b = box(w, h, d, lam({ color: 0xd8d8d0 })); b.position.y = h / 2; o.add(b);
@@ -353,7 +365,7 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
 
   /* ---------- 매 장면 ---------- */
   const tmp = new THREE.Vector3(), look = new THREE.Vector3(), pv = new THREE.Vector3();
-  let t0 = performance.now(), dustT = 0, cutK = 1;
+  let t0 = performance.now(), dustT = 0, cutK = 1, flickT = 0;
   function frame(S) {
     const now = performance.now(), dt = Math.min(0.1, (now - t0) / 1000); t0 = now;
     const p = Math.max(0, Math.min(1, S.progress || 0));
@@ -368,7 +380,7 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
     projK += ((projOn ? 1 : 0) - projK) * Math.min(1, dt * 1.5);
     const flick = projOn && Math.random() < 0.03 ? 0.6 : 1;
     pic.material.opacity = 0.92 * projK * flick; beam.material.opacity = 0.09 * projK * flick; projLight.intensity = 2.5 * projK;
-    if (tvScreen) tvScreen.material.color.setHex(tvOn ? (Math.random() < 0.05 ? 0x6a8aa0 : 0x4a6a80) : 0x0c1418);
+    if (tvScreen) tvScreen.material.color.setHex(tvOn === "static" ? (Math.random() < 0.5 ? 0xb0b8c0 : 0x404850) : tvOn ? (Math.random() < 0.05 ? 0x6a8aa0 : 0x4a6a80) : 0x0c1418);
 
     const seen = new Set();
     for (const c of S.chars) {
@@ -413,9 +425,16 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
       if (I.it.kind === "diary") I.m.material.opacity = S.lit && S.lit.includes(id) ? 1 : 0;
     }
 
-    if (S.it) {
+    if (decoy && S.decoy) { decoy.group.rotation.y += (Math.PI / 2 - S.decoy.a - decoy.group.rotation.y) * Math.min(1, dt * (S.decoy.snap ? 30 : 0)); }
+    boatLamp.intensity = 2.5 + Math.sin(now / 300) * 0.8;
+    if (flickT > 0) { flickT -= dt; const f = Math.random() < 0.5 ? 0.15 : 1; amb.intensity *= f; hemi.intensity *= f; }
+    if (S.it && S.it.off) {
+      it.group.visible = true; fan.visible = false;
+      it.group.position.set(S.it.x, 0.18, S.it.z); it.group.rotation.set(-Math.PI / 2, 0, 0.4);
+    } else if (S.it) {
+      it.group.rotation.x = 0;
       it.group.visible = fan.visible = !S.it.hide;
-      it.group.position.set(S.it.x, 0, S.it.z); it.group.rotation.y = Math.PI / 2 - S.it.dir;
+      it.group.position.set(S.it.x, 0, S.it.z); it.group.rotation.set(0, Math.PI / 2 - S.it.dir, 0);
       it.update(dt, { speed: S.it.moving === false ? 0 : 1, alert: S.it.alert });
       fan.position.set(S.it.x, 0.04, S.it.z); fan.rotation.y = -S.it.dir;
       fan.material.opacity = S.it.weak ? 0.04 : 0.08 + (S.it.alert ? 0.14 : 0);
@@ -437,7 +456,8 @@ export function createWorld(canvas, { pixel = 3 } = {}) {
   return {
     frame, move, setDoor, resize, project, hits,
     setProjection: v => { projOn = !!v; },
-    setTV: v => { tvOn = !!v; },
+    setTV: v => { tvOn = v; },
+    flicker: sec => { flickT = sec; },
     setItemGone: (id, v) => { if (items[id]) items[id].gone = v; },
     dispose: () => { removeEventListener("resize", resize); renderer.dispose(); }
   };

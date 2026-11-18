@@ -2,7 +2,7 @@
    마지막 배는 6시 · 2D 화면 (3D 방에서 물건을 누르면 위에 뜨는 것)
    단서 보기 · 장면 카드 줄 세우기 · 자물쇠 · 일기장 · 캐릭터 소개
    ────────────────────────────────────────────────────────────── */
-import { ROOMS } from "./data.js?v=202611181804";
+import { ROOMS } from "./data.js?v=202611181913";
 
 export const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const br = s => esc(s).replace(/\n/g, "<br>");
@@ -135,6 +135,9 @@ function renderClue(el, c) {
     el.innerHTML = `<div class="bigimg zoomed">${watchSVG(c.word)}</div><p class="lead">${esc(c.note)}</p>`;
     return;
   }
+  if (c.kind === "journal") { el.innerHTML = `<div class="paper"><h3>${esc(c.title)}</h3>${c.lines.map(l => `<p>${esc(l)}</p>`).join("")}</div>`; return; }
+  if (c.kind === "flyer") { el.innerHTML = `<div class="flyer">${logoSVG("sun", 56)}<div><h3>봉두분교 터, 바다를 품은 리조트로</h3><p>${br(c.body)}</p><b>해송개발</b></div></div>`; return; }
+  if (c.kind === "board") { el.innerHTML = `<ul class="evlist">${c.items.map(i => `<li><b>${esc(i.t)}</b><span>${esc(i.l)}</span></li>`).join("") || "<li>아직 증거가 없어요.</li>"}</ul>`; return; }
   el.innerHTML = `<h3>${esc(c.title)}</h3><p class="lead">${br(c.body)}</p>`;
 }
 
@@ -265,3 +268,132 @@ export function showDiary(room) {
   modal(`<div class="diary"><div class="dh">재희의 일기장 · ${room}/5</div><p>${br(DIARY[room])}</p></div>`);
 }
 
+
+/* ================================================================
+   ③ ④ ⑤ 와 ① 편집 노트 · 증거 카드
+   ================================================================ */
+
+/* 작은 로고 그림 (계정 프로필 · 전단지) */
+export function logoSVG(k, size = 36) {
+  const L = {
+    sun: `<rect width="40" height="40" rx="9" fill="#1d5a7a"/><circle cx="20" cy="17" r="8" fill="#f2b03a"/><path d="M4 28 q8 -6 16 0 t16 0 v8 h-32z" fill="#e8f0f4"/>`,
+    fire: `<rect width="40" height="40" rx="20" fill="#c0302a"/><path d="M20 8 q8 10 3 16 q4 -2 4 -7 q5 8 -2 15 h-10 q-7 -7 -1 -14 q1 5 4 6 q-5 -8 2 -16z" fill="#ffd27a"/>`,
+    town: `<rect width="40" height="40" rx="9" fill="#3a7a4a"/><path d="M8 30 v-10 l6 -5 6 5 v10z M22 30 v-14 h10 v14z" fill="#f0ead8"/>`,
+    eye: `<rect width="40" height="40" rx="20" fill="#222"/><ellipse cx="20" cy="20" rx="13" ry="8" fill="#fff"/><circle cx="20" cy="20" r="5" fill="#222"/>`,
+    cat: `<rect width="40" height="40" rx="20" fill="#e8a0b0"/><path d="M11 14 l4 -6 4 6 h2 l4 -6 4 6 v10 q-9 8 -18 0z" fill="#fff"/>`,
+    news: `<rect width="40" height="40" rx="9" fill="#ddd"/><rect x="8" y="9" width="24" height="5" fill="#333"/><rect x="8" y="18" width="11" height="13" fill="#888"/><rect x="21" y="18" width="11" height="3" fill="#888"/><rect x="21" y="24" width="11" height="3" fill="#888"/>`,
+    book: `<rect width="40" height="40" rx="20" fill="#6a3a2a"/><path d="M10 12 h9 q2 0 2 2 v16 q-1 -2 -3 -2 h-8z M30 12 h-8 v18 q1 -2 3 -2 h5z" fill="#f4e8c8"/>`
+  };
+  return `<svg width="${size}" height="${size}" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${L[k] || ""}</svg>`;
+}
+
+/* ① 편집 노트: 쇼츠가 원본을 어떻게 바꿨나 (여러 개 고르기) */
+export function editPuzzle(edits, onSubmit, lockedText) {
+  const m = modal(`<h2>편집 노트</h2>
+    <p class="lead">쇼츠는 원본을 <b>어떻게</b> 바꿨을까? 맞는 것을 <b>모두</b> 고르세요.</p>
+    <div class="checks">${edits.map(e => `<label class="ck"><input type="checkbox" value="${e.id}"><span>${esc(e.text)}</span></label>`).join("")}</div>
+    <div class="row"><button class="pill y" id="go" ${lockedText ? "disabled" : ""}>이렇게 적기</button></div>
+    ${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}`);
+  m.querySelector("#go").onclick = () => { const v = [...m.querySelectorAll("input:checked")].map(i => i.value); if (v.length) { onSubmit(v); m.close(); } };
+}
+
+/* ③ 녹음기: 테이프 듣기 + 학교 일지 대조 + 분류 */
+const WHY = { few: "사례 부족", sim: "유사성 부족", fact: "사실과 어긋남" };
+function garble(t) { return t.split(" ").map((w, i) => (i % 3 === 1 ? "…지지직…" : w)).join(" "); }
+export function tapePuzzle(tapes, { clean, journal }, onSubmit, lockedText, onLast) {
+  const pick = {};
+  const m = modal(`<h2>녹음기 · 1999년 테이프</h2>
+    <p class="lead">섬사람들의 증언이다. 들어 보고, 근거가 있는지 가려 보자.</p>
+    ${clean ? "" : `<div class="res bad">테이프가 늘어져 소리가 뭉개진다. 귀가 밝은 친구가 있으면 또렷해질 텐데.</div>`}
+    <div class="tapes">${tapes.map((t, i) => `<div class="tape" data-id="${t.id}">
+      <button class="play" data-i="${i}">▶</button>
+      <div class="tw"><b>${esc(t.who)}</b><div class="tt" id="tt-${t.id}">— 재생 버튼을 누르세요 —</div>
+      <div class="seg2"><button data-v="yes">근거 있음</button><button data-v="no">근거 없음</button></div>
+      <div class="whys" hidden>${Object.entries(WHY).map(([k, v]) => `<button data-w="${k}">${v}</button>`).join("")}</div></div></div>`).join("")}</div>
+    ${journal ? `<details class="journal"><summary>📓 수아의 대조: ${esc(journal.title)}</summary>${journal.lines.map(l => `<p>${esc(l)}</p>`).join("")}</details>` : `<p class="muted small">기록과 대조해 줄 친구가 있으면 더 확실할 텐데.</p>`}
+    <div class="row"><button class="pill y" id="go" disabled>이렇게 나누기</button></div>
+    ${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}`, { cls: "wide" });
+  let played = 0;
+  m.querySelectorAll(".play").forEach(b => b.onclick = () => {
+    const t = tapes[+b.dataset.i], el = m.querySelector("#tt-" + t.id), txt = clean ? t.text : garble(t.text);
+    let k = 0; el.textContent = ""; clearInterval(el._t);
+    el._t = setInterval(() => { k++; el.textContent = "“" + txt.slice(0, k) + (k >= txt.length ? "”" : ""); if (k >= txt.length) { clearInterval(el._t); if (++played === tapes.length && onLast) onLast(); } }, 24);
+  });
+  const draw = () => {
+    m.querySelectorAll(".tape").forEach(row => {
+      const id = row.dataset.id, v = pick[id];
+      row.querySelectorAll(".seg2 button").forEach(b => b.classList.toggle("on", v === "yes" ? b.dataset.v === "yes" : v && v !== "yes" ? b.dataset.v === "no" : false));
+      const w = row.querySelector(".whys"); w.hidden = !(v && v !== "yes");
+      w.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.w === v));
+    });
+    m.querySelector("#go").disabled = !!lockedText || tapes.some(t => !pick[t.id] || pick[t.id] === "no");
+  };
+  m.querySelectorAll(".tape").forEach(row => {
+    const id = row.dataset.id;
+    row.querySelectorAll(".seg2 button").forEach(b => b.onclick = () => { pick[id] = b.dataset.v === "yes" ? "yes" : "no"; draw(); });
+    row.querySelectorAll(".whys button").forEach(b => b.onclick = () => { pick[id] = b.dataset.w; draw(); });
+  });
+  m.querySelector("#go").onclick = () => { onSubmit(Object.assign({}, pick)); m.close(); };
+  draw();
+}
+
+/* ④ 업로드 기록: 계정을 올린 순서대로 + 맨 앞 계정의 정체 */
+export function accountPuzzle(accounts, sources, { flyer }, onSubmit, lockedText) {
+  const order = [];
+  let src = null;
+  const card = a => `<div class="acc-in">${logoSVG(a.logo, 34)}<div><b>${esc(a.name)}</b><small>팔로워 ${esc(a.fol)} · 계정 만든 날 ${esc(a.born)}</small>
+    <div class="cap">“${esc(a.cap)}”</div><small class="up">업로드 기록: ${esc(a.up)}</small></div></div>`;
+  const m = modal(`<h2>숨겨진 앱 · 업로드 기록</h2>
+    <p class="lead">같은 쇼츠를 올린 계정 여섯. <b>처음 올린 계정부터</b> 차례로 누르세요.</p>
+    <div class="accs"></div>
+    <h3>맨 앞 계정의 프로필 그림은 어디서 본 것일까?</h3>
+    ${flyer ? "" : `<p class="muted small">이 그림, 어디서 본 것 같은데… 섬 사람이라면 알지도.</p>`}
+    <div class="srcs">${sources.map(s => `<button class="src" data-s="${s.id}" ${flyer ? "" : "disabled"}>${logoSVG(s.logo, 30)}<span>${esc(s.name)}</span></button>`).join("")}</div>
+    <div class="row"><button class="pill ghost" id="rs">다시</button><button class="pill y" id="go" disabled>이 기록으로 확인</button></div>
+    ${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}`, { cls: "wide" });
+  const draw = () => {
+    m.querySelector(".accs").innerHTML = accounts.map(a => { const n = order.indexOf(a.id); return `<button class="acc ${n >= 0 ? "on" : ""}" data-a="${a.id}"><i>${n >= 0 ? n + 1 : ""}</i>${card(a)}</button>`; }).join("");
+    m.querySelectorAll(".acc").forEach(b => b.onclick = () => { const id = b.dataset.a, n = order.indexOf(id); if (n >= 0) order.splice(n); else order.push(id); draw(); });
+    m.querySelectorAll(".src").forEach(b => b.classList.toggle("on", b.dataset.s === src));
+    m.querySelector("#go").disabled = !!lockedText || order.length !== accounts.length || !src;
+  };
+  m.querySelectorAll(".src").forEach(b => b.onclick = () => { src = b.dataset.s; draw(); });
+  m.querySelector("#rs").onclick = () => { order.length = 0; src = null; draw(); };
+  m.querySelector("#go").onclick = () => { onSubmit({ order: order.slice(), src }); m.close(); };
+  draw();
+}
+
+/* ⑤ 연역: 대전제 · 소전제 · 결론 */
+export function deducePuzzle(cards, onSubmit, lockedText) {
+  const pick = { major: null, minor: null, concl: null };
+  const NAMES = { major: "대전제", minor: "소전제", concl: "결론" };
+  const m = modal(`<h2>경찰 설득하기</h2>
+    <p class="lead">사건 보드의 증거로 논리를 세우자. 칸마다 카드 하나씩.</p>
+    <div class="ded">${Object.keys(NAMES).map(k => `<div class="dcol"><h4>${NAMES[k]}</h4>${cards[k].map(c => `<button class="dc" data-k="${k}" data-c="${c.id}">${esc(c.text)}</button>`).join("")}</div>`).join("")}</div>
+    <div class="row"><button class="pill y" id="go" disabled>이 논리로 말하기</button></div>
+    ${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}`, { cls: "wide" });
+  m.querySelectorAll(".dc").forEach(b => b.onclick = () => {
+    pick[b.dataset.k] = b.dataset.c;
+    m.querySelectorAll(`.dc[data-k="${b.dataset.k}"]`).forEach(x => x.classList.toggle("on", x === b));
+    m.querySelector("#go").disabled = !!lockedText || Object.values(pick).some(v => !v);
+  });
+  m.querySelector("#go").onclick = () => { onSubmit([pick.major, pick.minor, pick.concl]); m.close(); };
+}
+
+/* ⑤ 반론에 답하기 */
+export function rebutPick(list, party, onSubmit, lockedText) {
+  const m = modal(`<h2>경찰의 반론</h2><p class="lead">“벽시계가 고장 났을 수도 있잖아?”<br>시계 말고 <b>다른 종류의 증거</b>로 답하자.</p>
+    <div class="rebs">${list.map(r => { const off = r.need && !r.need.every(n => party.includes(n));
+      return `<button class="reb" data-r="${r.id}" ${off || lockedText ? "disabled" : ""}>${esc(off ? "(하은이와 태오가 함께 있어야 떠올릴 수 있다)" : r.text)}</button>`; }).join("")}</div>
+    ${lockedText ? `<div class="res bad">${esc(lockedText)}</div>` : ""}`);
+  m.querySelectorAll(".reb").forEach(b => b.onclick = () => { onSubmit(b.dataset.r); m.close(); });
+}
+
+/* 방을 풀면: 증거 카드 + 무엇을 배웠나 */
+export function evidenceCard(room, name, evidence, lesson) {
+  return new Promise(res => {
+    const m = modal(`<div class="evc"><div class="evk">증거 ${room} · ${esc(name)}</div><div class="evt">${esc(evidence)}</div>
+      <div class="evl">${esc(lesson)}</div><button class="pill y" id="ok">사건 보드에 붙이기</button></div>`, { onClose: res });
+    m.querySelector("#ok").onclick = () => m.close();
+  });
+}

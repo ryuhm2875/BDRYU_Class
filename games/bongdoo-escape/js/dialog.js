@@ -4,14 +4,17 @@
    - 초상화 그림(수채화)은 나중에 assets/portraits/<아이디>_<표정>.webp 로 넣으면 자동으로 씀.
      없으면 색과 이름 첫 글자로 대신 그림
    ────────────────────────────────────────────────────────────── */
-import { NPCS } from "./data.js?v=202611181804";
-import { esc } from "./puzzles.js?v=202611181804";
+import { NPCS } from "./data.js?v=202611181913";
+import { esc } from "./puzzles.js?v=202611181913";
 
 const has = {};             // 그림 파일이 있는지 기억
+/* 친구가 아닌 사람들 */
+const OTHERS = { police: { name: "섬 경찰", color: "#8aa4d8" }, seojin: { name: "한서진", color: "#f0a0a8" }, jaehee: { name: "윤재희", color: "#d8c49a" } };
+const who2 = w => NPCS[w] || OTHERS[w];
 function portrait(who, face) {
-  if (who === "narr") return "";
+  if (who === "narr" || who === "voice") return "";
   const key = `${who}_${face || "normal"}`, src = `assets/portraits/${key}.webp`;
-  const N = NPCS[who], col = who === "me" ? "#3a4660" : N ? N.color : "#555";
+  const N = who2(who), col = who === "me" ? "#3a4660" : N ? N.color : "#555";
   const ch = who === "me" ? "" : N ? N.name[1] : "?";
   const ph = `<div class="pf ph ${face || ""}" style="--c:${col}"><i></i><b>${esc(ch)}</b></div>`;
   if (has[key] === false) return ph;
@@ -21,7 +24,9 @@ function portrait(who, face) {
 }
 
 /* lines 를 차례로 보여 줌. 고르기가 있으면 고른 kind 를 돌려줌 */
-export function talk(lines, { name = "나", onLine } = {}) {
+export function talk(lines, { name = "나", onLine, party = null } = {}) {
+  /* needs: 그 친구가 일행에 있을 때만 나오는 줄 */
+  if (party) lines = lines.filter(L => !L.needs || party.includes(L.needs));
   return new Promise(resolve => {
     const box = document.createElement("div"); box.className = "talk"; document.body.appendChild(box);
     let i = 0, typing = null, full = "", picked = null;
@@ -32,10 +37,10 @@ export function talk(lines, { name = "나", onLine } = {}) {
       const L = lines[i++];
       if (L.choice) return choose(L.choice);
       onLine && onLine(L);
-      const who = L.who, N = NPCS[who];
-      const nm = who === "me" ? name : who === "narr" ? "" : N ? N.name : who;
+      const who = L.who, N = who2(who);
+      const nm = who === "me" ? name : (who === "narr" || who === "voice") ? "" : N ? N.name : who;
       full = sub(L.text);
-      box.className = "talk " + (who === "narr" ? "narr" : "");
+      box.className = "talk " + (who === "narr" ? "narr" : who === "voice" ? "narr voice" : "");
       box.innerHTML = `${portrait(who, L.face)}<div class="tb">${nm ? `<div class="nm" style="color:${who === "me" ? "#ffd27a" : N ? N.color : "#ccc"}">${esc(nm)}</div>` : ""}<div class="tx"></div><div class="more">▼</div></div>`;
       const tx = box.querySelector(".tx"); let k = 0;
       typing = setInterval(() => { k++; tx.textContent = full.slice(0, k); if (k >= full.length) { clearInterval(typing); typing = null; } }, 28);

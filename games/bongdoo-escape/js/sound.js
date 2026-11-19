@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────────
-   마지막 배는 6시 · 소리
+   6시의 섬 · 소리
    - 효과음: Kenney (CC0) 녹음 파일 + WebAudio 합성음 겹치기
    - 배경음악: Pixabay 3곡 (calm / explore / tension), 서서히 바꿔 틀기
    - 파일을 못 받으면 합성음만으로도 돌아감
@@ -109,6 +109,8 @@ sfx.creak = () => play("creak" + (1 + Math.floor(Math.random() * 3)), { vol: 0.5
 sfx.rattle = () => play("creak" + (1 + Math.floor(Math.random() * 3)), { vol: 0.45, rate: 1.2 }) || blip(990, 0.1, "square", 0.06);
 sfx.page = () => play("page" + (1 + Math.floor(Math.random() * 2)), { vol: 0.6 }) || blip(1400, 0.05, "square", 0.04);
 
+/* 전화 신호음 */
+sfx.ring = () => { blip(440, 0.9, "sine", 0.06); blip(480, 0.9, "sine", 0.06); };
 export function setDusk(p) { if (wave) wave.gain.value = 0.06 + p * 0.05; }
 
 /* ---------- 배경음악 ---------- */

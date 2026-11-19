@@ -60,7 +60,7 @@ for i, (s, st, du, tc, ck) in enumerate(SEG):
     t0 += du
 
 # ---------- 쇼츠 (세로) ----------
-SH = [("d", 2.5, 4.5, (0.45, 0.82), "봉두분교 화재 현장"), ("a", 1.5, 4.0, (0.36, 0.5), "그런데 이 사람…"), ("c", 2.0, 5.5, (0.36, 0.5), "범인은 현장에 돌아온다")]
+SH = [("d", 2.5, 4.5, (0.45, 0.82), "봉두초등학교 화재 현장"), ("a", 1.5, 4.0, (0.36, 0.5), "그런데 이 사람…"), ("c", 2.0, 5.5, (0.36, 0.5), "범인은 현장에 돌아온다")]
 parts = []
 for i, (s, st, du, cx, cap) in enumerate(SH):
     o = f"{TMP}/s{i}.mp4"
@@ -68,7 +68,7 @@ for i, (s, st, du, cx, cap) in enumerate(SH):
     crop = f"crop=405:720:'min(max(0,({c0}+({c1}-{c0})*min(1,t/{du}))*1280-202),875)':0"
     zoom = "scale=360*1.06:640*1.06,crop=360:640:(iw-360)/2+sin(t*9)*3:(ih-640)/2+cos(t*7)*3"
     txt = (f"drawtext=fontfile={FONT}:text='{cap}':x=(w-tw)/2:y=h*0.70:fontsize=30:fontcolor=white:borderw=4:bordercolor=black,"
-           f"drawtext=fontfile={FONT}:text='봉두분교 방화 사건':x=(w-tw)/2:y=44:fontsize=22:fontcolor=yellow:borderw=3:bordercolor=black")
+           f"drawtext=fontfile={FONT}:text='봉두초등학교 방화 사건':x=(w-tw)/2:y=44:fontsize=22:fontcolor=yellow:borderw=3:bordercolor=black")
     run(["ffmpeg","-loglevel","error","-y","-ss",str(st),"-t",str(du),"-i",f"{SRC}/{s}.mp4",
          "-vf",f"{crop},scale=360:640,eq=contrast=1.12:saturation=1.15,{zoom},{txt}",
          "-an","-c:v","libx264","-preset","veryfast","-crf","27","-pix_fmt","yuv420p","-r","24",o])

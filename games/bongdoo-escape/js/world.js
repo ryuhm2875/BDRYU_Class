@@ -1,16 +1,16 @@
 /* ──────────────────────────────────────────────────────────────
-   마지막 배는 6시 · 3D 폐교 (three.js)
+   6시의 섬 · 3D 폐교 (three.js)
    - 쿼터뷰 3인칭. 작게 그려 키운 화면 + 디더링 + 꼭짓점 흔들림(옛 게임기 느낌)
    - 바닥·벽·가구는 모두 textures.js 의 픽셀 텍스처. 바닥 그늘은 미리 구움
    - 그림자 만드는 빛은 내 손전등 하나뿐
    - 방향 a: (cos a, sin a) 가 x·z 로 향하는 쪽 (0 = 동쪽)
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { MAP, IT } from "./data.js?v=202611182111";
-import { photoSVG } from "./puzzles.js?v=202611182111";
-import * as TX from "./textures.js?v=202611182111";
-import { makeRig, makeMannequin } from "./rig.js?v=202611182111";
-import { loadPeople, makePerson, makeThing } from "./people.js?v=202611182111";
+import { MAP, IT } from "./data.js?v=202611191033";
+import { photoSVG } from "./puzzles.js?v=202611191033";
+import * as TX from "./textures.js?v=202611191033";
+import { makeRig, makeMannequin } from "./rig.js?v=202611191033";
+import { loadPeople, makePerson, makeThing } from "./people.js?v=202611191033";
 
 const H = 2.4, T = 0.2;
 const SNAP = { value: new THREE.Vector2(320, 200) };          // 꼭짓점이 붙는 격자

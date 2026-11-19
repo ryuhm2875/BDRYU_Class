@@ -1,11 +1,11 @@
 /* ──────────────────────────────────────────────────────────────
-   마지막 배는 6시 · 관절 인형 (2~3등신 로우폴리)
+   6시의 섬 · 관절 인형 (2~3등신 로우폴리)
    엉덩이 → 몸통 → 목 → 머리 / 어깨 → 팔꿈치 / 허벅지 → 무릎
    동작은 코드로: 서 있기(숨쉬기·눈 깜빡임) · 걷기 · 숨기 · 겁먹기 · 굳기 · 말하기
    모델은 +z 쪽을 봅니다.
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611182111";
+import { bakeFace, bakeUniform, toTex } from "./textures.js?v=202611191033";
 
 /* 어둠 속에서도 형태가 읽히게 자기 색을 조금 스스로 냄 */
 export const lam = (o) => {
@@ -35,6 +35,7 @@ export const LOOKS = {
   haeun:  { skin: [232, 196, 158], jacket: [38, 48, 78], tie: [210, 160, 60], hair: "bob", skirt: true, legs: [30, 30, 38], prop: "headphones" },
   taeo:   { skin: [226, 186, 146], jacket: [38, 48, 78], tie: [140, 90, 190], hair: "cap", legs: [42, 44, 56], prop: "cap", small: true },
   police: { skin: [220, 184, 150], jacket: [34, 48, 88], tie: [40, 40, 60], hair: "cap", legs: [28, 32, 48], prop: "cap" },
+  captain: { skin: [200, 160, 126], jacket: [70, 78, 60], tie: [0, 0, 0], hair: "cap", legs: [40, 40, 44], prop: "cap", shoe: [40, 34, 30] },
   seoyul: { skin: [242, 210, 178], jacket: [38, 48, 78], tie: [210, 70, 90], hair: "pony", skirt: true, legs: [30, 30, 38], prop: "phone" }
 };
 

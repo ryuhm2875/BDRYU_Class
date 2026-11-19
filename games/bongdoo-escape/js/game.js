@@ -1,17 +1,17 @@
 /* ──────────────────────────────────────────────────────────────
-   마지막 배는 6시 · 1인 게임 본체
+   6시의 섬 · 1인 게임 본체
    주인공 한 명이 움직이고, 찾은 친구들은 뒤를 따라옴.
    대사·연출은 줄(queue)에 세워 하나씩 → 겹치지 않음.
    판정은 이 기기 안에서 (judge.js). 진행은 자동 저장.
    ────────────────────────────────────────────────────────────── */
-import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611182111";
-import { newTeam, handle, timeUp } from "./judge.js?v=202611182111";
-import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611182111";
-import { CHAPTERS, PROLOGUE, INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611182111";
-import { talk, talking, preloadPortraits, chapter, book } from "./dialog.js?v=202611182111";
+import { NPCS, ROOMS, MAP, GAME_MS, IT, JACKETS, clockText, leftText, isOpen, roomAt, itPos } from "./data.js?v=202611191033";
+import { newTeam, handle, timeUp } from "./judge.js?v=202611191033";
+import { CLUES, ZOOM2, EDITS, TAPES, JOURNAL, ACCOUNTS, SOURCES4, CARDS5, REBUT, LESSONS } from "./answers.js?v=202611191033";
+import { CHAPTERS, PROLOGUE, INTRO, MEMO, FOUND, CONFESS, CHATTER, NUDGE, ENTER, LOOK, WRONG, EVENTS, POLICE, ENDINGS } from "./story.js?v=202611191033";
+import { talk, talking, preloadPortraits, chapter, book, setGender } from "./dialog.js?v=202611191033";
 import { esc, modal, closeModal, showMemo, phoneApps, showNotebook, showClue, orderPuzzle, codePad, wordPad, cropPuzzle, showDiary,
-         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611182111";
-import { startAudio, itStep, myStep, sfx, setDusk, music, isMuted, setMuted } from "./sound.js?v=202611182111";
+         editPuzzle, tapePuzzle, accountPuzzle, deducePuzzle, rebutPick, evidenceCard } from "./puzzles.js?v=202611191033";
+import { startAudio, itStep, myStep, sfx, setDusk, music, isMuted, setMuted } from "./sound.js?v=202611191033";
 
 const SAVE = "escape-solo-v1";
 const SPEED = 2.5, NEAR = 1.5, FLASH_DRAIN = 10 / 60, FREEZE_MS = 20000;
@@ -20,10 +20,11 @@ const QS = new URLSearchParams(location.search);
 const pickOne = a => a[(Math.random() * a.length) | 0];
 
 export const loadSave = () => { try { return JSON.parse(localStorage.getItem(SAVE) || "null"); } catch (e) { return null; } };
+export const saveGame = G => { try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} };
 export const clearSave = () => { try { localStorage.removeItem(SAVE); } catch (e) {} };
-export function newGame(name, jacket, fear) {
+export function newGame(name, jacket, fear, gender = "m") {
   return Object.assign(newTeam([]), {
-    v: 2, name, jacket, fear, el: 0, party: [], found: {}, heart: {}, frags: [], seen: {}, confessed: {}, entered: {}, flags: {},
+    v: 3, name, jacket, fear, gender, op: "dm", opDone: false, el: 0, party: [], found: {}, heart: {}, frags: [], seen: {}, confessed: {}, entered: {}, flags: {},
     x: MAP.spawn.x, z: MAP.spawn.z, a: 0, fbat: 100, flash: true, picked: [], introDone: false, hints: 0,
     short: false, itOff: false, itAt: null, police: false, startedAt: Date.now()
   });
@@ -32,6 +33,7 @@ export function newGame(name, jacket, fear) {
 export function Game(G, { onExit }) {
   const $app = document.getElementById("app");
   document.body.classList.add("player");
+  setGender(G.gender);
   for (const k of ["entered", "flags", "seen", "confessed", "heart"]) G[k] = G[k] || {};
   const cfg = { fear: G.fear };
   if (QS.has("debug")) window.__G = G;
@@ -84,7 +86,7 @@ export function Game(G, { onExit }) {
     st.busy = false; st.running = false; save();
   }
 
-  import("./world.js?v=202611182111").then(({ createWorld }) => {
+  import("./world.js?v=202611191033").then(({ createWorld }) => {
     try { W = createWorld($("cv"), { pixel: innerWidth > 1400 ? 3 : 2.5 }); }
     catch (e) { console.error(e); toast("3D 화면을 열지 못했어요. 크롬이나 사파리 최신 버전으로 열어 주세요.", "bad"); return; }
     W.setItemGone("phone", true);
@@ -93,9 +95,6 @@ export function Game(G, { onExit }) {
     startAudio();
     music(G.introDone ? "explore" : "calm");
     if (!G.introDone) later(async () => {
-      await chapter(CHAPTERS[0], G.name);
-      await book(PROLOGUE, G.name);
-      await chapter(CHAPTERS.school, G.name);
       await talk(INTRO, { name: G.name, onLine });
       G.introDone = true; music("explore");
       setTimeout(() => toast(NUDGE.start), 800);
@@ -492,7 +491,7 @@ export function Game(G, { onExit }) {
 
     /* 그리기 */
     const inRoom4 = roomAt(G.x, G.z) === 4;
-    const chars = [{ id: "player", x: G.x, z: G.z, a: G.a, speed, mode: frozen ? "frozen" : st.hidden ? "hide" : "idle", opts: { jacket: JACKETS[G.jacket] } }];
+    const chars = [{ id: "player", x: G.x, z: G.z, a: G.a, speed, mode: frozen ? "frozen" : st.hidden ? "hide" : "idle", opts: { jacket: JACKETS[G.jacket], female: G.gender === "f" } }];
     for (const id of G.party) { const N = st.npc[id]; chars.push({ id, x: N.x, z: N.z, a: N.a, speed: N.sp, mode: frozen ? "frozen" : st.hidden ? "hide" : (fear > 0.5 || st.fearBoost > 0.5) ? "scared" : "idle" }); }
     chars.push({ id: "police", x: -9, z: -2.0, a: G.solved[5] ? Math.atan2(G.z + 2, G.x + 9) : Math.PI / 2, speed: 0, mode: "idle" });
     const near = nearItem();
@@ -627,7 +626,7 @@ export function Ending(G, { onExit }) {
   document.getElementById("app").innerHTML = `<div class="wrap center end ${G.end}">
     <p class="kicker">${E[0]}</p><h1>${esc(E[1])}</h1><p class="lead">${esc(E[2])}</p>
     <div class="rcard">
-      <div class="rh"><b>마지막 배는 6시 · 결과</b><span>${esc(when)}</span></div>
+      <div class="rh"><b>6시의 섬 · 결과</b><span>${esc(when)}</span></div>
       <div class="rname">${esc(G.name)}</div>
       <div class="rgrid">
         <div><b>${E[0]}</b>엔딩</div><div><b>${G.end === "night" ? "—" : mm(G.endAt)}</b>걸린 시간</div>

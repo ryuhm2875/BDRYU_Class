@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────────
-   마지막 배는 6시 · 대사
+   6시의 섬 · 대사
    한 줄: { who, face, text, sfx?, shake? }   who: me(주인공) · narr(설명) · NPC 아이디 · police · jaehee · seojin · voice
    고르기: { choice: [{ text, kind: "kind"|"harsh", then: [줄...] }] }
    {name} 은 학생이 넣은 이름으로 바뀜
@@ -17,13 +17,7 @@ export const PROLOGUE = [
 ];
 
 export const INTRO = [
-  { who: "narr", text: "녹슨 정문 너머로\n낡은 분교 건물이 서 있었다.\n창문 몇 개는 시커멓게 그을려 있었다.\n오후 5시 30분." },
-  { who: "sua", face: "normal", text: "저 창문… 쇼츠에 나온 거 맞아. 진짜 불이 났었네." },
-  { who: "seoyul", face: "sad", text: "…불은 났어도, 언니가 낸 건 아니야." },
-  { who: "minjae", face: "normal", text: "배까지 30분이야. 언니가 두고 간 기록만 찾아서 바로 나오자." },
-  { who: "taeo", face: "scared", text: "…저기예요. 할머니가 절대 가지 말라던 학교." },
-  { who: "haeun", face: "scared", text: "고개 꺾인 사람 얘기… 그거 그냥 옛날얘기지?" },
-  { who: "narr", text: "{name:은} 현관 유리문을 밀었다.\n끼이익—\n여섯 명이 모두 안으로 들어선\n바로 그때였다.", sfx: "slam", shake: true },
+  { who: "narr", text: "{name:은} 현관 유리문을 밀었다.\n끼이익—\n셋이 모두 안으로 들어선\n바로 그때였다.", sfx: "slam", shake: true },
   { who: "narr", text: "쾅.\n등 뒤에서 문이 닫혔다.\n불이 나갔고, 누군가 비명을 질렀다.\n발소리가 사방으로 흩어졌다." },
   { who: "narr", text: "얼마나 지났을까.\n눈을 떴을 때, 복도에는\n{name} 혼자 남아 있었다." },
   { who: "me", text: "…서율아? 승우야? 다들 어디 있어?" },
@@ -273,4 +267,74 @@ export const CHAPTERS = {
   true: { no: "에필로그", title: "잘리지 않은 이야기", line: "" },
   escape: { no: "에필로그", title: "반쯤 남은 이야기", line: "" },
   night: { no: "에필로그", title: "떠난 배", line: "" }
+};
+
+/* ═════════ 오프닝: 학교 정문까지 (6시의 섬) ═════════
+   {오빠언니} {형누나} 는 주인공 성별에 따라 바뀜 */
+export const OPENING = {
+  /* 1. 밤 11시 42분 · 준호의 DM */
+  dm1: ["야. 이거 봤냐?", "어제 밤부터 난리남", { video: true }, "지금 여기저기 다 돌아다님"],
+  comments: ["방화범 얼굴 박제 ㅋㅋ", "조회수 때문에 불까지 지르냐", "공포 유튜버면 다 이럼?", "신고했습니다", "학교에 불 지르는 게 콘텐츠냐", "현장에 다시 간 거 소름", "얼굴 다 나왔네 ㅋㅋㅋ"],
+  dm2: ["근데 이 사람…", "너랑 같은 과 한재희 아님?"],
+  me1: [{ who: "me", text: "…재희?" }],
+  insta: {
+    id: "jaehee.horror", nameLine: "한재희 · 공포 체험 🎥", followers: "12.4만", post: "다음 편… 섬 속 폐교 🤫 (곧 공개)",
+    comments: ["해명하세요", "방화범이 공포 유튜버였네", "답 좀 해라", "구독 취소함", "왜 아무 말이 없음?", "경찰 조사 받는다던데", "해명 안 하면 인정하는 거임", "실망입니다", "영상 원본 공개해"]
+  },
+  me2: [{ who: "me", text: "재희가 그럴 리가 없는데…" }],
+  call: [
+    { who: "seoyul", face: "sad", text: "…{오빠언니}?" },
+    { who: "seoyul", face: "sad", text: "{오빠언니}, 우리 언니가… 그저께 내 친구가 소개해 준 섬에 촬영하러 들어갔는데, 연락이 안 돼. 어떡해, 진짜…" },
+    { who: "me", text: "서율아, 일단 진정해 봐. 그 친구가 누군데?" },
+    { who: "seoyul", face: "normal", text: "김승우. 같은 반 애야. 자기 고향 섬을 알려 준다고 했었어." },
+    { who: "seoyul", face: "sad", text: "경찰에도 말했는데… 어른이니까 하루만 더 기다려 보래. 영상 때문에 언니를 범인 취급만 하고…" },
+    { who: "me", text: "…알았어. 내일 셋이 한 번 만나자. 승우도 꼭 데리고 와." }
+  ],
+
+  /* 2. 다음 날 오후 3시 · 대서버스터미널 */
+  guideMeet: [{ who: "guide", text: "서율에게 다가가 보세요.\n움직이기: 조이스틱 또는 방향키(WASD) · 사람이나 빛나는 점을 눌러도 돼요." }],
+  meet: [
+    { who: "seoyul", face: "normal", text: "{오빠언니}, 여기. 얘가 승우야." },
+    { who: "minjae", face: "normal", text: "…안녕하세요." },
+    { who: "me", text: "도대체 이게 어떻게 된 건지 설명해 줄 수 있어?" },
+    { who: "minjae", face: "sad", text: "지난번에 재희 누나가 아는 무서운 장소 없냐고 해서… 그냥 가볍게 저희 고향에 있는 폐교를 알려 줬어요." },
+    { who: "minjae", face: "sad", text: "가라고 한 적은 절대 없어요. 소문도 안 좋고 위험한 데라서 말렸는데…" },
+    { who: "me", text: "그건 됐어. 재희 성격상 무조건 거기 갔을 거야. 거기가 어디야? 당장 같이 가자." }
+  ],
+  guideRoad: [{ who: "guide", text: "도로 쪽으로 나가 택시를 잡으세요." }],
+
+  /* 3. 택시 */
+  taxi: [
+    { who: "minjae", face: "normal", text: "대서항 가 주세요." },
+    { who: "driver", text: "이 시간에 섬엘 들어가? 막배 놓치면 큰일 나는디." },
+    { who: "seoyul", face: "sad", text: "…" }
+  ],
+
+  /* 4. 오후 5시 · 대서항 */
+  pier: [
+    { who: "minjae", face: "normal", text: "여기서 배를 타고 들어가면 봉두도예요. 근데 섬엔 사람도 거의 안 살고… 나오는 마지막 배가 6시예요. 빨리 나와야 해요." },
+    { who: "seoyul", face: "sad", text: "우리 언니… 저기 있겠지?" },
+    { choice: [
+      { kind: "plan", text: "일단 가 보자. 30분 안에 찾아서 나오면 돼.", then: [{ who: "seoyul", face: "normal", text: "…응. 30분." }] },
+      { kind: "luck", text: "나야 모르지. 되는 대로 가 보자.", then: [{ who: "seoyul", face: "sad", text: "…그래. 일단 가 보자." }] }
+    ] }
+  ],
+  guideBoat: [{ who: "guide", text: "선착장 끝의 배에 오르세요." }],
+
+  /* 5. 배 */
+  captain: [{ who: "captain", text: "6시에 바로 출발할 거요. 늦지 마소." }],
+
+  /* 6. 봉두도 · 섬 길 */
+  path1: [
+    { who: "seoyul", face: "normal", text: "근데 이 학교, 오래되긴 했어도… 무서운 이유가 따로 있어?" },
+    { who: "minjae", face: "normal", text: "응. 사실 여기 오지 말아야 하는 진짜 이유는… 뭔가가 돌아다닌다는 소문 때문이야." },
+    { who: "minjae", face: "scared", text: "눈을 마주치면 몸이 굳어 버리는 게 있대. 그래서 섬 어른들은 밤에 손전등을 꼭 아래로 비추고 다녀." },
+    { who: "seoyul", face: "scared", text: "정말이야…? 나 너무 무서워, 어떡해…" },
+    { choice: [
+      { kind: "comfort", text: "괜찮아. 내가 옆에 있을게.", then: [{ who: "seoyul", face: "normal", text: "…고마워, {오빠언니}." }] },
+      { kind: "scold", text: "소문 하나에 벌써 울면 어떡해.", then: [{ who: "seoyul", face: "sad", text: "…알았어. 안 울게." }] },
+      { kind: "cheer", text: "무서우면 내 옆에 붙어. 재희 찾으러 온 거잖아.", then: [{ who: "seoyul", face: "normal", text: "응. 언니 찾으러 온 거야." }] }
+    ] }
+  ],
+  path2: [{ who: "narr", text: "언덕 위로 녹슨 정문이 보였다.\n창문 몇 개가 시커멓게 그을려 있었다." }]
 };

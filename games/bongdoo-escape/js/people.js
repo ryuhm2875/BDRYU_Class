@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────────
-   마지막 배는 6시 · 사람 모델 (Quaternius Universal Animation Library 1·2, CC0)
+   6시의 섬 · 사람 모델 (Quaternius Universal Animation Library 1·2, CC0)
    - 회색 마네킹 몸에 뼈대별로 색을 칠해 교복을 입힘 (머리·손=피부, 몸통·팔=상의 …)
    - 머리는 기존 큰 얼굴 공 + 머리카락을 머리뼈에 붙여 2~3등신 느낌 유지
    - 동작: 서기·걷기·뛰기·웅크리기·말하기·손전등·겁먹기 / ‘그것’은 좀비 걸음
@@ -8,13 +8,13 @@
 import * as THREE from "../vendor/three.module.min.js";
 import { GLTFLoader } from "../vendor/GLTFLoader.js";
 import * as SkeletonUtils from "../vendor/SkeletonUtils.js";
-import { LOOKS, lam, hexc, addHair, addProp } from "./rig.js?v=202611182111";
-import { bakeFace, toTex } from "./textures.js?v=202611182111";
+import { LOOKS, lam, hexc, addHair, addProp } from "./rig.js?v=202611191033";
+import { bakeFace, toTex } from "./textures.js?v=202611191033";
 
 const BASE = new URL("../assets/models/", import.meta.url).href;
 const FEMALE = new Set(["sua", "haeun", "seoyul"]);
 const SKIRT = { sua: [116, 42, 54], haeun: [52, 56, 74], seoyul: [70, 64, 78] };
-const HEIGHT = { player: 1.5, minjae: 1.55, sua: 1.48, haeun: 1.46, taeo: 1.36, seoyul: 1.5, police: 1.72, it: 2.05, decoy: 1.85 };
+const HEIGHT = { player: 1.5, minjae: 1.55, sua: 1.48, haeun: 1.46, taeo: 1.36, seoyul: 1.5, police: 1.72, captain: 1.66, it: 2.05, decoy: 1.85 };
 
 let lib = null;
 /* 두 파일 받기. 실패하면 null → world 는 예전 인형을 그대로 씀 */
@@ -91,10 +91,10 @@ function palette(L, it) {
 }
 
 /* ---------- 학생·경찰 ---------- */
-export function makePerson(P, id, { jacket = null, ps1 } = {}) {
+export function makePerson(P, id, { jacket = null, ps1, female = false } = {}) {
   const L = Object.assign({}, LOOKS[id] || LOOKS.minjae); if (jacket) L.jacket = jacket;
   L.skirtC = SKIRT[id] || L.jacket;
-  const src = FEMALE.has(id) ? P.f : P.m;
+  const src = (FEMALE.has(id) || female) ? P.f : P.m;
   const model = SkeletonUtils.clone(src);
   const root = new THREE.Group(); root.add(model);
 

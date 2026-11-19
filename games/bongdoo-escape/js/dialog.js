@@ -1,34 +1,40 @@
 /* ──────────────────────────────────────────────────────────────
-   마지막 배는 6시 · 대화창 (비주얼 노벨 방식)
+   6시의 섬 · 대화창 (비주얼 노벨 방식)
    - 화면 아래 대화창 + 왼쪽 초상화 + 글자가 한 자씩
    - 초상화 그림(수채화)은 나중에 assets/portraits/<아이디>_<표정>.webp 로 넣으면 자동으로 씀.
      없으면 색과 이름 첫 글자로 대신 그림
    ────────────────────────────────────────────────────────────── */
-import { NPCS } from "./data.js?v=202611182111";
-import { esc } from "./puzzles.js?v=202611182111";
+import { NPCS } from "./data.js?v=202611191033";
+import { esc } from "./puzzles.js?v=202611191033";
 
 const has = {};             // 그림 파일이 있는지 기억
 /* 친구가 아닌 사람들 */
-const OTHERS = { police: { name: "섬 경찰", color: "#8aa4d8" }, seojin: { name: "한서진", color: "#f0a0a8" }, jaehee: { name: "윤재희", color: "#d8c49a" } };
+const OTHERS = { driver: { name: "택시 기사", color: "#c8b890" }, captain: { name: "선장", color: "#9ac0c8" }, police: { name: "섬 경찰", color: "#8aa4d8" }, seojin: { name: "한서진", color: "#f0a0a8" }, jaehee: { name: "윤재희", color: "#d8c49a" } };
 const who2 = w => NPCS[w] || OTHERS[w];
 function portrait(who, face) {
   if (who === "narr" || who === "voice" || who === "guide") return "";
   /* 수채화 초상화: assets/portraits/<아이디>.webp (표정은 화면 효과로) */
+  const isMe = who === "me";
+  if (isMe) who = "me_" + GENDER;
   const src = `assets/portraits/${who}.webp`;
-  const N = who2(who), col = who === "me" ? "#3a4660" : N ? N.color : "#555";
-  const ch = who === "me" ? "" : N ? N.name[1] : "?";
+  const N = who2(who), col = isMe ? "#3a4660" : N ? N.color : "#555";
+  const ch = isMe ? "" : N ? N.name[1] : "?";
   const ph = `<div class="pf ph ${face || ""}" style="--c:${col}"><i></i><b>${esc(ch)}</b></div>`;
-  if (has[who] === false || who === "me") return ph;
+  if (has[who] === false) return ph;
   if (has[who] === true) return `<div class="pf art ${face || ""}" style="--c:${col}"><img src="${src}" alt=""></div>`;
   const im = new Image(); im.onload = () => { has[who] = true; }; im.onerror = () => { has[who] = false; }; im.src = src;
   return ph;
 }
 /* 미리 불러 두기 (대화가 처음 뜰 때 그림이 늦게 뜨지 않게) */
-export function preloadPortraits() { for (const w of ["minjae", "sua", "taeo", "haeun", "seoyul", "seojin", "jaehee", "police"]) portrait(w); }
+export function preloadPortraits() { for (const w of ["me", "minjae", "sua", "taeo", "haeun", "seoyul", "seojin", "jaehee", "police"]) portrait(w); }
 
 /* 이름 뒤 조사: {name:은} {name:이} {name:을} {name:과} {name:아} */
 const JOSA = { "은": ["은", "는"], "이": ["이", "가"], "을": ["을", "를"], "과": ["과", "와"], "아": ["아", "야"] };
+/* 주인공 성별: {오빠언니} {형누나} */
+let GENDER = "m";
+export function setGender(g) { GENDER = g === "f" ? "f" : "m"; }
 export function withName(s, name) {
+  s = String(s).replace(/\{오빠언니\}/g, GENDER === "f" ? "언니" : "오빠").replace(/\{형누나\}/g, GENDER === "f" ? "누나" : "형");
   const c = name.charCodeAt(name.length - 1);
   const bat = c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0;
   return String(s).replace(/\{name(?::(은|이|을|과|아))?\}/g, (_, j) => j ? name + JOSA[j][bat ? 0 : 1] : name);

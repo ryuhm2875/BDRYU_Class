@@ -8,8 +8,8 @@
 import * as THREE from "../vendor/three.module.min.js";
 import { GLTFLoader } from "../vendor/GLTFLoader.js";
 import * as SkeletonUtils from "../vendor/SkeletonUtils.js";
-import { LOOKS, lam, hexc, addHair, addProp } from "./rig.js?v=202611191033";
-import { bakeFace, toTex } from "./textures.js?v=202611191033";
+import { LOOKS, lam, hexc, addHair, addProp } from "./rig.js?v=202611191038";
+import { bakeFace, toTex } from "./textures.js?v=202611191038";
 
 const BASE = new URL("../assets/models/", import.meta.url).href;
 const FEMALE = new Set(["sua", "haeun", "seoyul"]);

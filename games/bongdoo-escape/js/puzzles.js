@@ -2,8 +2,8 @@
    6시의 섬 · 2D 화면 (3D 방에서 물건을 누르면 위에 뜨는 것)
    단서 보기 · 장면 카드 줄 세우기 · 자물쇠 · 일기장 · 캐릭터 소개
    ────────────────────────────────────────────────────────────── */
-import { ROOMS } from "./data.js?v=202611191033";
-import { duck } from "./sound.js?v=202611191033";
+import { ROOMS } from "./data.js?v=202611191038";
+import { duck } from "./sound.js?v=202611191038";
 
 export const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const br = s => esc(s).replace(/\n/g, "<br>");

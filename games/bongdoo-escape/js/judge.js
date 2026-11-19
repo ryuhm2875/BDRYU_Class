@@ -3,8 +3,8 @@
    모든 시각은 ‘게임 시작부터 지난 ms’(el).
    who: 지금 일행에 있는 친구들 (환등기·잠긴 앱처럼 특정 친구가 있어야 하는 일)
    ────────────────────────────────────────────────────────────── */
-import { ANSWERS, HINTS } from "./answers.js?v=202611191033";
-import { ROOMS, isOpen, GAME_MS } from "./data.js?v=202611191033";
+import { ANSWERS, HINTS } from "./answers.js?v=202611191038";
+import { ROOMS, isOpen, GAME_MS } from "./data.js?v=202611191038";
 
 export const LOCK_MS = 60000, BLACKOUT_MS = 30000;
 

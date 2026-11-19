@@ -10,12 +10,12 @@
    단계마다 저장 → 이어 하기는 그 단계 처음부터
    ────────────────────────────────────────────────────────────── */
 import * as THREE from "../vendor/three.module.min.js";
-import { makePost } from "./post.js?v=202611191033";
-import { loadPeople, makePerson } from "./people.js?v=202611191033";
-import { talk, talking, setGender, preloadPortraits } from "./dialog.js?v=202611191033";
-import { sfx, music, myStep, startAudio, duck } from "./sound.js?v=202611191033";
-import { esc } from "./puzzles.js?v=202611191033";
-import { OPENING as O } from "./story.js?v=202611191033";
+import { makePost } from "./post.js?v=202611191038";
+import { loadPeople, makePerson } from "./people.js?v=202611191038";
+import { talk, talking, setGender, preloadPortraits } from "./dialog.js?v=202611191038";
+import { sfx, music, myStep, startAudio, duck } from "./sound.js?v=202611191038";
+import { esc } from "./puzzles.js?v=202611191038";
+import { OPENING as O } from "./story.js?v=202611191038";
 
 const STAGES = ["dm", "terminal", "taxi", "pier", "boat", "path", "gate"];
 const sleep = ms => new Promise(r => setTimeout(r, ms));

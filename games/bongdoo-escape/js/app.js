@@ -3,11 +3,11 @@
    이름 · 성별(주인공 그림)을 고르고 시작. 무서움은 '보통' 고정. 저장된 게임이 있으면 이어 하기.
    ?debug=1 → 개발 확인용 (window.__G)
    ────────────────────────────────────────────────────────────── */
-import { JACKETS } from "./data.js?v=202611191033";
-import { esc } from "./puzzles.js?v=202611191033";
-import { startAudio, music } from "./sound.js?v=202611191033";
-import { Opening } from "./opening.js?v=202611191033";
-import { Game, Ending, newGame, loadSave, clearSave, saveGame } from "./game.js?v=202611191033";
+import { JACKETS } from "./data.js?v=202611191038";
+import { esc } from "./puzzles.js?v=202611191038";
+import { startAudio, music } from "./sound.js?v=202611191038";
+import { Opening } from "./opening.js?v=202611191038";
+import { Game, Ending, newGame, loadSave, clearSave, saveGame } from "./game.js?v=202611191038";
 
 const $app = document.getElementById("app");
 Title();
